@@ -37,9 +37,14 @@ drones, force-fire (hold LMB = all guns on cursor, RMB = main battery), reticle 
 gate everything in `verify.sh`. The C2 spec's LOOK-LOCK (owner: "if it doesn't look this good it
 doesn't get approved") binds any future render change that touches this chunk.
 
-**Next:** C3 is unscoped — candidates: wave/spawn director (first real enemies + hull damage),
-sonar + subs, depth charges, hardpoint purchase economy. Each needs its own `/spec-feature`
-interview first. All five DECISIONS.md open threads: #5 is resolved; #1–#4 remain.
+**C3 — Wave director & first enemies** is mid-gate: the spec (`docs/specs/wave-director.md`, from
+the 2026-07-08 owner interview) is owner-APPROVED, and the interactive mockup
+`design/wave-director.html` is built — seeded budget director (discrete waves + lulls),
+swarmer/gunboat/bomber roster arriving from beyond the edge, hostile dodgeable shells, 10 hull pips
++ grace window, SHIP LOST card + fresh-seed restart; the C2 practice range is retired inside it.
+Its sim region passes a 7-check harness mirroring the spec acceptance list. Per the mockup gate, the
+owner must approve wave rhythm / threat readability / dodge feel before the Godot port. No C3 Godot
+code exists yet. DECISIONS open threads #1–#4 remain (naming, #2, is the nearest).
 
 ## 3. Tree layout
 
