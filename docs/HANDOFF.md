@@ -59,9 +59,17 @@ report, four marquee sim features behind default-off flags, muzzle-origin shells
 fix), and the DEV TEST KIT (debug builds only, ` to toggle). `probe_tech` (9 checks) gates it in
 `verify.sh`; `design/tech-tree.html` stays the visual/loop reference.
 
-**Next:** C5 candidates: sonar + subs + depth charges (completes the three domains, D1.10/D1.11),
-the helicopter/AIR WING function (open thread #3 — the tree is waiting for it), or the boss ladder
-+ naming pass (open thread #2). Each needs its own `/spec-feature` interview first.
+**C5 — Sonar, subs & depth charges is MID-GATE (2026-07-08):** spec approved
+(`docs/specs/sonar-subs.md`), interactive mockup BUILT (`design/sonar-subs.html` — subs with
+torpedo wakes, passive sonar detection/latch, contact-gated DC volleys, SONAR tree branch, dev-kit
+`+SUB`; scratchpad harness 7/7 on the spec's acceptance checks) and published for owner
+feel-approval. NOT yet approved, NOT yet ported. On approval: record it in the spec, then port
+(SonarConfig + sub roster + Sonar/DepthCharges systems + render/radar + probe_sonar + D1.11
+refinement in the DECISIONS Change Log — the owner superseded the blind-backstop clause at
+interview: charges arm only on a sonar contact).
+
+**After C5:** the helicopter/AIR WING function (open thread #3 — the tree is waiting for it) or
+the boss ladder + naming pass (open thread #2). Each needs its own `/spec-feature` interview first.
 
 ## 3. Tree layout
 

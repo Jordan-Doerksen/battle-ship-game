@@ -1,7 +1,7 @@
 # Spec — C5: Sonar, Submarines & Depth Charges
 
-**Status:** DRAFT 2026-07-08 — interviewed 2026-07-08 (owner), awaiting owner approval · Not mocked ·
-Not built
+**Status:** APPROVED 2026-07-08 (owner) · Interviewed 2026-07-08 · Mockup BUILT (`design/sonar-subs.html`,
+harness 7/7) — AT THE GATE, awaiting owner feel-approval · Not ported
 **Completes:** the founding three-domain fantasy (air / surface / SUB — D1.9). **Implements:** D1.10
 (passive sonar, radar-gated sub visibility) and D1.11 (free always-on inaccurate depth charges) —
 with one owner refinement at interview: **charges arm only on a sonar CONTACT** (supersedes
