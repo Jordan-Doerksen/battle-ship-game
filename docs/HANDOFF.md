@@ -24,9 +24,14 @@ next chunk begins.** No dead mechanics, no orphan pointers, no dead tags strappe
 
 ## 2. Current status
 
-Only **C0 — Heartbeat** exists: a fixed-timestep deterministic loop, seeded RNG, the `GameWorld` truth
-object, and a minimal render harness proving the loop is alive. No gameplay systems (movement, combat,
-hardpoints, sonar) are wired yet. See `DECISIONS.md`'s Build Timeline for what's next.
+**C0 — Heartbeat** is built: a fixed-timestep deterministic loop, seeded RNG, the `GameWorld` truth
+object, and a minimal render harness proving the loop is alive. No gameplay systems are wired yet.
+
+**C1 — Naval movement** is mid-gate: the spec (`docs/specs/naval-movement.md`) is owner-APPROVED, and
+the interactive mockup `design/naval-movement.html` is built (keyboard-driven, implements the spec's
+exact model + tunables; spec acceptance checks 1–6 validated numerically against it). Per the mockup
+gate, the owner must approve the mockup's *feel* hands-on before the Godot port. No Godot code for C1
+exists yet. See `DECISIONS.md`'s Build Timeline for what's next.
 
 ## 3. Tree layout
 
