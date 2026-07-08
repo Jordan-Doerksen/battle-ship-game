@@ -110,6 +110,14 @@ new size — wake stern offset and deck furniture scale with it).
 4S/4M/2L). The AA compensates as a hose: fire rate 6 → 12/s, base spread 0.035 → 0.045, plus the
 bloom mechanic above. Acceptance gains check 9 (bloom rises under sustained fire, decays at rest).
 
+**Gate revision 3 (owner, 2026-07-08):** hull still too small and turrets needed identity. Hull scale
+raised to ×2.4 (~210 u overall, wake offset 100) with the mount plan re-laid again (large turrets on
+their own barbettes fore/aft, mediums flanking the superstructure, small pairs fore/quarter). Turret
+art is now class-distinct and is part of the visual spec: **L** = twin-barrel armored turret with
+muzzle brakes, rangefinder ears, and a hull-fixed barbette ring; **M** = angular single-gun house
+with a recoil sleeve on its own smaller barbette; **S** = open AA ring mount, twin thin barrels,
+pedestal tub. All classes kick with render-side recoil on firing. The Godot port carries all of this.
+
 ## Determinism notes
 
 - Drone spawns/drift and per-shot spread are **gameplay randomness → `world.rng`**, drawn in stable
