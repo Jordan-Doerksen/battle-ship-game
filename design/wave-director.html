@@ -15,8 +15,10 @@
   hostile dodgeable shells, 10 hull pips + post-hit grace, run-over card + fresh-seed
   restart. The C2 practice range is gone — waves ARE the game now. Fixed 60 Hz step;
   ALL gameplay randomness through one seeded stream (mirrors world.rng).
+  Gate revision 1: MMB (scroll-wheel click) force-fires the MEDIUM battery; radar
+  scope (bottom-right) covers the spawn ring so ranged attackers can be planned for.
   Owner judges wave rhythm, threat readability, and dodge feel; approves BEFORE port.
-  Keys: W/S throttle · A/D helm · hold LMB all guns · hold RMB main battery · R new sortie.
+  Keys: W/S throttle · A/D helm · hold LMB all · MMB secondaries · RMB main · R new sortie.
 ================================================================================= -->
 <style>
   :root {
@@ -173,7 +175,7 @@
 
 <div id="helm-overlay">
   <button id="helm-btn">Begin Sortie</button>
-  <div class="sub-line">W·S·A·D helm — hold LMB / RMB to force-fire — R new sortie</div>
+  <div class="sub-line">W·S·A·D helm — hold LMB all guns · MMB secondaries · RMB main battery — R new sortie</div>
 </div>
 
 <div id="lost-overlay">
@@ -215,6 +217,7 @@ const DEFAULT_CFG = {
     base_budget: 6, budget_per_wave: 4, lull_secs: 8.0, first_wave_delay: 3.0,
     spawn_ring_min: 1700, spawn_ring_max: 2000, cluster_min: 1, cluster_max: 3,
     hull_pips: 10, grace_secs: 0.8,
+    radar_range: 2200,   // scope reach (gate revision 1) — future sonar config's neighbor
   },
   enemies: {   // == config/enemies.tres — the C3 roster (spec table); ids await the naming pass
     swarmer: { layer: "air",  hp: 2, speed: 115, turn: 2.2, dmg: 1, radius: 9,  cost: 1, unlock: 1 },
@@ -391,7 +394,8 @@ function stepTurrets(sim, inp, cfg, dt) {
     const mcfg = cfg.mounts[i], m = sim.mounts[i];
     const wpn = cfg.weapons[cfg.loadout[mcfg.size]];
     const mpos = mountWorld(sim.ship, mcfg);
-    const forced = inp.forceAll || (inp.forceLarge && mcfg.size === "L");
+    const forced = inp.forceAll || (inp.forceLarge && mcfg.size === "L")
+      || (inp.forceMedium && mcfg.size === "M");   // gate rev 1: MMB = secondary battery
     let aim = null;
     if (forced) {
       aim = { x: inp.aimX, y: inp.aimY };
@@ -478,13 +482,13 @@ function stepSim(sim, inp, cfg, dt) {   // == Sim.step fixed order
 let cfg = structuredClone(DEFAULT_CFG);
 let sortie = 0;
 let sim = makeSim(0xC3C3, cfg);
-const input = { thrust: 0, rudder: 0, forceAll: false, forceLarge: false, aimX: 0, aimY: 0 };
+const input = { thrust: 0, rudder: 0, forceAll: false, forceLarge: false, forceMedium: false, aimX: 0, aimY: 0 };
 
 /* ── input (Main.gd's role) ── */
 const held = new Set();
 const KEYMAP = { KeyW: "up", ArrowUp: "up", KeyS: "down", ArrowDown: "down",
                  KeyA: "left", ArrowLeft: "left", KeyD: "right", ArrowRight: "right" };
-let mouseX = 0, mouseY = 0, lmb = false, rmb = false;
+let mouseX = 0, mouseY = 0, lmb = false, rmb = false, mmb = false;
 addEventListener("keydown", (e) => {
   const k = KEYMAP[e.code];
   if (k) { held.add(k); e.preventDefault(); }
@@ -498,15 +502,22 @@ addEventListener("mousedown", (e) => {
   if (e.target.closest("#tuning") || e.target.closest("#helm-overlay")) return;
   if (sim.run_over) { newSortie(); return; }
   if (e.button === 0) lmb = true;
+  if (e.button === 1) { mmb = true; e.preventDefault(); }   // scroll-wheel click, no autoscroll
   if (e.button === 2) rmb = true;
 });
-addEventListener("mouseup", (e) => { if (e.button === 0) lmb = false; if (e.button === 2) rmb = false; });
+addEventListener("mouseup", (e) => {
+  if (e.button === 0) lmb = false;
+  if (e.button === 1) mmb = false;
+  if (e.button === 2) rmb = false;
+});
+addEventListener("auxclick", (e) => e.preventDefault());
 
 function pollInput() {
   input.thrust = (held.has("up") ? 1 : 0) - (held.has("down") ? 1 : 0);
   input.rudder = (held.has("right") ? 1 : 0) - (held.has("left") ? 1 : 0);
   input.forceAll = lmb;
   input.forceLarge = rmb && !lmb;
+  input.forceMedium = mmb && !lmb;   // RMB+MMB combine: main + secondary on point
   input.aimX = sim.ship.x + (mouseX - W / 2) / ZOOM;
   input.aimY = sim.ship.y + (mouseY - H / 2) / ZOOM;
 }
@@ -778,12 +789,19 @@ function drawFx(now) {
   }
 }
 
+function orderLabel() {
+  if (input.forceAll) return "ALL GUNS";
+  if (input.forceLarge && input.forceMedium) return "MAIN + SECONDARY";
+  if (input.forceLarge) return "MAIN BATTERY";
+  if (input.forceMedium) return "SECONDARIES";
+  return "";
+}
 function drawReticle() {
   if (sim.run_over) return;
-  const forced = input.forceAll || input.forceLarge;
-  ctx.strokeStyle = forced ? "rgba(217,79,43,0.95)" : "rgba(228,240,242,0.35)";
+  const label = orderLabel();
+  ctx.strokeStyle = label ? "rgba(217,79,43,0.95)" : "rgba(228,240,242,0.35)";
   ctx.lineWidth = 1.4;
-  const r = forced ? 14 : 9;
+  const r = label ? 14 : 9;
   ctx.beginPath(); ctx.arc(mouseX, mouseY, r, 0, TAU); ctx.stroke();
   ctx.beginPath();
   for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
@@ -791,11 +809,72 @@ function drawReticle() {
     ctx.lineTo(mouseX + dx * (r + 5), mouseY + dy * (r + 5));
   }
   ctx.stroke();
-  if (forced) {
+  if (label) {
     ctx.fillStyle = "rgba(217,79,43,0.95)";
     ctx.font = "700 10px Arial";
-    ctx.fillText(input.forceAll ? "ALL GUNS" : "MAIN BATTERY", mouseX + 18, mouseY - 12);
+    ctx.fillText(label, mouseX + 18, mouseY - 12);
   }
+}
+
+// radar scope (gate revision 1) — north-up, ship-centered, covers the spawn ring. RadarView analog;
+// the sonar chunk will gate SUB blips by detection radius, air/surface blips are free (D1.10).
+function drawRadar() {
+  const R = 105;
+  const cx = W - R - 26, cy = H - R - 26;
+  const range = cfg.waves.radar_range;
+  const k = R / range;
+  ctx.save();
+  ctx.fillStyle = "rgba(13,32,40,0.9)";
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.fill();
+  ctx.strokeStyle = "rgba(205,186,142,0.5)"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.stroke();
+  // range rings every 500u + the main battery's reach (dashed brass)
+  ctx.strokeStyle = "rgba(205,186,142,0.16)";
+  for (let d = 500; d < range; d += 500) {
+    ctx.beginPath(); ctx.arc(cx, cy, d * k, 0, TAU); ctx.stroke();
+  }
+  ctx.setLineDash([3, 3]);
+  ctx.strokeStyle = "rgba(205,186,142,0.35)";
+  ctx.beginPath(); ctx.arc(cx, cy, cfg.weapons.mb16.range * k, 0, TAU); ctx.stroke();
+  ctx.setLineDash([]);
+  // viewport extent
+  const vw = (W / 2 / ZOOM) * k, vh = (H / 2 / ZOOM) * k;
+  ctx.strokeStyle = "rgba(228,240,242,0.14)";
+  ctx.strokeRect(cx - vw, cy - vh, vw * 2, vh * 2);
+  // sweep (cosmetic)
+  const sw = (performance.now() * 0.0016) % TAU;
+  ctx.strokeStyle = "rgba(205,186,142,0.3)";
+  ctx.beginPath(); ctx.moveTo(cx, cy);
+  ctx.lineTo(cx + Math.sin(sw) * R, cy - Math.cos(sw) * R); ctx.stroke();
+  // clip blips to the scope
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.clip();
+  for (const e of sim.enemies) {
+    if (!e.active) continue;
+    const bx = cx + (e.x - sim.ship.x) * k, by = cy + (e.y - sim.ship.y) * k;
+    if (e.type === "gunboat") {
+      ctx.fillStyle = "rgba(217,79,43,1)";
+      ctx.fillRect(bx - 2.8, by - 2.8, 5.6, 5.6);
+    } else {
+      ctx.fillStyle = e.type === "bomber" ? "rgba(217,79,43,1)" : "rgba(233,103,66,1)";
+      ctx.beginPath(); ctx.arc(bx, by, e.type === "bomber" ? 3.6 : 2.4, 0, TAU); ctx.fill();
+    }
+  }
+  for (const p of sim.projectiles) {
+    if (!p.hostile) continue;
+    ctx.fillStyle = "rgba(233,103,66,0.8)";
+    ctx.fillRect(cx + (p.x - sim.ship.x) * k - 0.8, cy + (p.y - sim.ship.y) * k - 0.8, 1.6, 1.6);
+  }
+  // own ship — heading tick at center
+  const f = dirOf(sim.ship.heading);
+  ctx.strokeStyle = "#E4F0F2"; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(cx - f.x * 4, cy - f.y * 4); ctx.lineTo(cx + f.x * 7, cy + f.y * 7); ctx.stroke();
+  ctx.fillStyle = "#E4F0F2";
+  ctx.beginPath(); ctx.arc(cx, cy, 2, 0, TAU); ctx.fill();
+  ctx.restore();
+  ctx.fillStyle = "rgba(142,129,95,0.9)";
+  ctx.font = "700 9px Arial";
+  const lbl = "R A D A R";
+  ctx.fillText(lbl, cx - ctx.measureText(lbl).width / 2, cy - R - 8);
 }
 
 /* ── HUD ── */
@@ -838,7 +917,8 @@ function drawGauges() {
   $("authority").textContent = `AUTHORITY ${Math.round(Math.max(cfg.move.turn_speed_floor, Math.min(1, speed / cfg.move.max_speed_ahead)) * 100)}%`;
   $("rudder-txt").textContent = input.rudder === 0 ? "RUDDER AMIDSHIPS" : input.rudder > 0 ? "RUDDER TO STARBOARD" : "RUDDER TO PORT";
   $("rudder-needle").style.left = (50 + input.rudder * 46) + "%";
-  $("batteries").textContent = "BATTERIES: " + (input.forceAll ? "ALL GUNS ON POINT" : input.forceLarge ? "MAIN BATTERY ON POINT" : "AUTO");
+  const ol = orderLabel();
+  $("batteries").textContent = "BATTERIES: " + (ol ? ol + " ON POINT" : "AUTO");
   $("hdg").textContent = `HDG ${String(Math.round(mod(s.heading * 180 / Math.PI, 360))).padStart(3, "0")}°`;
 }
 
@@ -870,6 +950,7 @@ function buildTuning() {
   slider(wv, cfg.waves, "lull_secs", 2, 20, 0.5, "lull secs");
   slider(wv, cfg.waves, "hull_pips", 3, 20, 1, "hull pips", buildPips);
   slider(wv, cfg.waves, "grace_secs", 0, 2.5, 0.05, "grace secs");
+  slider(wv, cfg.waves, "radar_range", 1000, 4000, 50, "radar range");
   for (const [eid, e] of Object.entries(cfg.enemies)) {
     const s = section(eid.toUpperCase(), false);
     slider(s, e, "hp", 1, 20, 1, "hp");
@@ -915,7 +996,7 @@ function frame(now) {
       emitWake();
       acc -= SIM_DT;
     }
-    drawWake(); drawEnemies(); drawProjectiles(); drawHull(now); drawFx(now); drawReticle(); drawGauges();
+    drawWake(); drawEnemies(); drawProjectiles(); drawHull(now); drawFx(now); drawRadar(); drawReticle(); drawGauges();
   } else {
     drawHull(now);
   }

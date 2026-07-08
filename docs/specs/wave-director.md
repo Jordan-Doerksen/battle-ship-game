@@ -33,6 +33,20 @@ budget. When the hull gives out, the run ends on a card and a fresh seed starts.
 8. **The practice range retires.** Drones, `RangeConfig`, and `range.tres` are removed; the turret
    acceptance checks re-target hand-placed enemies. Waves are the game now.
 
+## Gate revision 1 (owner, 2026-07-08 — at the mockup)
+
+- **MMB (scroll-wheel click) force-fires the MEDIUM battery** at the cursor, hold-only, exactly like
+  LMB (all) and RMB (large). Orders combine: RMB+MMB = main + secondary on point while the AA keeps
+  fighting its own war. Extends the C2 force-fire design (open thread #5's resolution); the Godot
+  port maps it to `MOUSE_BUTTON_MIDDLE`.
+- **Radar scope** (bottom-right, circular): north-up, ship-centered, ~2200 u range — covers the
+  spawn ring so approaching formations are visible before they reach the screen ("with boat
+  mechanics, ranged attackers are a serious threat" — planning tool, not decoration). Shows enemy
+  blips by type/layer, incoming hostile shells, the current viewport extent, and the main-battery
+  range ring. This is the fulfillment `RadarView` analog arriving early; the sonar chunk (D1.10)
+  later gates SUB blips by detection radius — air/surface blips are free, as here. Render-side
+  one-way read; scope range lives in config (`radar_range`, future sonar config's neighbor).
+
 ## Player-facing behavior
 
 - A run starts at **WAVE 1**: a small formation of swarmers appears at long range and bores in. The
@@ -132,8 +146,9 @@ The C2 LOOK-LOCK carries: everything already locked must still look that good wi
    pip from a stationary ship.
 6. **Run end + restart:** hull 0 → `run_over`, enemies/turrets freeze; a fresh world on a new seed
    runs clean.
-7. **Turret suite retained:** probe_hardpoints' checks (domain filter, policies, both force-fire
-   modes, splash, bloom, traverse ceiling) pass against hand-placed enemies.
+7. **Turret suite retained:** probe_hardpoints' checks (domain filter, policies, force-fire modes —
+   now including MMB medium-only and RMB+MMB combining — splash, bloom, traverse ceiling) pass
+   against hand-placed enemies.
 8. **probe_sim / probe_movement pass unchanged** — movement isolates by running with a zero-budget
    director (no spawns ⇒ zero draws, the C1 tripwire stays exact).
 
