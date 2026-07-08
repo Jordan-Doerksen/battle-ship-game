@@ -1,7 +1,6 @@
 # Spec — C4: Levels & Tech Tree
 
-**Status:** DRAFT 2026-07-08 — interviewed 2026-07-08 (owner), awaiting owner approval · Not mocked ·
-Not built
+**Status:** APPROVED 2026-07-08 (owner) · Interviewed 2026-07-08 · Mockup pending (gate) · Not built
 **Implements:** the 2026-07-08 Change Request (set hulls/turrets; persistent levels unlock a tech
 tree — replaced the purchasable-hardpoint economy). **Builds on:** every tunable the tree modifies
 already living in per-system `.tres` configs — the tree is config modification, by design.

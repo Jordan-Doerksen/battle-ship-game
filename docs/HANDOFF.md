@@ -51,10 +51,16 @@ economy is DEAD. Ships have set hulls/turrets; progression is persistent levels 
 tree (movement, turret-size-specific, bullet effects, traverse, and a helicopter branch — function
 TBD). The fixed loadout already in the build matches this.
 
-**Next:** C4 candidates: the levels + tech-tree meta chunk (owner's new direction — needs its
-interview), or sonar + subs + depth charges (completes the three domains per D1.10/D1.11). Boss
-ladder + naming (open thread #2) trails. Each needs its own `/spec-feature` interview first.
-DECISIONS open threads #1–#4 remain (#3 evolved into the helicopter question).
+**C4 — Levels & tech tree** is mid-gate: the spec (`docs/specs/tech-tree.md`, from the 2026-07-08
+owner interview implementing the Change Request) is owner-APPROVED, and the interactive mockup
+`design/tech-tree.html` is built — the full career loop in one page: title hub, tech tree screen
+(24 nodes, strict in-branch order, variable costs, free respec, AIR WING redacted/locked), and
+BEGIN SORTIE launching the C3 wave game with purchased tech APPLIED (config derivation + four
+marquee effects: CRASH TURN / INCENDIARY LOAD / PROXIMITY BURST / FULL SALVO), XP banking to a
+persistent profile (localStorage in the mock; user://profile.cfg at port). Its sim+meta region
+passes an 8-check harness (baseline invariance, derivation determinism, XP/levels, all four
+marquees, spend rules). Owner must approve the loop before the Godot port. No C4 Godot code yet.
+Then: sonar + subs + depth charges is the standing C5 candidate. Open threads #1–#4 remain.
 
 ## 3. Tree layout
 
