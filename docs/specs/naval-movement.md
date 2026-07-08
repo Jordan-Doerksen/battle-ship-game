@@ -1,6 +1,6 @@
 # Spec — C1: Naval Movement
 
-**Status:** APPROVED-PENDING (owner sign-off on this document) · Interviewed 2026-07-08
+**Status:** APPROVED 2026-07-08 (owner) · Interviewed 2026-07-08 · Not yet implemented
 **Resolves:** DECISIONS.md D1.6's deferral ("do not implement movement mechanics without a dedicated
 spec pass first" — this is that pass).
 
