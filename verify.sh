@@ -57,6 +57,7 @@ godot_step() { # name, args...
 godot_step "import (.godot cache + .uid regen)" --import --quit-after 1
 godot_step "boot the real game 300 frames"      --quit-after 300
 godot_step "probe_sim (fixed-step clock + determinism tripwire)" -s res://tests/probe_sim.gd
+godot_step "probe_movement (C1 naval-movement spec acceptance)"  -s res://tests/probe_movement.gd
 
 if [ "$FAIL" -eq 0 ]; then
   echo -e "\nALL VERIFY STEPS PASSED"

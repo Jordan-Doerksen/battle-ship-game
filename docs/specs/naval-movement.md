@@ -1,7 +1,7 @@
 # Spec — C1: Naval Movement
 
 **Status:** APPROVED 2026-07-08 (owner) · Mockup APPROVED 2026-07-08 (owner, at spec-default
-tunables) · Not yet ported to Godot
+tunables) · BUILT — ported to Godot 2026-07-08 (probe numbers match the mockup validation exactly)
 **Resolves:** DECISIONS.md D1.6's deferral ("do not implement movement mechanics without a dedicated
 spec pass first" — this is that pass).
 

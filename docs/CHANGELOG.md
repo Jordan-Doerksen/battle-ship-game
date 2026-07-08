@@ -4,6 +4,34 @@ Chunk log, newest first. Each chunk ships only after it passes the cross-check a
 
 ---
 
+## C1 — NAVAL MOVEMENT · 2026-07-08 · Built
+
+The first gameplay system, run through the full design-first pipeline in one day: `/spec-feature`
+interview → owner-approved spec (`docs/specs/naval-movement.md`) → interactive HTML mockup
+(`design/naval-movement.html`, owner-approved at the gate) → Godot port verified 1:1 against it.
+
+- **Sim:** `scripts/engine/systems/Movement.gd` — system #1 in `Sim.step`'s fixed order. Held-key
+  throttle (W ahead; S brakes harder than thrust and carries through the stop to a 35% astern cap),
+  speed-coupled turn authority with a standstill floor, anisotropic exponential drag (long along-keel
+  coast, visibly decaying lateral slip), heading-drives-velocity. Pure arithmetic, zero `world.rng`
+  draws. `scripts/engine/data/InputState.gd` is the one-way input door (Main writes it pre-step);
+  `GameWorld` gains `ship_vel` + `input`.
+- **Config:** `config/MovementConfig.gd` + `movement.tres` (8 tunables, owner-approved anchors);
+  `FieldConfig`/`field.tres` re-scoped from the retired C0 starfield to the sea field (grid, flecks,
+  wake) — no dead config left behind.
+- **Render/UI (1:1 mockup port):** `FieldRenderer` draws the chart grid, drifting foam flecks
+  (toroidal tile, cosmetic RNG), world-anchored wake trail, and the battleship hull silhouette with
+  deck hints; `scripts/render/patina.gdshader` ports the scanline/vignette overlay;
+  `scripts/ui/HelmGauges.gd` is the gauge bank (engine order, way digits + bar, helm/authority,
+  slip, heading) — the first piece of the future gauge-bank HUD. Camera stays north-up at 0.85 zoom.
+- **Verify:** `tests/probe_movement.gd` runs the spec's acceptance checks headless (determinism with
+  scripted input + zero-RNG tripwire, accel window, coast, brake/astern cap, turn floor, slip) as a
+  new `verify.sh` step. Probe numbers match the mockup's JS validation exactly. `probe_sim` checks
+  unchanged. `tests/ScreenshotC1.tscn` + `screenshot_c1.gd` is a dev harness (not gated) that drives
+  the helm under Xvfb and saves a frame for mockup side-by-side checks.
+- **Decisions:** D1.6's deferral resolved; D1.2 (Godot) reviewed at owner request and re-affirmed —
+  HTML mockups stay the permanent design surface, Godot is the product.
+
 ## C0 — HEARTBEAT · 2026-07-08 · Built
 
 Repo bootstrap from the owner-approved design brief (`docs/DESIGN-BRIEF.md`):

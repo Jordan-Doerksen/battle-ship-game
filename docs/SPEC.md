@@ -5,8 +5,8 @@
 > front-load design that will drift. Pairs with `DECISIONS.md` (the manifest) and `ARCHITECTURE.md`
 > (the map). Full source narrative: `docs/DESIGN-BRIEF.md`.
 >
-> **Status:** C0 built. C1+ planned, high-level only — each is locked in detail at the top of its own
-> chunk via `/spec-feature`.
+> **Status:** C0 + C1 built. C2+ planned, high-level only — each is locked in detail at the top of its
+> own chunk via `/spec-feature`.
 
 ---
 
@@ -48,9 +48,10 @@ at the moment it's built — recorded then, not now.
   fixed-timestep deterministic loop, the seeded RNG, the `GameWorld` truth object, and a hybrid render
   harness that proves the loop and determinism are alive on screen. No gameplay yet.
 
-- **C1 — Naval movement (not started).** Momentum/inertia-based piloting, turning radius, drift.
-  *Detailed design locked at the top of C1 via a dedicated interview — do not treat DECISIONS D1.6 as
-  more than a deferral.*
+- **C1 — Naval movement (built 2026-07-08).** Momentum/inertia piloting: held-key throttle with
+  brake-through-to-astern, speed-coupled turning with a standstill floor, long coast, visible lateral
+  slip. Locked by its interview spec `docs/specs/naval-movement.md`; feel proven and owner-approved in
+  `design/naval-movement.html` before the port (that mockup stays the C1 visual reference).
 
 - **C2+ — not yet scoped.** Hardpoint hull + purchase economy, weapon catalog (domain-tagged), sonar
   detection, depth charges, wave/spawn director, meta-progression shop. Order and grouping TBD when C1

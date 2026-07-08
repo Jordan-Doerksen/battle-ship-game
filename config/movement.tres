@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MovementConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://config/MovementConfig.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+max_speed_ahead = 220.0
+astern_frac = 0.35
+thrust_accel = 55.0
+brake_accel = 90.0
+drag_forward = 0.08
+drag_lateral = 1.8
+turn_rate_max = 0.55
+turn_speed_floor = 0.25

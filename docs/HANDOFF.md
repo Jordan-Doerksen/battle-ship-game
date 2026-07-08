@@ -24,31 +24,31 @@ next chunk begins.** No dead mechanics, no orphan pointers, no dead tags strappe
 
 ## 2. Current status
 
-**C0 — Heartbeat** is built: a fixed-timestep deterministic loop, seeded RNG, the `GameWorld` truth
-object, and a minimal render harness proving the loop is alive. No gameplay systems are wired yet.
+**C0 — Heartbeat** and **C1 — Naval movement** are built. C1 went through the full pipeline
+(spec interview → owner-approved spec → owner-approved interactive mockup → Godot port) in one day:
+`Movement.gd` is system #1 in `Sim.step`, `InputState` is the one-way input door, tunables live in
+`config/movement.tres`, and the render/HUD (sea chart grid, wake, hull silhouette, helm gauge bank,
+patina shader) is a 1:1 port of `design/naval-movement.html` — that mockup remains the C1 visual
+reference. `tests/probe_movement.gd` gates the spec's acceptance checks in `verify.sh`.
 
-**C1 — Naval movement** has passed the mockup gate: the spec (`docs/specs/naval-movement.md`) and the
-interactive mockup `design/naval-movement.html` are both owner-APPROVED (2026-07-08, spec-default
-tunables; acceptance checks 1–6 validated numerically). Next step is the Godot port — `Movement.gd`,
-`InputState.gd`, `MovementConfig`/`movement.tres`, hull/wake render, HUD speed readout,
-`probe_movement.gd` — with a **1:1 look-match against the mockup** (recorded in the spec). An
-owner-requested engine review (keep Godot vs ship HTML/JS — D1.2) was delivered 2026-07-08
-recommending Godot stands; confirm with the owner before porting. Open thread #5 in `DECISIONS.md`
-captures the owner's turret input (auto-track + mouse force-fire) for the hardpoints interview.
+**Next:** C2 is unscoped — hardpoint hull, weapon catalog, sonar, depth charges, wave director each
+need their own `/spec-feature` interview first. `DECISIONS.md` open thread #5 (owner, 2026-07-08)
+already seeds the hardpoints interview: turrets auto-track/auto-fire (D1.7) **plus** a mouse-button
+force-fire-at-cursor override, with turret traverse/tracking called out as a design risk.
 
 ## 3. Tree layout
 
 ```
 scripts/
-  app/            root scene + fixed-step loop plumbing (Main.gd)
+  app/            root scene + fixed-step loop plumbing (Main.gd — also writes InputState pre-step)
   engine/         the deterministic sim
-    Sim.gd        step root — calls systems in order (empty for now)
-    data/         GameWorld truth object + tunable tables
-    entities/     plain pooled data classes
-    systems/      static funcs that mutate GameWorld (empty until C1)
+    Sim.gd        step root — calls systems in fixed order (Movement first)
+    data/         GameWorld truth object, InputState, tunable tables
+    entities/     plain pooled data classes (empty until combat chunks)
+    systems/      static funcs that mutate GameWorld (Movement.gd — C1)
     util/         Rng, Pool — determinism primitives
-  render/         one-way sim → view (FieldRenderer)
-  ui/             screens + HUD (not built yet)
+  render/         one-way sim → view (FieldRenderer: sea/wake/hull; patina.gdshader)
+  ui/             screens + HUD (HelmGauges.gd — the C1 gauge bank)
 config/           typed Resource tunables (.tres)
 docs/             SPEC.md, HANDOFF.md (this file), CHANGELOG.md, DESIGN-BRIEF.md
 design/           approved HTML mockups (visual spec, mock → approve → port)

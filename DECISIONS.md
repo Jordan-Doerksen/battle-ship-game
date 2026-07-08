@@ -1,5 +1,5 @@
 # Decisions Manifest — Earth Defense Force (working title)
-**Started:** 2026-07-08  ·  **Last Updated:** 2026-07-08  ·  **Status:** C0 Heartbeat BUILT — no gameplay yet
+**Started:** 2026-07-08  ·  **Last Updated:** 2026-07-08  ·  **Status:** C1 Naval Movement BUILT (C0 Heartbeat 2026-07-08)
 
 > The single source of truth, written *for the next agent* — not a doc anyone maintains by hand.
 > Every future agent consults this before an architectural/behavioral change. Never silently rewrite
@@ -100,6 +100,11 @@ in detail; the concrete movement model (acceleration curves, turn rate, drift) i
 **Date Locked:** 2026-07-08 (deferral, not the movement spec itself) · **Affects:** future
 `scripts/engine/systems/Movement.gd` (name TBD).
 **Change Rule:** Do not implement movement mechanics without a dedicated spec pass first.
+**Resolved 2026-07-08:** the deferral is discharged. The concrete model is locked by
+`docs/specs/naval-movement.md` (owner-approved spec + mockup gate) and built as
+`scripts/engine/systems/Movement.gd` + `config/movement.tres`: held-key throttle with
+brake-through-to-astern, speed-coupled turn authority with a standstill floor, anisotropic drag
+(long along-keel coast, decaying lateral slip), heading-drives-velocity. See Change Log.
 
 ### Decision 1.7: Hardpoints fire independent of hull facing.
 **Chosen Answer:** **360° auto-turrets.** Hull facing is purely cosmetic + economic identity (where a
@@ -171,13 +176,26 @@ treated as locked:
 - **C0 — Heartbeat (built 2026-07-08).** Greenfield skeleton: fixed-timestep deterministic loop, seeded
   RNG, `GameWorld` truth object, minimal render harness proving the loop is alive on screen. No gameplay
   systems. Mirrors fulfillment's own C0.
-- **C1+ — not yet scoped.** Naval movement, hardpoint hull, weapon catalog, domain tagging, sonar,
-  depth charges — each needs its own `/spec-feature` interview before implementation, per this repo's
-  `CLAUDE.md`.
+- **C1 — Naval movement (built 2026-07-08).** Spec'd, mockup-gated (`design/naval-movement.html`,
+  owner-approved), and ported: `Movement.gd` system #1 in `Sim.step`, `InputState` one-way input door,
+  `movement.tres` tunables, mockup-matched sea/hull/wake render + helm gauge bank, `probe_movement`
+  acceptance gate. Spec: `docs/specs/naval-movement.md`.
+- **C2+ — not yet scoped.** Hardpoint hull, weapon catalog, domain tagging, sonar, depth charges —
+  each needs its own `/spec-feature` interview before implementation, per this repo's `CLAUDE.md`.
+  Open thread #5 (force-fire override + turret tracking) feeds the hardpoints interview.
 
 ---
 
 ## Change Log
+- **2026-07-08 — C1 Naval Movement built; D1.6 deferral resolved; D1.2 re-affirmed.** Owner accepted
+  the engine review ("keep Godot; HTML stays the design surface") — D1.2 stands. The approved C1 spec
+  ported to Godot: `Movement.gd` (system #1, pure arithmetic, zero RNG draws), `InputState.gd`,
+  `MovementConfig`/`movement.tres`, mockup-matched `FieldRenderer` (chart grid, foam flecks, wake,
+  hull silhouette — replaces the C0 placeholder starfield, so `FieldConfig` fields changed with it),
+  patina shader, `HelmGauges` HUD, input map, `probe_movement` verify step. D1.6's "do not implement
+  without a spec pass" deferral is resolved by that spec (noted inline at D1.6). Godot probe numbers
+  match the JS mockup validation exactly (4.55s to 95%, 67% coast, 2.25s stop, cap 0.00% off,
+  floor 0.1375 rad/s, slip 66.1 u/s).
 - **2026-07-08 — C1 mockup approved at the gate.** `design/naval-movement.html` owner-approved for
   feel at the spec-default tunables; the Godot port is unblocked, with a 1:1 look-match requirement
   recorded in the spec. Owner requested a review of D1.2 (keep Godot vs ship the HTML/JS mockup

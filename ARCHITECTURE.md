@@ -7,26 +7,25 @@
 A deterministic, fixed-timestep (60 Hz) **naval wave-survival roguelite** in Godot 4.7. The **simulation
 owns all truth** as pooled data seeded by one RNG stream; the **renderer only reads it** (one-way, never
 writes back). Unlike fulfillment, turret/hardpoint art renders **on the hull itself** (DECISIONS D1.5) —
-the hull's visible hardpoint layout is the point of the game. Currently only the C0 heartbeat exists: no
-gameplay systems are wired yet.
+the hull's visible hardpoint layout is the point of the game. Built so far: C0 heartbeat + C1 naval
+movement (the piloting verb — momentum, coupled turning, lateral slip; `docs/specs/naval-movement.md`).
 
 ## Core Flow
 ```text
-Input (keys / mouse)  →  InputState
+Input (keys / mouse)  →  InputState            (Main writes it pre-step; sim only reads it)
         ↓
-Sim.step(world, dt)                         ← fixed 60 Hz, ONLY randomness = world.rng
-   ├─ (C0: no systems yet)
-   ├─ …future: naval movement                  (systems are static funcs that mutate `world`)
+Sim.step(world, dt, cfgs)                   ← fixed 60 Hz, ONLY randomness = world.rng
+   ├─ Movement.step (C1)                       (systems are static funcs that mutate `world`)
    ├─ …future: hardpoints / targeting / domain-tagged combat
    ├─ …future: sonar detection + depth charges
    ├─ …future: spawn / wave director
    └─ …future: progression, hardpoint economy
         ↓
-GameWorld  ← the single mutable source of truth (pools arrive as systems land)
+GameWorld  ← the single mutable source of truth (pools arrive as combat systems land)
         ↓  (one-way read, changes nothing)
-Render:  FieldRenderer → placeholder hull + starfield (C0)   +   node scenes → future HUD
+Render:  FieldRenderer → sea grid/flecks + wake + hull silhouette   +   HelmGauges (HUD gauge bank)
         ↓
-Screen
+Screen (patina shader overlay — pure cosmetics)
 ```
 
 ## Core Domains
@@ -36,13 +35,13 @@ hardcoded (DECISIONS Non-Negotiable Constraints).
 | Domain | Purpose | Entry Point | Config | Notes |
 |--------|---------|-------------|--------|-------|
 | app | root scene + loop plumbing (fixed-step accumulator, wiring) | `scripts/app/Main.gd` + `scenes/Main.tscn` | — | thin; owns nothing gameplay |
-| engine (sim) | the deterministic step root | `scripts/engine/Sim.gd` | `config/sim.tres` (clock only) | fixed-step; C0 has no gameplay systems to call yet |
-| engine/data | tunable tables + the world truth object | `scripts/engine/data/` | `config/*.tres` (one small file per system — see DECISIONS Non-Negotiable Constraints) | `GameWorld` lands here |
-| engine/systems | sim systems — static funcs that mutate `GameWorld` | `scripts/engine/systems/` | reads config | empty until C1 (naval movement is first) |
-| engine/entities | plain pooled data classes | `scripts/engine/entities/` | — | data only, no engine coupling |
+| engine (sim) | the deterministic step root | `scripts/engine/Sim.gd` | `config/sim.tres` (clock only) | fixed-step; calls systems in a locked order (Movement first) |
+| engine/data | the world truth object + input snapshot | `scripts/engine/data/` | `config/*.tres` (one small file per system — see DECISIONS Non-Negotiable Constraints) | `GameWorld`, `InputState` |
+| engine/systems | sim systems — static funcs that mutate `GameWorld` | `scripts/engine/systems/` | each reads its own config | `Movement.gd` (C1, `movement.tres`) |
+| engine/entities | plain pooled data classes | `scripts/engine/entities/` | — | data only, no engine coupling; empty until combat chunks |
 | engine/util | determinism primitives | `scripts/engine/util/` | — | `Rng`, `Pool` |
-| render | draw the world (hybrid), read-only | `scripts/render/FieldRenderer.gd` | — | one-way sim → view; hull/hardpoint art lives here (not HUD-only, per D1.5) |
-| ui | screens + HUD | `scripts/ui/` | — | not built yet |
+| render | draw the world (hybrid), read-only | `scripts/render/FieldRenderer.gd` | `config/field.tres` (sea/wake cosmetics) | one-way sim → view; hull/hardpoint art lives here (not HUD-only, per D1.5); `patina.gdshader` |
+| ui | screens + HUD | `scripts/ui/HelmGauges.gd` | — | C1 gauge bank; grows into the full gauge-bank HUD |
 | config | typed tunables | `config/*.tres` | — | `Resource` subclasses |
 | design | approved HTML mockups = the visual spec | `design/` | — | mock → approve → port |
 
