@@ -1,6 +1,8 @@
 # Spec — C3: Wave Director & First Enemies
 
-**Status:** APPROVED 2026-07-08 (owner) · Interviewed 2026-07-08 · Mockup pending (gate) · Not built
+**Status:** APPROVED 2026-07-08 (owner) · Interviewed 2026-07-08 · Mockup APPROVED 2026-07-08
+(owner, with gate revisions 1–2: MMB secondaries, radar scope, over-the-horizon main battery) ·
+Not built
 **Builds on:** C1 movement (dodging is piloting), C2 hardpoints (the guns finally have a war),
 D1.8 (single hull pool, pip-style), D1.9 (domain tags). **Retires:** the C2 practice range (owner
 decision — waves replace it; no dead mechanics left behind).
