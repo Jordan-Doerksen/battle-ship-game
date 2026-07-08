@@ -6,13 +6,13 @@ extends SceneTree
 
 func _initialize() -> void:
 	var fails: int = 0
-	var move_cfg := MovementConfig.new()   # class defaults mirror config/movement.tres
+	var cfgs := Configs.defaults()   # class defaults mirror every config/*.tres
 
 	var world_a := GameWorld.new(777001)
 	var world_b := GameWorld.new(777001)
 	for i in range(600):   # 10 sim-seconds at 60Hz
-		Sim.step(world_a, 1.0 / 60.0, move_cfg)
-		Sim.step(world_b, 1.0 / 60.0, move_cfg)
+		Sim.step(world_a, 1.0 / 60.0, cfgs)
+		Sim.step(world_b, 1.0 / 60.0, cfgs)
 		world_a.rng.nextf()   # draw from both streams identically to prove replay-stability
 		world_b.rng.nextf()
 

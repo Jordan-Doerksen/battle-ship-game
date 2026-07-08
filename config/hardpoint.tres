@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HardpointConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://config/HardpointConfig.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+mount_pos = PackedVector2Array(0, -72, 0, 36, -19, -28, 19, -28, -19, 14, 19, 14, -16, -55, 16, -55, -17, 52, 17, 52)
+mount_size = PackedStringArray("L", "L", "M", "M", "M", "M", "S", "S", "S", "S")
+loadout = {
+"L": "mb16",
+"M": "dp5",
+"S": "aa20"
+}
+aim_tol = 0.06

@@ -7,3 +7,6 @@ extends RefCounted
 
 var thrust: float = 0.0   # −1..1 from S/W: +1 all ahead, −1 brake-then-astern
 var rudder: float = 0.0   # −1..1 from A/D: +1 clockwise on screen (D), screen-fixed even astern
+var force_all: bool = false     # LMB held — ALL mounts on the cursor, domain tags overridden (C2)
+var force_large: bool = false   # RMB held — large mounts only (never true while force_all is)
+var aim_world: Vector2 = Vector2.ZERO   # cursor in WORLD space; Main converts — sim never sees screen

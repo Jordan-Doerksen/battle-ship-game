@@ -7,23 +7,26 @@
 A deterministic, fixed-timestep (60 Hz) **naval wave-survival roguelite** in Godot 4.7. The **simulation
 owns all truth** as pooled data seeded by one RNG stream; the **renderer only reads it** (one-way, never
 writes back). Unlike fulfillment, turret/hardpoint art renders **on the hull itself** (DECISIONS D1.5) —
-the hull's visible hardpoint layout is the point of the game. Built so far: C0 heartbeat + C1 naval
-movement (the piloting verb — momentum, coupled turning, lateral slip; `docs/specs/naval-movement.md`).
+the hull's visible hardpoint layout is the point of the game. Built so far: C0 heartbeat, C1 naval
+movement (the piloting verb — `docs/specs/naval-movement.md`), C2 hardpoint hull + gunnery range
+(traversing auto-turrets, force-fire, practice drones — `docs/specs/hardpoint-hull.md`, LOOK-LOCKED).
 
 ## Core Flow
 ```text
-Input (keys / mouse)  →  InputState            (Main writes it pre-step; sim only reads it)
+Input (keys / mouse→world-space)  →  InputState   (Main writes it pre-step; sim only reads it)
         ↓
-Sim.step(world, dt, cfgs)                   ← fixed 60 Hz, ONLY randomness = world.rng
+Sim.step(world, dt, cfgs: Configs)          ← fixed 60 Hz, ONLY randomness = world.rng
    ├─ Movement.step (C1)                       (systems are static funcs that mutate `world`)
-   ├─ …future: hardpoints / targeting / domain-tagged combat
+   ├─ Drones.step (C2)                         practice targets — spawn/drift/respawn
+   ├─ Turrets.step (C2)                        policy targeting, traverse, bloom, force-fire
+   ├─ Projectiles.step (C2)                    pooled shells, hits, splash, kills
    ├─ …future: sonar detection + depth charges
-   ├─ …future: spawn / wave director
+   ├─ …future: spawn / wave director (real enemies)
    └─ …future: progression, hardpoint economy
         ↓
-GameWorld  ← the single mutable source of truth (pools arrive as combat systems land)
+GameWorld  ← the single mutable source of truth (+ effects queue: sim appends, Main plumbs to render)
         ↓  (one-way read, changes nothing)
-Render:  FieldRenderer → sea grid/flecks + wake + hull silhouette   +   HelmGauges (HUD gauge bank)
+Render:  FieldRenderer → sea + wake + hull + turret art (D1.5) + drones/shells/fx   +   HelmGauges HUD
         ↓
 Screen (patina shader overlay — pure cosmetics)
 ```
@@ -36,12 +39,12 @@ hardcoded (DECISIONS Non-Negotiable Constraints).
 |--------|---------|-------------|--------|-------|
 | app | root scene + loop plumbing (fixed-step accumulator, wiring) | `scripts/app/Main.gd` + `scenes/Main.tscn` | — | thin; owns nothing gameplay |
 | engine (sim) | the deterministic step root | `scripts/engine/Sim.gd` | `config/sim.tres` (clock only) | fixed-step; calls systems in a locked order (Movement first) |
-| engine/data | the world truth object + input snapshot | `scripts/engine/data/` | `config/*.tres` (one small file per system — see DECISIONS Non-Negotiable Constraints) | `GameWorld`, `InputState` |
-| engine/systems | sim systems — static funcs that mutate `GameWorld` | `scripts/engine/systems/` | each reads its own config | `Movement.gd` (C1, `movement.tres`) |
-| engine/entities | plain pooled data classes | `scripts/engine/entities/` | — | data only, no engine coupling; empty until combat chunks |
-| engine/util | determinism primitives | `scripts/engine/util/` | — | `Rng`, `Pool` |
-| render | draw the world (hybrid), read-only | `scripts/render/FieldRenderer.gd` | `config/field.tres` (sea/wake cosmetics) | one-way sim → view; hull/hardpoint art lives here (not HUD-only, per D1.5); `patina.gdshader` |
-| ui | screens + HUD | `scripts/ui/HelmGauges.gd` | — | C1 gauge bank; grows into the full gauge-bank HUD |
+| engine/data | the world truth object + input snapshot + config bundle | `scripts/engine/data/` | `config/*.tres` (one small file per system — see DECISIONS Non-Negotiable Constraints) | `GameWorld`, `InputState`, `Configs` |
+| engine/systems | sim systems — static funcs that mutate `GameWorld` | `scripts/engine/systems/` | each reads its own config | `Movement` (C1); `Drones`/`Turrets`/`Projectiles` (C2: `hardpoint`/`weapons`/`range.tres`) |
+| engine/entities | plain pooled data classes | `scripts/engine/entities/` | — | `Drone`, `Projectile` (pooled), `Mount` — data only, no engine coupling |
+| engine/util | determinism primitives | `scripts/engine/util/` | — | `Rng`, `Pool` (feeds projectiles) |
+| render | draw the world (hybrid), read-only | `scripts/render/FieldRenderer.gd` | `config/field.tres` (sea/wake cosmetics) | one-way sim → view; turret art ON the hull per D1.5, LOOK-LOCKED to mockup rev 3; `patina.gdshader` |
+| ui | screens + HUD | `scripts/ui/HelmGauges.gd` | — | gauge bank, kills plate, force-fire reticle |
 | config | typed tunables | `config/*.tres` | — | `Resource` subclasses |
 | design | approved HTML mockups = the visual spec | `design/` | — | mock → approve → port |
 

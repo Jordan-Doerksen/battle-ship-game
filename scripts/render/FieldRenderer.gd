@@ -1,36 +1,55 @@
 class_name FieldRenderer
 extends Node2D
 # Draws the world in WORLD coordinates; the Camera2D centers on `world.ship_pos` (Main sets this each
-# frame). Reads the world, writes nothing back (one-way sim → render, DECISIONS Non-Negotiable
-# Constraints). C1: 1:1 port of the owner-approved design/naval-movement.html — dark sea with a
-# north-up chart grid, drifting foam flecks (toroidal tile, cosmetic RNG only), a world-anchored wake
-# trail (own render-side state, fed one-way from ship state), and the drawn battleship hull silhouette
-# rotated to `ship_heading`. Hardpoint/turret art will render ON this hull in a later chunk (D1.5).
+# frame). Reads the world, writes nothing back (one-way sim → render). C2: 1:1 port of the
+# owner-approved design/hardpoint-hull.html revision 3 (LOOK-LOCK in the spec): battleship-scale hull
+# (×2.4), class-distinct turret art ON the hull (D1.5) with render-side recoil, practice drones,
+# tracers/shells, and muzzle/splash/death/hit effects. Effects arrive via consume_effects() — Main
+# plumbs the sim's event batch here after stepping; this node never touches world.effects itself.
 
 const SEA := Color(0.039, 0.118, 0.157)      # #0A1E28
 const FOAM := Color(0.894, 0.941, 0.949)     # #E4F0F2
 const HULL := Color(0.235, 0.310, 0.341)     # #3C4F57
 const DECK := Color(0.353, 0.439, 0.478)     # #5A707A
 const STEEL := Color(0.576, 0.655, 0.682)    # #93A7AE
+const HOUSE := Color(0.392, 0.471, 0.522)    # #647885 — turret houses
+const HOUSE_FORCED := Color(0.431, 0.353, 0.314)  # #6E5A50 — force-fired tint
+const FLASH := Color(0.910, 0.706, 0.431)    # muzzle
+const RED := Color(0.851, 0.310, 0.169)      # #D94F2B
+const HULL_SCALE := 2.4
+const FLASH_LEN := { "L": 35.0, "M": 22.0, "S": 13.0 }
 
 var _world: GameWorld
 var _field_cfg: FieldConfig
-var _move_cfg: MovementConfig                 # read-only: speed normalization for cosmetics
+var _cfgs: Configs
 var _flecks: Array = []
-var _wake: Array = []                         # {pos: Vector2, t: float, w: float} — render-side only
+var _wake: Array = []
+var _fx: Array = []                          # render-side animated effects
+var _recoil: Array = []                      # per-mount barrel kick, fed by muzzle effects
 var _last_emit: float = -1.0
 var _hull_outline: PackedVector2Array
 
-func bind(world: GameWorld, field_cfg: FieldConfig, move_cfg: MovementConfig) -> void:
+func bind(world: GameWorld, field_cfg: FieldConfig, cfgs: Configs) -> void:
 	_world = world
 	_field_cfg = field_cfg
-	_move_cfg = move_cfg
+	_cfgs = cfgs
 	_build_flecks()
 	_hull_outline = _build_hull_outline()
+	_recoil.resize(cfgs.hardpoints.mount_pos.size())
+	_recoil.fill(0.0)
 
-# foam flecks — cosmetic-only randomness: OWN generator, never world.rng (D1.4)
+# Main hands over the sim's effect batch each frame (one-way; see GameWorld.effects)
+func consume_effects(events: Array) -> void:
+	var now: int = Time.get_ticks_msec()
+	for e in events:
+		if e["type"] == "muzzle" and e["idx"] < _recoil.size():
+			_recoil[e["idx"]] = 1.0
+		var fxe: Dictionary = e.duplicate()
+		fxe["t0"] = now
+		_fx.append(fxe)
+
 func _build_flecks() -> void:
-	var srng := RandomNumberGenerator.new()
+	var srng := RandomNumberGenerator.new()   # cosmetic-only randomness — never world.rng (D1.4)
 	srng.seed = _world.world_seed ^ 0x51ED2317
 	_flecks.clear()
 	for i in range(_field_cfg.fleck_count):
@@ -41,17 +60,19 @@ func _build_flecks() -> void:
 			"ph": srng.randf() * TAU,
 		})
 
-# hull silhouette outline — sampled once from the mockup's exact bezier path (bow = −y, local space)
+# C1 silhouette proportions at battleship scale (spec gate revisions 1+3)
 static func _build_hull_outline() -> PackedVector2Array:
 	var pts := PackedVector2Array()
-	pts.append(Vector2(0, -50))                                       # bow tip
-	_quad(pts, Vector2(0, -50), Vector2(8, -38), Vector2(9.5, -24), 8)   # starboard bow flare
+	pts.append(Vector2(0, -50))
+	_quad(pts, Vector2(0, -50), Vector2(8, -38), Vector2(9.5, -24), 8)
 	pts.append(Vector2(10, 20))
-	_quad(pts, Vector2(10, 20), Vector2(10, 32), Vector2(6, 35), 6)      # stern taper
+	_quad(pts, Vector2(10, 20), Vector2(10, 32), Vector2(6, 35), 6)
 	_quad(pts, Vector2(6, 35), Vector2(0, 38), Vector2(-6, 35), 6)
 	_quad(pts, Vector2(-6, 35), Vector2(-10, 32), Vector2(-10, 20), 6)
 	pts.append(Vector2(-9.5, -24))
 	_quad(pts, Vector2(-9.5, -24), Vector2(-8, -38), Vector2(0, -50), 8)
+	for i in range(pts.size()):
+		pts[i] *= HULL_SCALE
 	return pts
 
 static func _quad(pts: PackedVector2Array, p0: Vector2, c: Vector2, p1: Vector2, n: int) -> void:
@@ -62,7 +83,6 @@ static func _quad(pts: PackedVector2Array, p0: Vector2, c: Vector2, p1: Vector2,
 func _process(_delta: float) -> void:
 	if _world == null:
 		return
-	# wake emission keyed to sim time (one puff per sim tick's worth of elapsed) — cosmetic state
 	if _world.elapsed - _last_emit >= 1.0 / 60.0:
 		_last_emit = _world.elapsed
 		_emit_wake()
@@ -77,9 +97,9 @@ func _emit_wake() -> void:
 		return
 	var fwd := Vector2(sin(_world.ship_heading), -cos(_world.ship_heading))
 	_wake.append({
-		"pos": _world.ship_pos - fwd * 42.0,
+		"pos": _world.ship_pos - fwd * 100.0,
 		"t": _world.elapsed,
-		"w": minf(1.0, speed / _move_cfg.max_speed_ahead) + (0.7 if braking else 0.0),
+		"w": minf(1.0, speed / _cfgs.movement.max_speed_ahead) + (0.7 if braking else 0.0),
 	})
 	if _wake.size() > _field_cfg.wake_max_points:
 		_wake.pop_front()
@@ -90,10 +110,13 @@ func _draw() -> void:
 	_draw_grid()
 	_draw_flecks()
 	_draw_wake()
+	_draw_drones()
+	_draw_projectiles()
 	_draw_hull()
+	_draw_mounts()
+	_draw_fx()
 
 func _view_rect() -> Rect2:
-	# renderer MAY read view size (the sim never does) — visible world rect at the camera's zoom
 	var cam := get_viewport().get_camera_2d()
 	var size: Vector2 = get_viewport_rect().size / (cam.zoom if cam != null else Vector2.ONE)
 	return Rect2(_world.ship_pos - size * 0.5, size)
@@ -115,7 +138,7 @@ func _draw_grid() -> void:
 func _draw_flecks() -> void:
 	var tile: float = _field_cfg.field_tile
 	var cam_pos: Vector2 = _world.ship_pos
-	var now: float = Time.get_ticks_msec() * 0.001   # cosmetic bob only — never sim time math
+	var now: float = Time.get_ticks_msec() * 0.001
 	var col := Color(FOAM.r, FOAM.g, FOAM.b, 0.16)
 	for f in _flecks:
 		var wx: float = fposmod(f["x"] - cam_pos.x + tile * 0.5, tile) - tile * 0.5 + cam_pos.x
@@ -131,20 +154,129 @@ func _draw_wake() -> void:
 		var r: float = (2.0 + p["w"] * 7.0) * (0.5 + age * 1.6)
 		draw_circle(p["pos"], r, Color(FOAM.r, FOAM.g, FOAM.b, 0.30 * p["w"] * (1.0 - age)))
 
+func _draw_drones() -> void:
+	for d in _world.drones:
+		if not d.active:
+			continue
+		var va: float = atan2(d.vel.x, -d.vel.y)
+		draw_set_transform(d.pos, va, Vector2.ONE)
+		if d.layer == "air":
+			var wing := PackedVector2Array([Vector2(0, -11), Vector2(9, 7), Vector2(0, 3), Vector2(-9, 7)])
+			draw_colored_polygon(wing, Color(FOAM.r, FOAM.g, FOAM.b, 0.85))
+		else:
+			draw_rect(Rect2(-10, -14, 20, 28), Color(0.180, 0.243, 0.271))
+			draw_rect(Rect2(-10, -14, 20, 28), Color(FOAM.r, FOAM.g, FOAM.b, 0.4), false, 1.0)
+		draw_set_transform(d.pos, 0.0, Vector2.ONE)
+		if d.layer == "surf":
+			for i in range(d.hp):
+				draw_rect(Rect2(-9 + i * 7, 17, 5, 2.5), Color(FOAM.r, FOAM.g, FOAM.b, 0.7))
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+func _draw_projectiles() -> void:
+	for i in range(_world.projectiles.items.size()):
+		var p: Projectile = _world.projectiles.items[i]
+		if not p.active:
+			continue
+		var tail: Vector2 = p.pos - p.vel * 0.03
+		if p.splash > 0.0:
+			draw_circle(p.pos, 2.6, Color(FOAM.r, FOAM.g, FOAM.b, 0.95))
+			draw_line(tail, p.pos, Color(FOAM.r, FOAM.g, FOAM.b, 0.35), 2.0)
+		elif p.wid == "aa20":
+			draw_line(tail, p.pos, Color(0.804, 0.729, 0.557, 0.9), 1.2)
+		else:
+			draw_line(tail, p.pos, Color(FOAM.r, FOAM.g, FOAM.b, 0.85), 1.2)
+
 func _draw_hull() -> void:
 	draw_set_transform(_world.ship_pos, _world.ship_heading, Vector2.ONE)
 	draw_colored_polygon(_hull_outline, HULL)
 	var speed: float = _world.ship_vel.length()
-	var edge := Color(FOAM.r, FOAM.g, FOAM.b, minf(0.55, 0.12 + speed / _move_cfg.max_speed_ahead * 0.5))
+	var edge := Color(FOAM.r, FOAM.g, FOAM.b, minf(0.55, 0.12 + speed / _cfgs.movement.max_speed_ahead * 0.5))
 	var closed := PackedVector2Array(_hull_outline)
 	closed.append(_hull_outline[0])
 	draw_polyline(closed, edge, 1.2, true)
-	# deck hints — superstructure, bridge, turret barbettes fore/aft, stern helipad ring
-	draw_rect(Rect2(-5.5, -13, 11, 17), DECK)
-	draw_rect(Rect2(-3.5, -18, 7, 5), DECK)
-	draw_circle(Vector2(0, -27), 5.0, DECK)
-	draw_circle(Vector2(0, 13), 5.0, DECK)
-	draw_rect(Rect2(-1.2, -36, 2.4, 9), STEEL)   # fore barrels (hint)
-	draw_rect(Rect2(-1.2, 18, 2.4, 8), STEEL)    # aft barrels (hint)
-	draw_arc(Vector2(0, 27), 6.0, 0.0, TAU, 24, STEEL, 1.0, true)
+	# deck furniture (mockup rev 3): superstructure, bridge, funnel, helipad, bow jack line
+	draw_rect(Rect2(-13, -31, 26, 41), DECK)
+	draw_rect(Rect2(-8, -43, 16, 12), DECK)
+	draw_rect(Rect2(-4, -18, 8, 8), Color(0.290, 0.373, 0.408))
+	draw_arc(Vector2(0, 65), 14.0, 0.0, TAU, 32, STEEL, 1.0, true)
+	draw_line(Vector2(-8, 65), Vector2(8, 65), STEEL, 1.0)
+	draw_line(Vector2(0, -120), Vector2(0, -90), STEEL, 1.0)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+# Class-distinct turret art (LOOK-LOCK): L twin-barrel armored turret, M single-gun angular house,
+# S open AA ring. Houses + barrels rotate to the WORLD barrel angle; barbettes stay hull-fixed.
+func _draw_mounts() -> void:
+	var hp_cfg: HardpointConfig = _cfgs.hardpoints
+	for i in range(mini(_world.mounts.size(), hp_cfg.mount_pos.size())):
+		var m: Mount = _world.mounts[i]
+		var size: String = hp_cfg.mount_size[i]
+		var mpos: Vector2 = Turrets.mount_world(_world, hp_cfg.mount_pos[i])
+		_recoil[i] *= 0.9
+		var rec: float = _recoil[i]
+		var forced: bool = m.mode == "forced"
+		var house: Color = HOUSE_FORCED if forced else HOUSE
+		# barbette rings — hull-fixed under the rotating turret
+		draw_set_transform(mpos, 0.0, Vector2.ONE)
+		if size == "L":
+			draw_arc(Vector2.ZERO, 11.5, 0.0, TAU, 32, Color(FOAM.r, FOAM.g, FOAM.b, 0.25), 1.5, true)
+		elif size == "M":
+			draw_arc(Vector2.ZERO, 7.5, 0.0, TAU, 24, Color(FOAM.r, FOAM.g, FOAM.b, 0.25), 1.0, true)
+		# house + barrels at the world barrel angle
+		draw_set_transform(mpos, m.ang, Vector2.ONE)
+		if size == "L":
+			for bx in [-3.2, 3.2]:
+				draw_rect(Rect2(bx - 1.3, -9.0 - 26.0 + rec * 4.0, 2.6, 26.0), STEEL)
+				draw_rect(Rect2(bx - 1.9, -9.0 - 26.0 + rec * 4.0, 3.8, 3.0), STEEL)   # muzzle brakes
+			var lh := PackedVector2Array()
+			lh.append(Vector2(-8, 12)); lh.append(Vector2(-8, -4))
+			_quad(lh, Vector2(-8, -4), Vector2(-8, -10), Vector2(0, -10), 5)
+			_quad(lh, Vector2(0, -10), Vector2(8, -10), Vector2(8, -4), 5)
+			lh.append(Vector2(8, 12))
+			draw_colored_polygon(lh, house)
+			var lhc := PackedVector2Array(lh); lhc.append(lh[0])
+			draw_polyline(lhc, Color(0.039, 0.118, 0.157, 0.55), 1.0, true)
+			draw_rect(Rect2(-10, 3, 3, 2.4), STEEL)     # rangefinder ears
+			draw_rect(Rect2(7, 3, 3, 2.4), STEEL)
+		elif size == "M":
+			draw_rect(Rect2(-1.1, -6.0 - 16.0 + rec * 3.0, 2.2, 16.0), STEEL)
+			draw_rect(Rect2(-1.7, -6.0 - 7.0 + rec * 3.0, 3.4, 7.0), STEEL)             # recoil sleeve
+			var mh := PackedVector2Array([
+				Vector2(-5.5, 8), Vector2(-5.5, -2), Vector2(-3, -6.5),
+				Vector2(3, -6.5), Vector2(5.5, -2), Vector2(5.5, 8),
+			])
+			draw_colored_polygon(mh, house)
+			var mhc := PackedVector2Array(mh); mhc.append(mh[0])
+			draw_polyline(mhc, Color(0.039, 0.118, 0.157, 0.55), 1.0, true)
+		else:
+			var ring := Color(0.690, 0.537, 0.408) if forced else Color(0.494, 0.576, 0.612)
+			draw_arc(Vector2.ZERO, 5.5, 0.0, TAU, 20, ring, 1.2, true)                  # open ring mount
+			for bx in [-1.5, 1.5]:
+				draw_rect(Rect2(bx - 0.55, -2.0 - 11.0 + rec * 2.0, 1.1, 11.0), STEEL)
+			draw_circle(Vector2(0, 2.2), 2.6, house)                                    # pedestal + tub
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+func _draw_fx() -> void:
+	var now: int = Time.get_ticks_msec()
+	var i: int = _fx.size() - 1
+	while i >= 0:
+		var e: Dictionary = _fx[i]
+		var life: float = 0.7 if e["type"] == "splash" else (0.5 if e["type"] == "death" else 0.12)
+		var age: float = (now - e["t0"]) / 1000.0
+		if age >= life:
+			_fx.remove_at(i)
+			i -= 1
+			continue
+		var k: float = age / life
+		match e["type"]:
+			"muzzle":
+				var dirv := Vector2(sin(e["ang"]), -cos(e["ang"]))
+				var flen: float = FLASH_LEN[e["size"]]
+				var fr: float = (6.5 if e["size"] == "L" else (3.2 if e["size"] == "M" else 2.2)) * (1.0 + k)
+				draw_circle(e["pos"] + dirv * flen, fr, Color(FLASH.r, FLASH.g, FLASH.b, 0.9 * (1.0 - k)))
+			"splash":
+				draw_arc(e["pos"], maxf(0.5, e["r"] * k), 0.0, TAU, 40, Color(FOAM.r, FOAM.g, FOAM.b, 0.7 * (1.0 - k)), 2.0, true)
+			"death":
+				draw_arc(e["pos"], 4.0 + 26.0 * k, 0.0, TAU, 32, Color(RED.r, RED.g, RED.b, 0.85 * (1.0 - k)), 2.0, true)
+			"hit":
+				draw_circle(e["pos"], 3.0, Color(FOAM.r, FOAM.g, FOAM.b, 0.8 * (1.0 - k)))
+		i -= 1

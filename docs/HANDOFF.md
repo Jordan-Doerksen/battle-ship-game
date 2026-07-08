@@ -24,34 +24,37 @@ next chunk begins.** No dead mechanics, no orphan pointers, no dead tags strappe
 
 ## 2. Current status
 
-**C0 — Heartbeat** and **C1 — Naval movement** are built. C1 went through the full pipeline
-(spec interview → owner-approved spec → owner-approved interactive mockup → Godot port) in one day:
-`Movement.gd` is system #1 in `Sim.step`, `InputState` is the one-way input door, tunables live in
-`config/movement.tres`, and the render/HUD (sea chart grid, wake, hull silhouette, helm gauge bank,
-patina shader) is a 1:1 port of `design/naval-movement.html` — that mockup remains the C1 visual
-reference. `tests/probe_movement.gd` gates the spec's acceptance checks in `verify.sh`.
+**C0 — Heartbeat, C1 — Naval movement, and C2 — Hardpoint hull & gunnery range** are all built
+(2026-07-08), each through the full pipeline: owner interview → approved spec → owner-approved
+interactive mockup → Godot port verified against it.
 
-**C2 — Hardpoint hull & gunnery range** is mid-gate: the spec (`docs/specs/hardpoint-hull.md`,
-from the 2026-07-08 owner interview) is owner-APPROVED, and the interactive mockup
-`design/hardpoint-hull.html` is built — 12 mounts (6S/4M/2L), the 3-weapon catalog, finite traverse,
-per-weapon policies, drifting air/surface drones, hold-to-force-fire (LMB all guns / RMB main
-battery). Its sim block is validated against the spec's acceptance checks 1–7 (harness extracts the
-SIM-BEGIN…SIM-END region from the HTML). Per the mockup gate, the owner must approve the *feel*
-(traverse weight + both force-fire orders) before the Godot port. No C2 Godot code exists yet.
+C1: `Movement.gd` (system #1), `InputState` one-way input door, `movement.tres`, mockup-matched
+sea/hull/wake render + helm gauges. C2: `Drones`/`Turrets`/`Projectiles` behind it in the fixed step
+order, the `Configs` bundle, `hardpoint.tres`/`weapons.tres`/`range.tres`, pooled shells, and the
+LOOK-LOCKED render — battleship-scale hull with class-distinct traversing turret art, practice
+drones, force-fire (hold LMB = all guns on cursor, RMB = main battery), reticle + kills HUD.
+`design/*.html` mockups remain the visual references; `tests/probe_{sim,movement,hardpoints}.gd`
+gate everything in `verify.sh`. The C2 spec's LOOK-LOCK (owner: "if it doesn't look this good it
+doesn't get approved") binds any future render change that touches this chunk.
+
+**Next:** C3 is unscoped — candidates: wave/spawn director (first real enemies + hull damage),
+sonar + subs, depth charges, hardpoint purchase economy. Each needs its own `/spec-feature`
+interview first. All five DECISIONS.md open threads: #5 is resolved; #1–#4 remain.
 
 ## 3. Tree layout
 
 ```
 scripts/
-  app/            root scene + fixed-step loop plumbing (Main.gd — also writes InputState pre-step)
+  app/            root scene + fixed-step loop plumbing (Main.gd — writes InputState pre-step,
+                  plumbs the sim effects queue to the renderer post-step)
   engine/         the deterministic sim
-    Sim.gd        step root — calls systems in fixed order (Movement first)
-    data/         GameWorld truth object, InputState, tunable tables
-    entities/     plain pooled data classes (empty until combat chunks)
-    systems/      static funcs that mutate GameWorld (Movement.gd — C1)
-    util/         Rng, Pool — determinism primitives
-  render/         one-way sim → view (FieldRenderer: sea/wake/hull; patina.gdshader)
-  ui/             screens + HUD (HelmGauges.gd — the C1 gauge bank)
+    Sim.gd        step root — fixed order: Movement, Drones, Turrets, Projectiles
+    data/         GameWorld truth object, InputState, Configs bundle
+    entities/     plain data classes (Drone, Projectile, Mount)
+    systems/      static funcs that mutate GameWorld (Movement C1; Drones/Turrets/Projectiles C2)
+    util/         Rng, Pool — determinism primitives (Pool feeds projectiles)
+  render/         one-way sim → view (FieldRenderer: sea/wake/hull/turrets/drones/fx; patina.gdshader)
+  ui/             screens + HUD (HelmGauges.gd — gauges, kills plate, force-fire reticle)
 config/           typed Resource tunables (.tres)
 docs/             SPEC.md, HANDOFF.md (this file), CHANGELOG.md, DESIGN-BRIEF.md
 design/           approved HTML mockups (visual spec, mock → approve → port)

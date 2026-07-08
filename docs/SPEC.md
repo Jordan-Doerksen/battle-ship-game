@@ -5,8 +5,8 @@
 > front-load design that will drift. Pairs with `DECISIONS.md` (the manifest) and `ARCHITECTURE.md`
 > (the map). Full source narrative: `docs/DESIGN-BRIEF.md`.
 >
-> **Status:** C0 + C1 built. C2+ planned, high-level only — each is locked in detail at the top of its
-> own chunk via `/spec-feature`.
+> **Status:** C0 + C1 + C2 built. C3+ planned, high-level only — each is locked in detail at the top
+> of its own chunk via `/spec-feature`.
 
 ---
 
@@ -53,6 +53,12 @@ at the moment it's built — recorded then, not now.
   slip. Locked by its interview spec `docs/specs/naval-movement.md`; feel proven and owner-approved in
   `design/naval-movement.html` before the port (that mockup stays the C1 visual reference).
 
-- **C2+ — not yet scoped.** Hardpoint hull + purchase economy, weapon catalog (domain-tagged), sonar
-  detection, depth charges, wave/spawn director, meta-progression shop. Order and grouping TBD when C1
-  is done — see `DECISIONS.md` Build Timeline.
+- **C2 — Hardpoint hull & gunnery range (built 2026-07-08).** Visible 4S/4M/2L mount plan on a
+  battleship-scale hull, 3-weapon domain-tagged catalog with per-weapon policies and finite traverse,
+  hold-to-force-fire (LMB all guns / RMB main battery), drifting practice drones. Locked by
+  `docs/specs/hardpoint-hull.md` (owner LOOK-LOCK on mockup rev 3 — `design/hardpoint-hull.html`
+  stays the visual reference).
+
+- **C3+ — not yet scoped.** Wave/spawn director (first real enemies + hull damage), sonar detection +
+  subs, depth charges, hardpoint purchase economy, meta-progression shop. Order and grouping TBD —
+  see `DECISIONS.md` Build Timeline.

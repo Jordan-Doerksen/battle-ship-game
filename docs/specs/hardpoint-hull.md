@@ -1,7 +1,8 @@
 # Spec — C2: Hardpoint Hull & Gunnery Range
 
 **Status:** APPROVED 2026-07-08 (owner) · Interviewed 2026-07-08 · Mockup APPROVED 2026-07-08
-(owner, revision 3 — "lock this in") · Not built
+(owner, revision 3 — "lock this in") · BUILT — ported to Godot 2026-07-08 (probe_hardpoints green;
+look-lock verified by side-by-side Xvfb screenshots against mockup rev 3)
 **LOOK-LOCK (owner, verbatim condition):** *"if it doesn't look this good it doesn't get approved"* —
 the Godot port must match mockup revision 3 side-by-side (hull scale, turret identity art, recoil,
 effects, HUD) or C2 fails its own cross-check. This is a gate condition, not a nice-to-have.

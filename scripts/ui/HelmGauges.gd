@@ -1,9 +1,8 @@
 class_name HelmGauges
 extends Control
-# The helm gauge bank — first piece of the future gauge-bank HUD (C1 spec: "speed/throttle readout").
-# 1:1 port of the owner-approved mockup's bottom-left plate: engine order, way-on-ship digits + bar,
-# helm rudder/authority, slip and heading. Reads the world one-way each frame; writes nothing back.
-# Layout constants are cosmetic plate geometry, not tunables — handling numbers live in movement.tres.
+# The helm gauge bank + gunnery HUD (C1 speed readout, C2 batteries line / kills plate / force-fire
+# reticle — 1:1 with the owner-approved mockups, LOOK-LOCK). Reads the world one-way each frame;
+# writes nothing back. Layout constants are cosmetic plate geometry, not tunables.
 
 const PLATE_BG := Color(0.051, 0.125, 0.157, 0.88)
 const PLATE_EDGE := Color(0.804, 0.729, 0.557, 0.5)
@@ -86,13 +85,43 @@ func _draw() -> void:
 	draw_string(_mono, Vector2(right - _mono.get_string_size("STBD", HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x, y + 8.0),
 		"STBD", HORIZONTAL_ALIGNMENT_LEFT, -1, 8, BRASS_DIM)
 
-	# ── slip + heading ──
+	# ── batteries + heading (C2 mockup layout) ──
 	y += 24.0
-	var slip_dir := "  → STBD" if keel.y > 0.5 else ("  ← PORT" if keel.y < -0.5 else "")
-	draw_string(_mono, Vector2(x, y), "SLIP %.1f U/S%s" % [absf(keel.y), slip_dir], HORIZONTAL_ALIGNMENT_LEFT, -1, 12, BRASS)
+	var bat := "BATTERIES: AUTO"
+	if _world.input.force_all:
+		bat = "BATTERIES: ALL GUNS ON POINT"
+	elif _world.input.force_large:
+		bat = "BATTERIES: MAIN BATTERY ON POINT"
+	draw_string(_mono, Vector2(x, y), bat, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, BRASS)
 	var hdg_txt := "HDG %03d°" % roundi(fposmod(_world.ship_heading * 180.0 / PI, 360.0))
 	draw_string(_mono, Vector2(right - _mono.get_string_size(hdg_txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x, y),
 		hdg_txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, BRASS)
+
+	_draw_kills_plate()
+	_draw_reticle()
+
+# top-left range plate — the game-relevant slice of the mockup's mission plate
+func _draw_kills_plate() -> void:
+	var origin := Vector2(PAD, PAD)
+	_draw_plate(origin, Vector2(PLATE_W, 64.0))
+	var x := origin.x + INNER
+	_label(x, origin.y + 24.0, "★ EARTH DEFENSE FORCE · GUNNERY RANGE")
+	draw_string(_mono, Vector2(x, origin.y + 48.0), "DRONES SPLASHED: ", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, FOAM)
+	var w := _mono.get_string_size("DRONES SPLASHED: ", HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
+	draw_string(_mono, Vector2(x + w, origin.y + 48.0), str(_world.kills), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, RED)
+
+# force-fire reticle at the cursor (mockup rev 3): dim crosshair always, red + order label when held
+func _draw_reticle() -> void:
+	var mp := get_viewport().get_mouse_position()
+	var forced: bool = _world.input.force_all or _world.input.force_large
+	var col := Color(RED.r, RED.g, RED.b, 0.95) if forced else Color(FOAM.r, FOAM.g, FOAM.b, 0.35)
+	var r: float = 14.0 if forced else 9.0
+	draw_arc(mp, r, 0.0, TAU, 32, col, 1.4, true)
+	for dv in [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1)]:
+		draw_line(mp + dv * (r - 4.0), mp + dv * (r + 5.0), col, 1.4)
+	if forced:
+		var label := "ALL GUNS" if _world.input.force_all else "MAIN BATTERY"
+		draw_string(_sans, mp + Vector2(18, -12), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, col)
 
 func _order_text(along: float, speed: float) -> String:
 	var t := _world.input.thrust

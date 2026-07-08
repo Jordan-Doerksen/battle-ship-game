@@ -1,5 +1,5 @@
 # Decisions Manifest — Earth Defense Force (working title)
-**Started:** 2026-07-08  ·  **Last Updated:** 2026-07-08  ·  **Status:** C1 Naval Movement BUILT (C0 Heartbeat 2026-07-08)
+**Started:** 2026-07-08  ·  **Last Updated:** 2026-07-08  ·  **Status:** C2 Hardpoint Hull BUILT (C0 + C1 also 2026-07-08)
 
 > The single source of truth, written *for the next agent* — not a doc anyone maintains by hand.
 > Every future agent consults this before an architectural/behavioral change. Never silently rewrite
@@ -114,6 +114,10 @@ anything in range regardless of which way the hull points.
 not for "bringing guns to bear" — deliberate design intent from the brief §3, not an oversight.
 **Date Locked:** 2026-07-08 · **Affects:** future targeting/turret system (adapts fulfillment's
 `Turrets.gd` CLOSE/FAR/STRONG model — see brief §7).
+**Refined 2026-07-08 (C2, not a reversal):** turrets still engage 360° regardless of hull facing, but
+slew at per-weapon **traverse rates** (owner decision, hardpoint spec #2) — positioning now decides
+*which guns bear soonest*, never *whether* they can bear. A hold-only force-fire override (LMB all
+guns / RMB main battery) rides on top; see `docs/specs/hardpoint-hull.md`.
 
 ### Decision 1.8: Hull health model.
 **Chosen Answer:** **Single hull health pool**, pip-style (discrete hits, like fulfillment's hull pips).
@@ -164,11 +168,10 @@ treated as locked:
    undefined.
 4. **Working title / trademark check** — "Earth Defense Force" collides with an existing real game
    franchise (Sandlot/D3 Publisher). Revisit before the name goes into a public repo/store listing.
-5. **Hardpoint force-fire override & turret tracking** — owner input (2026-07-08, at C1 mockup
-   approval): turrets auto-track and auto-fire per D1.7, **and** holding the mouse button force-fires
-   them at the cursor; turret tracking behavior ("a thing to worry about" — traverse rates, target
-   selection, how the override interacts with auto-fire) needs real design care. Capture for the
-   hardpoints `/spec-feature` interview — noted here so it isn't lost, not locked.
+5. ~~**Hardpoint force-fire override & turret tracking**~~ — **RESOLVED 2026-07-08** by the C2
+   interview + spec (`docs/specs/hardpoint-hull.md`): finite per-weapon traverse, per-weapon
+   CLOSE/STRONG policies, hold-only force-fire (LMB all mounts domain-overridden / RMB large only).
+   Built in C2; D1.7 carries the refinement note.
 
 ---
 
@@ -180,13 +183,28 @@ treated as locked:
   owner-approved), and ported: `Movement.gd` system #1 in `Sim.step`, `InputState` one-way input door,
   `movement.tres` tunables, mockup-matched sea/hull/wake render + helm gauge bank, `probe_movement`
   acceptance gate. Spec: `docs/specs/naval-movement.md`.
-- **C2+ — not yet scoped.** Hardpoint hull, weapon catalog, domain tagging, sonar, depth charges —
-  each needs its own `/spec-feature` interview before implementation, per this repo's `CLAUDE.md`.
-  Open thread #5 (force-fire override + turret tracking) feeds the hardpoints interview.
+- **C2 — Hardpoint hull & gunnery range (built 2026-07-08).** Interviewed, spec'd, mockup-gated
+  through three owner revisions (battleship-scale hull ×2.4, 4S/4M/2L, class-distinct turret art,
+  blooming AA), LOOK-LOCKED, and ported: `Drones`/`Turrets`/`Projectiles` systems, `Configs` bundle,
+  three new per-system configs, pooled shells, mockup-matched render/HUD, `probe_hardpoints` gate.
+  Spec: `docs/specs/hardpoint-hull.md`.
+- **C3+ — not yet scoped.** Wave/spawn director (first real enemies), sonar + subs, depth charges,
+  hardpoint purchase economy, hull damage — each needs its own `/spec-feature` interview before
+  implementation, per this repo's `CLAUDE.md`.
 
 ---
 
 ## Change Log
+- **2026-07-08 — C2 Hardpoint Hull built; open thread #5 resolved; D1.7 refined.** The approved C2
+  spec (three owner gate revisions, LOOK-LOCK condition) ported to Godot: `Drones.gd`/`Turrets.gd`/
+  `Projectiles.gd` in `Sim.step`'s fixed order behind `Movement`, a `Configs` bundle so the step
+  signature stays flat, per-system configs `hardpoint.tres`/`weapons.tres` (WeaponDef sub-resources)/
+  `range.tres`, `Pool`'s first consumer (shells), sim→render effects queue plumbed through Main,
+  battleship-scale hull + class-distinct turret art with recoil in `FieldRenderer`, force-fire
+  reticle/batteries line/kills plate in `HelmGauges`, mouse input map. `probe_hardpoints` (8 checks
+  mirroring the mockup harness) added to the gate; `probe_movement` now isolates with a drone-free
+  range so its zero-RNG tripwire stays exact. Look-lock verified by side-by-side Xvfb screenshots
+  against mockup rev 3. D1.7 refined (traverse rates), open thread #5 closed, D1.9 domain tags live.
 - **2026-07-08 — C1 Naval Movement built; D1.6 deferral resolved; D1.2 re-affirmed.** Owner accepted
   the engine review ("keep Godot; HTML stays the design surface") — D1.2 stands. The approved C1 spec
   ported to Godot: `Movement.gd` (system #1, pure arithmetic, zero RNG draws), `InputState.gd`,
