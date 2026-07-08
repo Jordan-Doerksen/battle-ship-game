@@ -1,6 +1,10 @@
 # Spec — C2: Hardpoint Hull & Gunnery Range
 
-**Status:** APPROVED 2026-07-08 (owner) · Interviewed 2026-07-08 · Mockup pending (gate) · Not built
+**Status:** APPROVED 2026-07-08 (owner) · Interviewed 2026-07-08 · Mockup APPROVED 2026-07-08
+(owner, revision 3 — "lock this in") · Not built
+**LOOK-LOCK (owner, verbatim condition):** *"if it doesn't look this good it doesn't get approved"* —
+the Godot port must match mockup revision 3 side-by-side (hull scale, turret identity art, recoil,
+effects, HUD) or C2 fails its own cross-check. This is a gate condition, not a nice-to-have.
 **Consumes:** DECISIONS.md open thread #5 (force-fire override + turret tracking — owner input at C1
 mockup approval). **Builds on:** D1.5 (turret art ON the hull), D1.7 (360° auto-turrets), D1.9
 (domain tags), D1.12 (one hull).
