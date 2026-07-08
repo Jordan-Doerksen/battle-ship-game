@@ -16,11 +16,13 @@ You command a single Earth Defense Force battleship, alone against AI-piloted al
 air, sea surface, and underwater. The aliens don't personally pilot the drones — they're sheltering
 inside motherships that already crash-landed on Earth, running the swarm by remote while consuming the
 planet's water for reasons not yet revealed. You pilot the ship directly with real naval momentum and
-weight; your hull's hardpoints auto-fire at anything in range regardless of which way you're facing.
-Hardpoints are visible, purchasable positions on the hull — small mounts numerous, medium fewer, large
-fewest, mirroring a real battleship's gun arrangement. Subs are invisible until sonar range reveals
-them; depth charges are a free, inaccurate always-on backstop for whatever sonar misses. Survive waves,
-bank a persistent currency, spend it between runs on permanent hardpoint unlocks. Tone: 1950s B-movie
+weight; your hull's turrets auto-fire at anything in range regardless of which way you're facing, and
+you can force any battery onto a point. The ship's hull and turret fit are FIXED — visible mounts in a
+real battleship arrangement (small numerous, medium fewer, large fewest). Progression is persistent
+LEVELS earned across runs, unlocking a TECH TREE: movement upgrades, turret-size-specific upgrades,
+bullet effects, traverse, and a helicopter branch (owner change request 2026-07-08 — replaced the
+original purchasable-hardpoint economy). Subs are invisible until sonar range reveals them; depth
+charges are a free, inaccurate always-on backstop for whatever sonar misses. Tone: 1950s B-movie
 schlock, played completely straight-faced.
 
 ## Design pillars

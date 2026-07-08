@@ -46,11 +46,15 @@ turret auto-fire LEADS its target now — no-lead fire couldn't hit orbiting gun
 cleared; the fix is in the mockup reference too. `probe_waves` + re-targeted `probe_hardpoints`
 gate it all in `verify.sh`.
 
-**Next:** C4 is unscoped — strongest candidates: sonar + subs + depth charges (completes the three
-domains; sonar-gates SUB blips on the existing radar per D1.10, and D1.11's depth-charge failsafe
-is already designed), the hardpoint purchase economy (lulls are its shop window), or the boss
-ladder + naming pass (open thread #2). Each needs its own `/spec-feature` interview first.
-DECISIONS open threads #1–#4 remain.
+**Direction change (owner, 2026-07-08 — see the DECISIONS Change Log):** the hardpoint purchase
+economy is DEAD. Ships have set hulls/turrets; progression is persistent levels unlocking a tech
+tree (movement, turret-size-specific, bullet effects, traverse, and a helicopter branch — function
+TBD). The fixed loadout already in the build matches this.
+
+**Next:** C4 candidates: the levels + tech-tree meta chunk (owner's new direction — needs its
+interview), or sonar + subs + depth charges (completes the three domains per D1.10/D1.11). Boss
+ladder + naming (open thread #2) trails. Each needs its own `/spec-feature` interview first.
+DECISIONS open threads #1–#4 remain (#3 evolved into the helicopter question).
 
 ## 3. Tree layout
 

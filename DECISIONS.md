@@ -200,6 +200,17 @@ treated as locked:
 ---
 
 ## Change Log
+- **2026-07-08 — CHANGE REQUEST (owner): tech-tree progression replaces the hardpoint purchase
+  economy.** Owner directive, verbatim intent: ships have SET hulls and turrets; the upgrade path is
+  persistent LEVELS gained across runs, unlocking a TECH TREE of upgrades and effects — many
+  movement upgrades, turret-size-specific upgrades, bullet effects, traverse speed, and a HELICOPTER
+  tech tree (function undecided). Supersedes: the founding brief/SPEC's "visible, purchasable
+  hardpoint positions" economy (mounts stay visible and hull-mounted per D1.5 — the PURCHASE axis
+  dies, not the art); the planned hardpoint-purchase-shop reuse of fulfillment's Depot pattern.
+  Conveniently, the C2/C3 build already runs a FIXED loadout — no built system is orphaned. Open
+  thread #3 (helipad function) evolves into the helicopter tech-tree question. Detailed design goes
+  through its own `/spec-feature` interview before anything is built (this entry records the
+  direction, not the specifics).
 - **2026-07-08 — C3 Wave Director built; the game has stakes.** The approved C3 spec (two owner gate
   revisions) ported to Godot: `Waves.gd` (seeded budget director), `Enemies.gd` (swarmer/gunboat/
   bomber, beyond-the-edge arrival, led + dodgeable gunboat shells), `Hull.gd` (pip pool per D1.8
