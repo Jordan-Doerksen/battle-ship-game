@@ -24,8 +24,10 @@ size — so that where you sail (C1) decides which guns bear soonest.
    **RMB held = LARGE mounts only** (bombard the point). Release = instant return to auto-targeting.
 4. **Auto-targeting: policy fixed per weapon type** (fulfillment's CLOSE/FAR/STRONG adapted), not
    per-mount and not player-assignable yet.
-5. **Hull layout: 6 small / 4 medium / 2 large** — 2 large centerline (fore/aft, where the C1 deck
-   hints already sit), 4 medium at the beam, 6 small sponsons. Helipad stays clear (open thread #3).
+5. **Hull layout: 4 small / 4 medium / 2 large** — 2 large centerline (fore/aft), 4 medium at the
+   beam, 4 small sponsons (fore + quarter pairs). Helipad stays clear (open thread #3).
+   *Originally 6 small; owner cut to 4 at the mockup gate, compensating the AA with doubled fire
+   rate, wider base spread, and a bloom mechanic (see catalog + gate revisions).*
 6. **Catalog: 3 starters, one per size.** Sub-hunting weapons wait for the sonar chunk.
 7. **Loadout: fixed test loadout in config** — every mount pre-filled. Purchase/economy is its own
    future interview.
@@ -79,9 +81,14 @@ class, alignment tolerance.
 
 | id | size | domains | policy | range | fire rate | traverse | dmg | proj. speed | spread | splash |
 |---|---|---|---|---|---|---|---|---|---|---|
-| `aa20` "Vigilant" | small | air | CLOSE | 420 | 6.0/s | 4.0 rad/s | 1 | 700 | 0.035 | — |
+| `aa20` "Vigilant" | small | air | CLOSE | 420 | 12.0/s | 4.0 rad/s | 1 | 700 | 0.045 + bloom | — |
 | `dp5` "Sentinel" | medium | air+surface | CLOSE | 560 | 1.2/s | 2.2 rad/s | 2 | 620 | 0.02 | — |
 | `mb16` "Judgement" | large | surface | STRONG | 900 | 0.33/s | 0.9 rad/s | 4 | 420 | 0.012 | 36 |
+
+**Bloom (AA texture, owner gate revision):** sustained fire widens a mount's spread by `bloom_add`
+(0.01 rad) per shot up to `bloom_max` (0.10 rad); the cone tightens at `bloom_decay` (0.06 rad/s)
+whenever the gun isn't firing. Pure per-mount arithmetic — no RNG state; only the per-shot spread
+draw touches `world.rng`, exactly as before. `dp5`/`mb16` carry the fields at 0.
 
 **`config/RangeConfig.gd` + `range.tres`** — the practice range: 4 air + 3 surface drones concurrent,
 spawn ring 500–1000 u, drift 20–45 u/s, respawn delay 2.0 s, HP air 1 / surface 3.
@@ -98,6 +105,10 @@ feel (decision #2) and the two force-fire orders — then approves; then it port
 too small for its turrets. Hull upscaled ×1.7 (~150 u overall) with the mount plan re-laid for real
 deck room; the C2 port must carry this hull scale into `FieldRenderer` (C1's silhouette proportions,
 new size — wake stern offset and deck furniture scale with it).
+
+**Gate revision 2 (owner, 2026-07-08):** small mounts cut 6 → 4 (fore + quarter pairs; layout is now
+4S/4M/2L). The AA compensates as a hose: fire rate 6 → 12/s, base spread 0.035 → 0.045, plus the
+bloom mechanic above. Acceptance gains check 9 (bloom rises under sustained fire, decays at rest).
 
 ## Determinism notes
 
@@ -122,7 +133,9 @@ new size — wake stern offset and deck furniture scale with it).
 6. **Kill & respawn:** a drone at 0 HP deactivates (pool release) and a replacement spawns after the
    configured delay; concurrent counts hold.
 7. **Splash:** an `mb16` shell kills a drone it never directly hit when inside splash radius.
-8. Existing `probe_sim` + `probe_movement` checks still pass unchanged.
+8. **Bloom:** sustained `aa20` fire drives mount bloom toward `bloom_max`; after a few seconds of
+   rest it decays back to zero.
+9. Existing `probe_sim` + `probe_movement` checks still pass unchanged.
 
 ## Out of scope (explicit cuts from the interview)
 
