@@ -1,0 +1,13 @@
+# Godot 4+ import & cache
+.godot/
+/builds/
+export_presets.cfg
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.tmp
+*~
+
+# Secrets — never commit
+.env

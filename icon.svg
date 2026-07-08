@@ -1,0 +1,8 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Placeholder crest: a battleship hull silhouette over waves. Replaced in the presentation pass. -->
+  <rect width="128" height="128" rx="20" fill="#061018"/>
+  <path d="M20 82 L108 82 L98 96 L30 96 Z" fill="none" stroke="#8fd6ff" stroke-width="4"/>
+  <path d="M40 82 L40 62 L88 62 L88 82" fill="none" stroke="#8fd6ff" stroke-width="4"/>
+  <path d="M56 62 L56 44 L72 44 L72 62" fill="none" stroke="#8fd6ff" stroke-width="3"/>
+  <path d="M10 100 Q 32 92 54 100 T 98 100 T 118 100" fill="none" stroke="#3f7a94" stroke-width="3" opacity="0.7"/>
+</svg>

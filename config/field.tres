@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="FieldConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://config/FieldConfig.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+star_count = 160
+star_min_size = 1.0
+star_max_size = 2.5
+field_tile = 1800.0
