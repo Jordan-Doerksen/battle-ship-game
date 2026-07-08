@@ -31,10 +31,13 @@ next chunk begins.** No dead mechanics, no orphan pointers, no dead tags strappe
 patina shader) is a 1:1 port of `design/naval-movement.html` — that mockup remains the C1 visual
 reference. `tests/probe_movement.gd` gates the spec's acceptance checks in `verify.sh`.
 
-**Next:** C2 is unscoped — hardpoint hull, weapon catalog, sonar, depth charges, wave director each
-need their own `/spec-feature` interview first. `DECISIONS.md` open thread #5 (owner, 2026-07-08)
-already seeds the hardpoints interview: turrets auto-track/auto-fire (D1.7) **plus** a mouse-button
-force-fire-at-cursor override, with turret traverse/tracking called out as a design risk.
+**C2 — Hardpoint hull & gunnery range** is mid-gate: the spec (`docs/specs/hardpoint-hull.md`,
+from the 2026-07-08 owner interview) is owner-APPROVED, and the interactive mockup
+`design/hardpoint-hull.html` is built — 12 mounts (6S/4M/2L), the 3-weapon catalog, finite traverse,
+per-weapon policies, drifting air/surface drones, hold-to-force-fire (LMB all guns / RMB main
+battery). Its sim block is validated against the spec's acceptance checks 1–7 (harness extracts the
+SIM-BEGIN…SIM-END region from the HTML). Per the mockup gate, the owner must approve the *feel*
+(traverse weight + both force-fire orders) before the Godot port. No C2 Godot code exists yet.
 
 ## 3. Tree layout
 

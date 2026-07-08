@@ -1,7 +1,6 @@
 # Spec — C2: Hardpoint Hull & Gunnery Range
 
-**Status:** DRAFT 2026-07-08 — interviewed 2026-07-08 (owner), awaiting owner approval · Not mocked ·
-Not built
+**Status:** APPROVED 2026-07-08 (owner) · Interviewed 2026-07-08 · Mockup pending (gate) · Not built
 **Consumes:** DECISIONS.md open thread #5 (force-fire override + turret tracking — owner input at C1
 mockup approval). **Builds on:** D1.5 (turret art ON the hull), D1.7 (360° auto-turrets), D1.9
 (domain tags), D1.12 (one hull).
