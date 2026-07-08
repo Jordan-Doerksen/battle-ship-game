@@ -27,11 +27,14 @@ next chunk begins.** No dead mechanics, no orphan pointers, no dead tags strappe
 **C0 — Heartbeat** is built: a fixed-timestep deterministic loop, seeded RNG, the `GameWorld` truth
 object, and a minimal render harness proving the loop is alive. No gameplay systems are wired yet.
 
-**C1 — Naval movement** is mid-gate: the spec (`docs/specs/naval-movement.md`) is owner-APPROVED, and
-the interactive mockup `design/naval-movement.html` is built (keyboard-driven, implements the spec's
-exact model + tunables; spec acceptance checks 1–6 validated numerically against it). Per the mockup
-gate, the owner must approve the mockup's *feel* hands-on before the Godot port. No Godot code for C1
-exists yet. See `DECISIONS.md`'s Build Timeline for what's next.
+**C1 — Naval movement** has passed the mockup gate: the spec (`docs/specs/naval-movement.md`) and the
+interactive mockup `design/naval-movement.html` are both owner-APPROVED (2026-07-08, spec-default
+tunables; acceptance checks 1–6 validated numerically). Next step is the Godot port — `Movement.gd`,
+`InputState.gd`, `MovementConfig`/`movement.tres`, hull/wake render, HUD speed readout,
+`probe_movement.gd` — with a **1:1 look-match against the mockup** (recorded in the spec). An
+owner-requested engine review (keep Godot vs ship HTML/JS — D1.2) was delivered 2026-07-08
+recommending Godot stands; confirm with the owner before porting. Open thread #5 in `DECISIONS.md`
+captures the owner's turret input (auto-track + mouse force-fire) for the hardpoints interview.
 
 ## 3. Tree layout
 

@@ -1,6 +1,7 @@
 # Spec — C1: Naval Movement
 
-**Status:** APPROVED 2026-07-08 (owner) · Interviewed 2026-07-08 · Not yet implemented
+**Status:** APPROVED 2026-07-08 (owner) · Mockup APPROVED 2026-07-08 (owner, at spec-default
+tunables) · Not yet ported to Godot
 **Resolves:** DECISIONS.md D1.6's deferral ("do not implement movement mechanics without a dedicated
 spec pass first" — this is that pass).
 
@@ -75,6 +76,11 @@ exact model (same tunables, same integration), proving before any Godot code:
 4. the feel numbers: ~4–5s to full speed, long coast, floor-coupled turning, visible lateral slip in a
    full-speed turn.
 Owner approves the mockup's feel; then it ports. (No scripted turning-circle demo — judging is hands-on.)
+
+**Gate passed 2026-07-08** — owner approved the mockup's feel and look at the spec-default tunables.
+**Port fidelity requirement (owner, 2026-07-08):** the Godot build must match this mockup's look 1:1 —
+hull silhouette, wake read, gauge-bank styling, ocean/chart-grid field. Judge the port side-by-side
+against the mockup before C1 ships.
 
 ## Determinism notes
 

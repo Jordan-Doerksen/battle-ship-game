@@ -159,6 +159,11 @@ treated as locked:
    undefined.
 4. **Working title / trademark check** — "Earth Defense Force" collides with an existing real game
    franchise (Sandlot/D3 Publisher). Revisit before the name goes into a public repo/store listing.
+5. **Hardpoint force-fire override & turret tracking** — owner input (2026-07-08, at C1 mockup
+   approval): turrets auto-track and auto-fire per D1.7, **and** holding the mouse button force-fires
+   them at the cursor; turret tracking behavior ("a thing to worry about" — traverse rates, target
+   selection, how the override interacts with auto-fire) needs real design care. Capture for the
+   hardpoints `/spec-feature` interview — noted here so it isn't lost, not locked.
 
 ---
 
@@ -173,6 +178,12 @@ treated as locked:
 ---
 
 ## Change Log
+- **2026-07-08 — C1 mockup approved at the gate.** `design/naval-movement.html` owner-approved for
+  feel at the spec-default tunables; the Godot port is unblocked, with a 1:1 look-match requirement
+  recorded in the spec. Owner requested a review of D1.2 (keep Godot vs ship the HTML/JS mockup
+  stack) — review delivered in-session recommending Godot stands; D1.2 remains locked unless the
+  owner supersedes it. New open thread #5 (hardpoint force-fire override + turret tracking) captured
+  from the same feedback.
 - **2026-07-08 — Brief adopted as founding manifest.** Owner-approved design brief
   (`docs/DESIGN-BRIEF.md`, captured 2026-07-08) translated into this manifest's Chapter 1. C0 Heartbeat
   skeleton built in the same session. No prior decisions to supersede — this is the repo's founding
