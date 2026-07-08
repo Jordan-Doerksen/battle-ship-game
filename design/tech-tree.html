@@ -561,7 +561,8 @@ function stepEnemies(sim, cfg, dt) {
         const aim = { x: sim.ship.x + sim.ship.vx * flight * def.lead, y: sim.ship.y + sim.ship.vy * flight * def.lead };
         const ang = angleTo(e, aim) + (draw(sim) * 2 - 1) * def.spread;
         const dir = dirOf(ang);
-        sim.projectiles.push({ x: e.x, y: e.y, vx: dir.x * def.shell_speed, vy: dir.y * def.shell_speed,
+        sim.projectiles.push({ x: e.x + dir.x * 14, y: e.y + dir.y * 14,   // gunboat muzzle, not hull center
+          vx: dir.x * def.shell_speed, vy: dir.y * def.shell_speed,
           dmg: def.shell_dmg, splash: 0, life: (def.fire_range * 1.4) / def.shell_speed, wid: "hostile", hostile: true });
         sim.effects.push({ type: "gunflash", x: e.x, y: e.y, ang });
       }
@@ -585,11 +586,14 @@ function pickTarget(sim, wpn, mpos) {
   }
   return best;
 }
-function fireShell(sim, cfg, mpos, ang, wpn, wid, aim, forced) {
+const MUZZLE = { L: 35, M: 22, S: 13 };   // shells spawn at the barrel TIP, never inside the house
+function fireShell(sim, cfg, mpos, barrelAng, ang, wpn, wid, aim, forced, size) {
+  const bd = dirOf(barrelAng);
+  const ox = mpos.x + bd.x * MUZZLE[size], oy = mpos.y + bd.y * MUZZLE[size];
   const dir = dirOf(ang);
-  const p = { x: mpos.x, y: mpos.y, vx: dir.x * wpn.speed, vy: dir.y * wpn.speed,
+  const p = { x: ox, y: oy, vx: dir.x * wpn.speed, vy: dir.y * wpn.speed,
     dmg: wpn.dmg, splash: wpn.splash, life: wpn.range / wpn.speed, wid, hostile: false };
-  if (wpn.splash > 0 && !forced) p.life = Math.min(Math.hypot(aim.x - mpos.x, aim.y - mpos.y), wpn.range) / wpn.speed;
+  if (wpn.splash > 0 && !forced) p.life = Math.min(Math.hypot(aim.x - ox, aim.y - oy), wpn.range) / wpn.speed;
   sim.projectiles.push(p);
 }
 function stepTurrets(sim, inp, cfg, dt) {
@@ -622,10 +626,10 @@ function stepTurrets(sim, inp, cfg, dt) {
       const shotAng = m.ang + (draw(sim) * 2 - 1) * (wpn.spread + m.bloom);
       m.bloom = Math.min(wpn.bloom_max, m.bloom + wpn.bloom_add);
       if (wid === "mb16" && cfg.tech.salvo) {   // FULL SALVO: both barrels, one spread draw
-        fireShell(sim, cfg, mpos, shotAng - cfg.tech.salvo_offset, wpn, wid, aim, forced);
-        fireShell(sim, cfg, mpos, shotAng + cfg.tech.salvo_offset, wpn, wid, aim, forced);
+        fireShell(sim, cfg, mpos, m.ang, shotAng - cfg.tech.salvo_offset, wpn, wid, aim, forced, mcfg.size);
+        fireShell(sim, cfg, mpos, m.ang, shotAng + cfg.tech.salvo_offset, wpn, wid, aim, forced, mcfg.size);
       } else {
-        fireShell(sim, cfg, mpos, shotAng, wpn, wid, aim, forced);
+        fireShell(sim, cfg, mpos, m.ang, shotAng, wpn, wid, aim, forced, mcfg.size);
       }
       sim.effects.push({ type: "muzzle", idx: i, x: mpos.x, y: mpos.y, ang: m.ang, size: mcfg.size });
     }

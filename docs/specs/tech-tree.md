@@ -1,6 +1,11 @@
 # Spec — C4: Levels & Tech Tree
 
-**Status:** APPROVED 2026-07-08 (owner) · Interviewed 2026-07-08 · Mockup pending (gate) · Not built
+**Status:** APPROVED 2026-07-08 (owner) · Interviewed 2026-07-08 · Mockup APPROVED 2026-07-08
+(owner, with the dev test kit and one fix condition) · Not built
+**Gate fix (owner condition at approval):** shells must spawn at the barrel MUZZLE (per-size tip
+offset — L 35 / M 22 / S 13 u; gunboats +14 u), never at the mount center where they visibly rose
+from behind the turret house and passed through it. Fixed in the mockup at approval; the port
+carries it.
 **Implements:** the 2026-07-08 Change Request (set hulls/turrets; persistent levels unlock a tech
 tree — replaced the purchasable-hardpoint economy). **Builds on:** every tunable the tree modifies
 already living in per-system `.tres` configs — the tree is config modification, by design.
