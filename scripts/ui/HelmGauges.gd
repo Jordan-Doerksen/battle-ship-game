@@ -141,10 +141,12 @@ func _order_text(along: float, speed: float) -> String:
 		return "EMERGENCY BACK — BRAKING" if along > 1.0 else "ALL ASTERN"
 	return "ALL STOP" if speed < 2.0 else "ADRIFT — COASTING"
 
-# ── wave plate (top-left; C3) ──
+var lost_report: Dictionary = {}   # Main fills at run end: { xp: int, leveled_to: int (0 = none) }
+
+# ── wave plate (top-left; C3 + C4 XP tally) ──
 func _draw_wave_plate() -> void:
 	var origin := Vector2(PAD, PAD)
-	_draw_plate(origin, Vector2(PLATE_W, 86.0))
+	_draw_plate(origin, Vector2(PLATE_W, 104.0))
 	var x := origin.x + INNER
 	_label(x, origin.y + 24.0, "★ EARTH DEFENSE FORCE · SORTIE COMMAND")
 	var line := ""
@@ -162,6 +164,8 @@ func _draw_wave_plate() -> void:
 		line = "WAVE %d CLEARED — NEXT IN 0:%02d" % [_world.wave, maxi(0, ceili(_world.lull_until - _world.elapsed))]
 	draw_string(_mono, Vector2(x, origin.y + 50.0), line, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, FOAM)
 	draw_string(_mono, Vector2(x, origin.y + 72.0), "DRONES DESTROYED: %d" % _world.kills,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 12, BRASS)
+	draw_string(_mono, Vector2(x, origin.y + 90.0), "XP +%d" % _world.xp_run,
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 12, BRASS)
 
 # ── radar scope (bottom-right; C3 gate revisions 1–2). Sub blips get sonar-gated in a later chunk
@@ -228,11 +232,11 @@ func _dashed_arc(c: Vector2, r: float, col: Color) -> void:
 		if i % 2 == 0:
 			draw_arc(c, r, TAU * i / segs, TAU * (i + 1) / segs, 4, col, 1.0, true)
 
-# ── SHIP LOST card (C3) ──
+# ── SHIP LOST card (C3 + C4 XP report) ──
 func _draw_lost_card() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.08, 0.024, 0.016, 0.55))
-	var cw := 420.0
-	var chh := 150.0
+	var cw := 460.0
+	var chh := 176.0
 	var origin := Vector2((size.x - cw) * 0.5, (size.y - chh) * 0.5)
 	var pts := PackedVector2Array([
 		origin + Vector2(14, 0), origin + Vector2(cw, 0), origin + Vector2(cw, chh - 14),
@@ -245,9 +249,14 @@ func _draw_lost_card() -> void:
 	var cxr := origin.x + cw * 0.5
 	_centered_spaced(cxr, origin.y + 52.0, "SHIP LOST", 30, RED, 8.0)
 	var stats := "WAVE %d · %d DRONES DESTROYED" % [_world.wave, _world.kills]
-	draw_string(_mono, Vector2(cxr - _mono.get_string_size(stats, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x * 0.5, origin.y + 92.0),
+	draw_string(_mono, Vector2(cxr - _mono.get_string_size(stats, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x * 0.5, origin.y + 90.0),
 		stats, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, FOAM)
-	_centered_spaced(cxr, origin.y + 124.0, "[ R ]  NEW SORTIE", 11, BRASS, 3.0)
+	var xp_line := "+%d XP" % int(lost_report.get("xp", _world.xp_run))
+	if int(lost_report.get("leveled_to", 0)) > 0:
+		xp_line += " · LEVEL UP → %d" % int(lost_report["leveled_to"])
+	draw_string(_mono, Vector2(cxr - _mono.get_string_size(xp_line, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x * 0.5, origin.y + 116.0),
+		xp_line, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, BRASS)
+	_centered_spaced(cxr, origin.y + 150.0, "[ R ]  NEW SORTIE      [ T ]  TECH TREE", 11, BRASS, 3.0)
 
 func _centered_spaced(cx: float, y: float, text: String, px: int, col: Color, tracking: float) -> void:
 	var total := 0.0

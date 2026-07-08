@@ -29,6 +29,7 @@ var _recoil: Array = []                      # per-mount barrel kick, fed by muz
 var _last_emit: float = -1.0
 var _hull_outline: PackedVector2Array
 var _death_ms: int = -1                      # when the shipdeath effect landed (wreck fade timer)
+var show_ship: bool = true                   # Main clears it behind the title/tree screens (C4)
 
 func bind(world: GameWorld, field_cfg: FieldConfig, cfgs: Configs) -> void:
 	_world = world
@@ -187,6 +188,10 @@ func _draw_enemies() -> void:
 			draw_polyline(wc, Color(0.851, 0.310, 0.169, 0.9), 1.2, true)
 			draw_circle(Vector2(-6, 6), 1.6, FLASH)
 			draw_circle(Vector2(6, 6), 1.6, FLASH)
+		if e.burn_left > 0:   # INCENDIARY (C4): flame flicker on burning drones
+			var nowf: float = Time.get_ticks_msec() * 1.0
+			draw_circle(Vector2.ZERO, 4.0 + sin(nowf * 0.05) * 1.5,
+				Color(FLASH.r, FLASH.g, FLASH.b, 0.6 + 0.4 * sin(nowf * 0.03)))
 		draw_set_transform(e.pos, 0.0, Vector2.ONE)
 		if e.hp < e.hp_max and e.hp_max > 2:   # hp pips under damaged toughs
 			for i in range(e.hp):
@@ -220,7 +225,7 @@ func _wreck_fade(c: Color, fade: float) -> Color:
 
 func _draw_hull() -> void:
 	var fade: float = _wreck_alpha()
-	if fade <= 0.0:
+	if fade <= 0.0 or not show_ship:
 		return
 	draw_set_transform(_world.ship_pos, _world.ship_heading, Vector2.ONE)
 	draw_colored_polygon(_hull_outline, _wreck_fade(HULL, fade))
@@ -245,7 +250,7 @@ func _draw_hull() -> void:
 # S open AA ring. Houses + barrels rotate to the WORLD barrel angle; barbettes stay hull-fixed.
 func _draw_mounts() -> void:
 	var fade: float = _wreck_alpha()
-	if fade <= 0.0:
+	if fade <= 0.0 or not show_ship:
 		return
 	var hp_cfg: HardpointConfig = _cfgs.hardpoints
 	for i in range(mini(_world.mounts.size(), hp_cfg.mount_pos.size())):
@@ -296,12 +301,18 @@ func _draw_mounts() -> void:
 			draw_circle(Vector2(0, 2.2), 2.6, house)                                    # pedestal + tub
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
+const FX_LIFE := {
+	"muzzle": 0.12, "gunflash": 0.12, "hit": 0.12, "ignite": 0.3, "shiphit": 0.4,
+	"airburst": 0.45, "death": 0.5, "splash": 0.7, "crashturn": 0.8, "shipdeath": 2.2,
+	"waveclear": 0.0,
+}
+
 func _draw_fx() -> void:
 	var now: int = Time.get_ticks_msec()
 	var i: int = _fx.size() - 1
 	while i >= 0:
 		var e: Dictionary = _fx[i]
-		var life: float = 0.7 if e["type"] == "splash" else (0.5 if e["type"] == "death" else 0.12)
+		var life: float = FX_LIFE.get(e["type"], 0.12)
 		var age: float = (now - e["t0"]) / 1000.0
 		if age >= life:
 			_fx.remove_at(i)
@@ -314,10 +325,27 @@ func _draw_fx() -> void:
 				var flen: float = FLASH_LEN[e["size"]]
 				var fr: float = (6.5 if e["size"] == "L" else (3.2 if e["size"] == "M" else 2.2)) * (1.0 + k)
 				draw_circle(e["pos"] + dirv * flen, fr, Color(FLASH.r, FLASH.g, FLASH.b, 0.9 * (1.0 - k)))
+			"gunflash":
+				var gd := Vector2(sin(e["ang"]), -cos(e["ang"]))
+				draw_circle(e["pos"] + gd * 14.0, 3.0 * (1.0 + k), Color(0.914, 0.404, 0.259, 0.9 * (1.0 - k)))
 			"splash":
 				draw_arc(e["pos"], maxf(0.5, e["r"] * k), 0.0, TAU, 40, Color(FOAM.r, FOAM.g, FOAM.b, 0.7 * (1.0 - k)), 2.0, true)
+			"airburst":   # PROXIMITY BURST (C4): amber flak cloud
+				draw_arc(e["pos"], e["r"] * (0.4 + k * 0.6), 0.0, TAU, 24, Color(FLASH.r, FLASH.g, FLASH.b, 0.85 * (1.0 - k)), 1.6, true)
+				draw_circle(e["pos"], 3.0 * (1.0 - k), Color(FLASH.r, FLASH.g, FLASH.b, 0.5 * (1.0 - k)))
+			"ignite":     # INCENDIARY (C4): catch-fire pop
+				draw_circle(e["pos"], 5.0 * (1.0 + k), Color(FLASH.r, FLASH.g, FLASH.b, 0.9 * (1.0 - k)))
+			"crashturn":  # CRASH TURN (C4): amber wash off the hull
+				draw_arc(_world.ship_pos, 40.0 + 160.0 * k, 0.0, TAU, 48, Color(FLASH.r, FLASH.g, FLASH.b, 0.7 * (1.0 - k)), 3.0, true)
 			"death":
 				draw_arc(e["pos"], 4.0 + 26.0 * k, 0.0, TAU, 32, Color(RED.r, RED.g, RED.b, 0.85 * (1.0 - k)), 2.0, true)
+			"shiphit":
+				draw_arc(e["pos"], 10.0 + 40.0 * k, 0.0, TAU, 32, Color(RED.r, RED.g, RED.b, 0.9 * (1.0 - k)), 3.0, true)
+			"shipdeath":
+				for ring in range(3):
+					var rk: float = maxf(0.0, k - ring * 0.12)
+					draw_arc(e["pos"], 10.0 + 220.0 * rk, 0.0, TAU, 48,
+						Color(0.914, 0.404, 0.259, 0.9 * (1.0 - rk)), 4.0 - ring, true)
 			"hit":
 				draw_circle(e["pos"], 3.0, Color(FOAM.r, FOAM.g, FOAM.b, 0.8 * (1.0 - k)))
 		i -= 1

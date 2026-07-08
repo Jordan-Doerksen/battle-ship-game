@@ -9,14 +9,28 @@ extends RefCounted
 # component IS the lateral slip that makes the hull read heavy. Heading 0 = north (screen up, −Y),
 # positive = clockwise, matching the north-up fixed camera.
 
-static func step(world: GameWorld, dt: float, cfg: MovementConfig) -> void:
+static func step(world: GameWorld, dt: float, cfgs: Configs) -> void:
+	var cfg: MovementConfig = cfgs.movement
 	var inp: InputState = world.input
+
+	# CRASH TURN (C4 marquee, flag defaults off): ordering EMERGENCY BACK above the speed
+	# threshold arms a short turn-rate window on a cooldown — the battleship snaps around once.
+	var turn_mult: float = 1.0
+	var tc: TechConfig = cfgs.tech
+	if tc.crash_turn:
+		var keel: Vector2 = keel_speeds(world)
+		if inp.thrust < 0.0 and keel.x > tc.crash_min_frac * cfg.max_speed_ahead and world.elapsed >= world.crash_ready:
+			world.crash_until = world.elapsed + tc.crash_secs
+			world.crash_ready = world.elapsed + tc.crash_cooldown
+			world.effects.append({ "type": "crashturn", "pos": world.ship_pos })
+		if world.elapsed < world.crash_until:
+			turn_mult = tc.crash_mult
 
 	# 1. Helm — turn authority couples to speed with a floor: the ship always answers,
 	#    just sluggishly when slow. Screen-fixed: D is clockwise even astern.
 	var speed: float = world.ship_vel.length()
 	var authority: float = maxf(cfg.turn_speed_floor, minf(1.0, speed / cfg.max_speed_ahead))
-	world.ship_heading += cfg.turn_rate_max * authority * inp.rudder * dt
+	world.ship_heading += cfg.turn_rate_max * turn_mult * authority * inp.rudder * dt
 
 	# 2. Decompose velocity on the NEW keel axes.
 	var fwd := Vector2(sin(world.ship_heading), -cos(world.ship_heading))

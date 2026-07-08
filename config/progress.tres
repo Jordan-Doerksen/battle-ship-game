@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ProgressConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://config/ProgressConfig.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+xp_swarmer = 10
+xp_gunboat = 30
+xp_bomber = 50
+xp_wave_bonus = 25
+level_xp_base = 150
+level_xp_step = 100

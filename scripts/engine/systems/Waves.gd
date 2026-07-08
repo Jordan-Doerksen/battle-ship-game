@@ -13,6 +13,8 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 		world.hull = wc.hull_pips
 	if world.lull_until < 0.0:
 		world.lull_until = world.elapsed + wc.first_wave_delay
+	if world.freeze_waves:                    # DEV test kit (debug builds): director paused
+		return
 	if world.wave_state == "lull":
 		if world.elapsed >= world.lull_until:
 			world.wave += 1
@@ -26,6 +28,8 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 				break
 		if not any_active:
 			world.enemies.clear()
+			world.xp_run += cfg.progress.xp_wave_bonus * world.wave   # wave-clear bonus (C4)
+			world.effects.append({ "type": "waveclear", "wave": world.wave })
 			world.wave_state = "lull"
 			world.lull_until = world.elapsed + wc.lull_secs
 

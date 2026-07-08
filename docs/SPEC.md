@@ -5,8 +5,9 @@
 > front-load design that will drift. Pairs with `DECISIONS.md` (the manifest) and `ARCHITECTURE.md`
 > (the map). Full source narrative: `docs/DESIGN-BRIEF.md`.
 >
-> **Status:** C0–C3 built — the game plays end to end (sail, fight, sink, restart). C4+ planned,
-> high-level only — each is locked in detail at the top of its own chunk via `/spec-feature`.
+> **Status:** C0–C4 built — the game plays end to end and carries a persistent career (levels +
+> tech tree). C5+ planned, high-level only — each is locked in detail at the top of its own chunk
+> via `/spec-feature`.
 
 ---
 
@@ -67,6 +68,11 @@ at the moment it's built — recorded then, not now.
   fuse; SHIP LOST → fresh-seed restart. The C2 practice range retired. Locked by
   `docs/specs/wave-director.md` (`design/wave-director.html` stays the visual reference).
 
-- **C4+ — not yet scoped.** Sonar + subs + depth charges (completes the three domains), hardpoint
-  purchase economy (the lull is its shop window), boss ladder + enemy naming (open thread #2),
-  meta-progression shop. Order TBD — see `DECISIONS.md` Build Timeline.
+- **C4 — Levels & tech tree (built 2026-07-08).** Persistent XP/levels (first save file), the
+  24-node tree (SEAMANSHIP/FLAK/GUNNERY/ORDNANCE + CLASSIFIED AIR WING), four marquee effects,
+  title hub + tree screen, dev test kit (debug builds). Locked by `docs/specs/tech-tree.md`
+  (`design/tech-tree.html` stays the loop/visual reference).
+
+- **C5+ — not yet scoped.** Sonar + subs + depth charges (completes the three domains), the
+  helicopter/AIR WING function (open thread #3), boss ladder + enemy naming (open thread #2).
+  Order TBD — see `DECISIONS.md` Build Timeline.

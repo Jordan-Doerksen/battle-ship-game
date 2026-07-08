@@ -4,6 +4,38 @@ Chunk log, newest first. Each chunk ships only after it passes the cross-check a
 
 ---
 
+## C4 — LEVELS & TECH TREE · 2026-07-08 · Built
+
+The war gets a career, implementing the owner's Change Request (fixed hulls/turrets; persistent
+levels replace the purchasable-hardpoint economy). Full pipeline: interview (8 decisions) →
+approved spec → interactive mockup (career loop + owner-requested DEV TEST KIT) → approval with one
+fix condition (muzzle-origin shells) → Godot port verified side-by-side.
+
+- **Meta:** `Profile` — the FIRST save file (`user://profile.cfg`: XP + unlocked nodes; app-layer
+  only, the sim never reads it). XP: kills by type (10/30/50) + wave-clear bonuses (25×wave), kept
+  on death; linear-ramp level curve; 1 tech point per level.
+- **Tech:** `TechConfig`/`tech.tres` (generated from `spec_defaults()` so code and resource cannot
+  drift) — 24 buyable nodes across SEAMANSHIP/FLAK/GUNNERY/ORDNANCE with strict in-branch order and
+  1/2/3-pt costs, plus the CLASSIFIED AIR WING (5 redacted, unbuyable nodes; open thread #3).
+  `Tech.apply` derives each sortie's `Configs` from DUPLICATED base resources + node mods —
+  baseline invariance is probe-gated (zero tech = byte-identical C3 behavior).
+- **Marquees (sim features behind default-off flags):** CRASH TURN (Movement: emergency-back at
+  speed arms a ×1.8 turn window on cooldown), INCENDIARY LOAD (aa20 hits ignite air enemies; burn
+  ticks in Enemies), PROXIMITY BURST (dp5 shells airburst near air targets with a small AoE),
+  FULL SALVO (mb16 fires both barrels per trigger, one spread draw).
+- **UI:** title hub (BEGIN SORTIE / TECH TREE, level + XP bar), tech-tree plotting board
+  (buy/respec/points, AIR WING stamp), wave-plate XP tally, lost-card XP report + LEVEL UP line +
+  `[T]` shortcut. Main owns the title/tree/game state machine; menus show open sea (no ghost hull).
+- **DEV TEST KIT (owner request; debug builds only, ` to toggle):** invulnerable, freeze waves,
+  god guns, spawn swarmer/gunboat/bomber/swarm×8, kill all, next wave, heal, max level. Sim
+  intercepts (`godmode`, `freeze_waves`) default off; spawns use non-sim RNG.
+- **Fixes:** shells spawn at the barrel MUZZLE (owner's approval condition — no more rounds rising
+  through the turret house; gunboats too), and the C3 fx dispatcher's silently-dropped
+  gunflash/shiphit/shipdeath draws now render (found at port).
+- **Verify:** `probe_tech.gd` — 9 checks (baseline invariance, derivation + modded-run determinism,
+  XP/level curve + wave bonus, all four marquees behaviorally, spend rules, profile roundtrip on a
+  probe-only path) — added to `verify.sh`. `ScreenshotC4` harness walks title → tree → sortie.
+
 ## C3 — WAVE DIRECTOR & FIRST ENEMIES · 2026-07-08 · Built
 
 It's a game: enemies attack, the hull takes damage, runs end and restart. Full pipeline again —

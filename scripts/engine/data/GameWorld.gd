@@ -31,6 +31,11 @@ var run_over: bool = false               # hull reached 0 — Main shows the car
 var wave: int = 0
 var wave_state: String = "lull"          # lull | fighting
 var lull_until: float = -1.0             # -1 = arm from first_wave_delay on the first step
+var xp_run: int = 0                      # XP earned this sortie (C4); Main banks it into the Profile
+var crash_until: float = -1.0            # CRASH TURN window end (marquee; Movement.gd)
+var crash_ready: float = 0.0             # CRASH TURN cooldown gate
+var godmode: bool = false                # DEV test kit only (debug builds); guards Hull.damage
+var freeze_waves: bool = false           # DEV test kit only (debug builds); pauses the director
 
 func _init(seed_val: int) -> void:
 	world_seed = seed_val

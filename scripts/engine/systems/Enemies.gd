@@ -12,6 +12,13 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 		var def: EnemyDef = cfg.enemies.by_id(e.type_id)
 		if def == null:
 			continue
+		# INCENDIARY LOAD (C4): burn ticks laid by aa20 hits
+		if e.burn_left > 0 and world.elapsed >= e.next_burn:
+			e.burn_left -= 1
+			e.next_burn = world.elapsed + 1.0
+			Projectiles.damage_enemy(world, e, cfg.tech.burn_dmg, cfg)
+			if not e.active:
+				continue
 		var dist_ship: float = e.pos.distance_to(world.ship_pos)
 		var desired: float
 		if def.standoff > 0.0:   # gunboat: approach, then orbit
@@ -28,7 +35,7 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 				var aim: Vector2 = world.ship_pos + world.ship_vel * flight * def.lead
 				var ang: float = _angle_to(e.pos, aim) + (world.rng.nextf() * 2.0 - 1.0) * def.spread
 				var p: Projectile = world.projectiles.obtain()
-				p.pos = e.pos
+				p.pos = e.pos + Vector2(sin(ang), -cos(ang)) * 14.0   # deck-gun muzzle, not hull center
 				p.vel = Vector2(sin(ang), -cos(ang)) * def.shell_speed
 				p.dmg = def.shell_dmg
 				p.splash = 0.0

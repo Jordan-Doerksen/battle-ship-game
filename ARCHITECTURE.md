@@ -7,13 +7,16 @@
 A deterministic, fixed-timestep (60 Hz) **naval wave-survival roguelite** in Godot 4.7. The **simulation
 owns all truth** as pooled data seeded by one RNG stream; the **renderer only reads it** (one-way, never
 writes back). Unlike fulfillment, turret/hardpoint art renders **on the hull itself** (DECISIONS D1.5) —
-the hull's visible hardpoint layout is the point of the game. Built so far: C0 heartbeat, C1 naval
-movement (`docs/specs/naval-movement.md`), C2 hardpoint hull (traversing auto-turrets + force-fire,
-LOOK-LOCKED — `docs/specs/hardpoint-hull.md`), C3 wave director (budget-director waves, three enemy
-types, hull pips, radar fire-control, run loop — `docs/specs/wave-director.md`). It plays.
+the hull's visible turret layout is the ship's identity. Built so far: C0 heartbeat, C1 naval
+movement, C2 hardpoint hull (LOOK-LOCKED), C3 wave director (waves, enemies, hull pips, radar,
+run loop), C4 levels & tech tree (persistent career, config-derivation upgrades, marquee effects,
+title/tree screens — `docs/specs/tech-tree.md`). It plays, and it remembers you between runs.
 
 ## Core Flow
 ```text
+Title / Tech Tree (Main's state machine)    ← Profile (user://profile.cfg: XP, levels, unlocks)
+        ↓  BEGIN SORTIE: cfgs = Tech.apply(base .tres values, unlocked)   ← the meta layer only
+        ↓                                                                    ever DERIVES config
 Input (keys / mouse→world-space)  →  InputState   (Main writes it pre-step; sim only reads it)
         ↓
 Sim.step(world, dt, cfgs: Configs)          ← fixed 60 Hz, ONLY randomness = world.rng
@@ -38,14 +41,14 @@ hardcoded (DECISIONS Non-Negotiable Constraints).
 
 | Domain | Purpose | Entry Point | Config | Notes |
 |--------|---------|-------------|--------|-------|
-| app | root scene + loop plumbing (fixed-step accumulator, wiring) | `scripts/app/Main.gd` + `scenes/Main.tscn` | — | thin; owns nothing gameplay |
+| app | root scene, loop plumbing, state machine, meta layer | `scripts/app/Main.gd` + `scenes/Main.tscn` | — | `Profile` (save file), `Tech` (config derivation + spend rules); owns no gameplay |
 | engine (sim) | the deterministic step root | `scripts/engine/Sim.gd` | `config/sim.tres` (clock only) | fixed-step; calls systems in a locked order (Movement first) |
 | engine/data | the world truth object + input snapshot + config bundle | `scripts/engine/data/` | `config/*.tres` (one small file per system — see DECISIONS Non-Negotiable Constraints) | `GameWorld`, `InputState`, `Configs` |
 | engine/systems | sim systems — static funcs that mutate `GameWorld` | `scripts/engine/systems/` | each reads its own config | `Movement` (C1); `Turrets`/`Projectiles` (C2: `hardpoint`/`weapons.tres`); `Waves`/`Enemies`/`Hull` (C3: `waves`/`enemies.tres`) |
 | engine/entities | plain pooled data classes | `scripts/engine/entities/` | — | `Enemy`, `Projectile` (pooled), `Mount` — data only, no engine coupling |
 | engine/util | determinism primitives | `scripts/engine/util/` | — | `Rng`, `Pool` (feeds projectiles) |
 | render | draw the world (hybrid), read-only | `scripts/render/FieldRenderer.gd` | `config/field.tres` (sea/wake cosmetics) | one-way sim → view; turret art ON the hull per D1.5, LOOK-LOCKED to mockup rev 3; `patina.gdshader` |
-| ui | screens + HUD | `scripts/ui/HelmGauges.gd` | — | gauges, hull pips, wave plate, radar scope (fire-control), reticle, SHIP LOST card |
+| ui | screens + HUD | `scripts/ui/` | — | `HelmGauges` (gauges/pips/wave plate/radar/reticle/lost card), `TitleScreen`, `TechTreeScreen`, `DevKit` (debug builds only) |
 | config | typed tunables | `config/*.tres` | — | `Resource` subclasses |
 | design | approved HTML mockups = the visual spec | `design/` | — | mock → approve → port |
 

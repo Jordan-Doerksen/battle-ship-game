@@ -1,5 +1,5 @@
 # Decisions Manifest — Earth Defense Force (working title)
-**Started:** 2026-07-08  ·  **Last Updated:** 2026-07-08  ·  **Status:** C3 Wave Director BUILT — it's a game (C0–C2 also 2026-07-08)
+**Started:** 2026-07-08  ·  **Last Updated:** 2026-07-08  ·  **Status:** C4 Levels & Tech Tree BUILT — it's a career (C0–C3 also 2026-07-08)
 
 > The single source of truth, written *for the next agent* — not a doc anyone maintains by hand.
 > Every future agent consults this before an architectural/behavioral change. Never silently rewrite
@@ -193,13 +193,28 @@ treated as locked:
   proximity fuse), and ported: seeded budget director, swarmer/gunboat/bomber roster, hull pips +
   grace, SHIP LOST card + fresh-seed restart, radar fire-control. The C2 practice range retired.
   Spec: `docs/specs/wave-director.md`.
-- **C4+ — not yet scoped.** Sonar + subs + depth charges (completes the three domains), hardpoint
-  purchase economy, boss ladder — each needs its own `/spec-feature` interview before
-  implementation, per this repo's `CLAUDE.md`.
+- **C4 — Levels & tech tree (built 2026-07-08).** The Change Request made real: persistent XP/levels
+  (first save file, `user://profile.cfg`), the 24-node tree + CLASSIFIED AIR WING, four marquee
+  effects, title hub + tree screen, dev test kit (debug builds only). Spec: `docs/specs/tech-tree.md`.
+- **C5+ — not yet scoped.** Sonar + subs + depth charges (completes the three domains), the
+  helicopter/AIR WING function (open thread #3), boss ladder + naming (open thread #2) — each needs
+  its own `/spec-feature` interview before implementation, per this repo's `CLAUDE.md`.
 
 ---
 
 ## Change Log
+- **2026-07-08 — C4 Levels & Tech Tree built; the Change Request is real.** Persistent career:
+  `Profile` (the FIRST save file, `user://profile.cfg` — strictly app-layer, the sim never reads
+  it), `Tech.apply` deriving each sortie's `Configs` from duplicated `.tres` values + unlocked
+  nodes (baseline invariance probe-gated: zero tech = byte-identical C3), `ProgressConfig` XP/level
+  curve, `TechConfig`/`tech.tres` (generated from `spec_defaults()` for parity), the four marquee
+  sim features behind default-off flags (CRASH TURN in Movement, INCENDIARY burn in Enemies,
+  PROXIMITY BURST in Projectiles, FULL SALVO in Turrets), title hub + tech-tree screen + lost-card
+  XP report, and the DEV TEST KIT (owner request) gated behind `OS.is_debug_build()`. Owner's
+  approval fix: shells spawn at the barrel MUZZLE (L 35 / M 22 / S 13 u; gunboats +14) — applied to
+  sim + mockups. Also fixed at port: the C3 fx dispatcher had silently dropped
+  gunflash/shiphit/shipdeath draws (render-only gap; now complete incl. the C4 effects).
+  `probe_tech` (9 checks) added to the gate.
 - **2026-07-08 — CHANGE REQUEST (owner): tech-tree progression replaces the hardpoint purchase
   economy.** Owner directive, verbatim intent: ships have SET hulls and turrets; the upgrade path is
   persistent LEVELS gained across runs, unlocking a TECH TREE of upgrades and effects — many

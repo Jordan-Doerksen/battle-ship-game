@@ -16,7 +16,7 @@ static func dist_to_hull(world: GameWorld, p: Vector2) -> float:
 	return p.distance_to(a + ab * t)
 
 static func damage(world: GameWorld, dmg: int, cfg: Configs) -> void:
-	if world.run_over or world.elapsed < world.grace_until:
+	if world.run_over or world.elapsed < world.grace_until or world.godmode:   # godmode: DEV kit only
 		return
 	world.hull -= dmg
 	world.grace_until = world.elapsed + cfg.waves.grace_secs

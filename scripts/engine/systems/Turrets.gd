@@ -49,18 +49,29 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 			m.cool = 1.0 / wpn.rate
 			var shot_ang: float = m.ang + (world.rng.nextf() * 2.0 - 1.0) * (wpn.spread + m.bloom)
 			m.bloom = minf(wpn.bloom_max, m.bloom + wpn.bloom_add)
-			var p: Projectile = world.projectiles.obtain()
-			p.pos = mpos
-			p.vel = Vector2(sin(shot_ang), -cos(shot_ang)) * wpn.speed
-			p.dmg = wpn.dmg
-			p.splash = wpn.splash
-			p.hostile = false
-			p.wid = wpn.id
-			p.life = wpn.range_u / wpn.speed
-			# AUTO splash shells burst at their computed intercept; FORCED ones fly full range (rev 2)
-			if wpn.splash > 0.0 and not forced:
-				p.life = minf(mpos.distance_to(aim), wpn.range_u) / wpn.speed
+			if wpn.id == "mb16" and cfg.tech.salvo:   # FULL SALVO (C4 marquee): both barrels, one draw
+				_fire(world, mpos, m.ang, shot_ang - cfg.tech.salvo_offset, wpn, aim, forced, size)
+				_fire(world, mpos, m.ang, shot_ang + cfg.tech.salvo_offset, wpn, aim, forced, size)
+			else:
+				_fire(world, mpos, m.ang, shot_ang, wpn, aim, forced, size)
 			world.effects.append({ "type": "muzzle", "idx": i, "pos": mpos, "ang": m.ang, "size": size })
+
+const MUZZLE := { "L": 35.0, "M": 22.0, "S": 13.0 }   # barrel-tip offsets — shells never spawn in the house
+
+static func _fire(world: GameWorld, mpos: Vector2, barrel_ang: float, shot_ang: float,
+		wpn: WeaponDef, aim: Vector2, forced: bool, size: String) -> void:
+	var origin: Vector2 = mpos + Vector2(sin(barrel_ang), -cos(barrel_ang)) * MUZZLE[size]
+	var p: Projectile = world.projectiles.obtain()
+	p.pos = origin
+	p.vel = Vector2(sin(shot_ang), -cos(shot_ang)) * wpn.speed
+	p.dmg = wpn.dmg
+	p.splash = wpn.splash
+	p.hostile = false
+	p.wid = wpn.id
+	p.life = wpn.range_u / wpn.speed
+	# AUTO splash shells burst at their computed intercept; FORCED ones fly full range (C3 rev 2)
+	if wpn.splash > 0.0 and not forced:
+		p.life = minf(origin.distance_to(aim), wpn.range_u) / wpn.speed
 
 static func mount_world(world: GameWorld, local: Vector2) -> Vector2:
 	return world.ship_pos + local.rotated(world.ship_heading)

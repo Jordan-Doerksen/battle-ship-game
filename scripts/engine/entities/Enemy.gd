@@ -12,3 +12,5 @@ var heading: float = 0.0       # radians, heading space (0 = north)
 var hp: int = 1
 var hp_max: int = 1
 var cool: float = 0.0          # gunboat fire cooldown
+var burn_left: int = 0         # INCENDIARY LOAD ticks remaining (C4 marquee)
+var next_burn: float = 0.0     # sim time of the next burn tick

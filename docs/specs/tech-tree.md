@@ -1,7 +1,9 @@
 # Spec — C4: Levels & Tech Tree
 
 **Status:** APPROVED 2026-07-08 (owner) · Interviewed 2026-07-08 · Mockup APPROVED 2026-07-08
-(owner, with the dev test kit and one fix condition) · Not built
+(owner, with the dev test kit and one fix condition) · BUILT — ported to Godot 2026-07-08
+(probe_tech green: 9 checks incl. baseline invariance and all four marquees; look verified by
+side-by-side Xvfb screenshots; dev kit gated behind OS.is_debug_build())
 **Gate fix (owner condition at approval):** shells must spawn at the barrel MUZZLE (per-size tip
 offset — L 35 / M 22 / S 13 u; gunboats +14 u), never at the mount center where they visibly rose
 from behind the turret house and passed through it. Fixed in the mockup at approval; the port
