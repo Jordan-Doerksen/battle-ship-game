@@ -94,6 +94,11 @@ firing, drifting air/surface drones with kills and respawns, LMB/RMB hold force-
 reticle, and a tuning drawer for the weapon/range tables. Owner judges by hand — especially traverse
 feel (decision #2) and the two force-fire orders — then approves; then it ports.
 
+**Gate revision (owner, 2026-07-08):** first cut approved on feel ("love the feel") but the hull was
+too small for its turrets. Hull upscaled ×1.7 (~150 u overall) with the mount plan re-laid for real
+deck room; the C2 port must carry this hull scale into `FieldRenderer` (C1's silhouette proportions,
+new size — wake stern offset and deck furniture scale with it).
+
 ## Determinism notes
 
 - Drone spawns/drift and per-shot spread are **gameplay randomness → `world.rng`**, drawn in stable

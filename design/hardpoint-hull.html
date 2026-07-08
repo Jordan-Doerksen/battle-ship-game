@@ -186,13 +186,13 @@ const DEFAULT_CFG = {
     dp5:  { size: "M", name: "SENTINEL 5-IN",  domains: ["air", "surface"], policy: "CLOSE",  range: 560, rate: 1.2,  traverse: 2.2, dmg: 2, speed: 620, spread: 0.02,  splash: 0 },
     mb16: { size: "L", name: "JUDGEMENT 16-IN", domains: ["surface"],       policy: "STRONG", range: 900, rate: 0.33, traverse: 0.9, dmg: 4, speed: 420, spread: 0.012, splash: 36 },
   },
-  mounts: [   // == config/hardpoint.tres — 6S/4M/2L, hull-local (bow = −y); helipad (0,27) kept clear
-    { x: 0,    y: -27, size: "L" }, { x: 0,    y: 13,  size: "L" },
-    { x: -8,   y: -10, size: "M" }, { x: 8,    y: -10, size: "M" },
-    { x: -8,   y: 4,   size: "M" }, { x: 8,    y: 4,   size: "M" },
-    { x: -6.5, y: -18, size: "S" }, { x: 6.5,  y: -18, size: "S" },
-    { x: -6.5, y: -4,  size: "S" }, { x: 6.5,  y: -4,  size: "S" },
-    { x: -6.5, y: 10,  size: "S" }, { x: 6.5,  y: 10,  size: "S" },
+  mounts: [   // == config/hardpoint.tres — 6S/4M/2L, hull-local (bow = −y, ~150u hull); helipad (0,46) kept clear
+    { x: 0,   y: -46, size: "L" }, { x: 0,   y: 22,  size: "L" },   // centerline fore/aft
+    { x: -14, y: -17, size: "M" }, { x: 14,  y: -17, size: "M" },   // beam, flanking the superstructure
+    { x: -14, y: 9,   size: "M" }, { x: 14,  y: 9,   size: "M" },
+    { x: -11, y: -31, size: "S" }, { x: 11,  y: -31, size: "S" },   // sponson pairs fore / mid / quarter
+    { x: -14, y: -4,  size: "S" }, { x: 14,  y: -4,  size: "S" },
+    { x: -10, y: 36,  size: "S" }, { x: 10,  y: 36,  size: "S" },
   ],
   loadout: { S: "aa20", M: "dp5", L: "mb16" },   // fixed C2 test loadout: fill by size class
   aim_tol: 0.06,                                  // rad — barrel alignment tolerance to fire
@@ -360,7 +360,7 @@ function stepProjectiles(sim, cfg, dt) {
     } else {
       for (const d of sim.drones) {
         if (!d.active) continue;
-        const hitR = d.layer === "air" ? 7 : 10;
+        const hitR = d.layer === "air" ? 8 : 12;
         if (Math.hypot(d.x - p.x, d.y - p.y) <= hitR) { damageDrone(sim, d, p.dmg, cfg); dead = true; break; }
       }
     }
@@ -470,7 +470,7 @@ function emitWake() {
   const braking = input.thrust < 0 && sim.ship.along > 5;
   if (speed < 6 && !braking) return;
   const f = dirOf(sim.ship.heading);
-  wake.push({ x: sim.ship.x - f.x * 42, y: sim.ship.y - f.y * 42, t: sim.t,
+  wake.push({ x: sim.ship.x - f.x * 72, y: sim.ship.y - f.y * 72, t: sim.t,
               w: Math.min(1, speed / cfg.move.max_speed_ahead) + (braking ? 0.7 : 0) });
   if (wake.length > 700) wake.shift();
 }
@@ -493,15 +493,15 @@ function drawDrones() {
     if (d.layer === "air") {   // pale winged delta
       ctx.rotate(va);
       ctx.fillStyle = "rgba(228,240,242,0.85)";
-      ctx.beginPath(); ctx.moveTo(0, -7); ctx.lineTo(6, 5); ctx.lineTo(0, 2); ctx.lineTo(-6, 5); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(0, -9); ctx.lineTo(8, 6); ctx.lineTo(0, 2.5); ctx.lineTo(-8, 6); ctx.closePath(); ctx.fill();
     } else {                    // dark raft with foam edge + hp pips
       ctx.rotate(va);
       ctx.fillStyle = "#2E3E45";
-      ctx.fillRect(-7, -9, 14, 18);
-      ctx.strokeStyle = "rgba(228,240,242,0.4)"; ctx.lineWidth = 1; ctx.strokeRect(-7, -9, 14, 18);
+      ctx.fillRect(-9, -12, 18, 24);
+      ctx.strokeStyle = "rgba(228,240,242,0.4)"; ctx.lineWidth = 1; ctx.strokeRect(-9, -12, 18, 24);
       ctx.rotate(-va);
       ctx.fillStyle = "rgba(228,240,242,0.7)";
-      for (let i = 0; i < d.hp; i++) ctx.fillRect(-6 + i * 5, 12, 3, 2);
+      for (let i = 0; i < d.hp; i++) ctx.fillRect(-8 + i * 6, 15, 4, 2.5);
     }
     ctx.restore();
   }
@@ -523,7 +523,8 @@ function drawProjectiles() {
   }
 }
 
-const HULL_PTS = (() => {   // C1 silhouette, unchanged
+const HULL_SCALE = 1.7;   // owner feedback at the C2 gate: bigger hull, real deck room for mounts
+const HULL_PTS = (() => {  // C1 silhouette proportions at the new scale (~150u overall)
   const pts = [[0, -50]];
   const quad = (p0, c, p1, n) => { for (let i = 1; i <= n; i++) { const t = i / n;
     const ax = p0[0] + (c[0] - p0[0]) * t, ay = p0[1] + (c[1] - p0[1]) * t;
@@ -533,9 +534,9 @@ const HULL_PTS = (() => {   // C1 silhouette, unchanged
   quad([10, 20], [10, 32], [6, 35], 6); quad([6, 35], [0, 38], [-6, 35], 6);
   quad([-6, 35], [-10, 32], [-10, 20], 6); pts.push([-9.5, -24]);
   quad([-9.5, -24], [-8, -38], [0, -50], 8);
-  return pts;
+  return pts.map(([x, y]) => [x * HULL_SCALE, y * HULL_SCALE]);
 })();
-const MOUNT_ART = { L: { base: 5, barrel: 11, w: 2.6 }, M: { base: 3.5, barrel: 8, w: 1.8 }, S: { base: 2.5, barrel: 5.5, w: 1.2 } };
+const MOUNT_ART = { L: { base: 8, barrel: 18, w: 4 }, M: { base: 5.5, barrel: 13, w: 2.8 }, S: { base: 3.8, barrel: 8, w: 1.8 } };
 
 function drawHull() {
   ctx.save();
@@ -549,9 +550,10 @@ function drawHull() {
   ctx.strokeStyle = `rgba(228,240,242,${Math.min(0.55, 0.12 + speed / cfg.move.max_speed_ahead * 0.5)})`;
   ctx.lineWidth = 1.2; ctx.stroke();
   ctx.fillStyle = "#5A707A";
-  ctx.fillRect(-5.5, -13, 11, 17); ctx.fillRect(-3.5, -18, 7, 5);
+  ctx.fillRect(-9.5, -22, 19, 29); ctx.fillRect(-6, -31, 12, 9);      // superstructure + bridge
   ctx.strokeStyle = "#93A7AE"; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.arc(0, 27, 6, 0, Math.PI * 2); ctx.stroke();   // helipad stays clear
+  ctx.beginPath(); ctx.arc(0, 46, 10, 0, Math.PI * 2); ctx.stroke();  // helipad stays clear
+  ctx.moveTo(-6, 46); ctx.lineTo(6, 46); ctx.stroke();                // pad marking
   ctx.restore();
   // mounts — bases rotate with the hull, barrels hold their WORLD angle (turrets track, D1.5 art on hull)
   for (let i = 0; i < cfg.mounts.length; i++) {
