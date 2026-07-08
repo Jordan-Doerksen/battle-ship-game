@@ -416,7 +416,9 @@ function stepTurrets(sim, inp, cfg, dt) {
       const dir = dirOf(shotAng);
       const p = { x: mpos.x, y: mpos.y, vx: dir.x * wpn.speed, vy: dir.y * wpn.speed,
         dmg: wpn.dmg, splash: wpn.splash, life: wpn.range / wpn.speed, wid: cfg.loadout[mcfg.size], hostile: false };
-      if (wpn.splash > 0) p.life = Math.min(Math.hypot(aim.x - mpos.x, aim.y - mpos.y), wpn.range) / wpn.speed;
+      // gate rev 2: AUTO splash shells burst at their computed intercept; FORCED ones fly the full
+      // range along the cursor bearing (the cursor sets bearing, not burst point — radar aims them)
+      if (wpn.splash > 0 && !forced) p.life = Math.min(Math.hypot(aim.x - mpos.x, aim.y - mpos.y), wpn.range) / wpn.speed;
       sim.projectiles.push(p);
       sim.effects.push({ type: "muzzle", idx: i, x: mpos.x, y: mpos.y, ang: m.ang, size: mcfg.size });
     }
@@ -446,6 +448,14 @@ function stepProjectiles(sim, cfg, dt) {
         dead = true;
       }
     } else if (p.splash > 0) {
+      if (!dead) {   // proximity fuse (gate rev 2): detonate on a close flyby of a surface enemy
+        for (const e of sim.enemies) {
+          if (e.active && e.layer === "surf" && Math.hypot(e.x - p.x, e.y - p.y) <= cfg.enemies[e.type].radius + 4) {
+            dead = true;
+            break;
+          }
+        }
+      }
       if (dead) {
         sim.effects.push({ type: "splash", x: p.x, y: p.y, r: p.splash });
         for (const e of sim.enemies)
@@ -846,6 +856,20 @@ function drawRadar() {
   ctx.strokeStyle = "rgba(205,186,142,0.3)";
   ctx.beginPath(); ctx.moveTo(cx, cy);
   ctx.lineTo(cx + Math.sin(sw) * R, cy - Math.cos(sw) * R); ctx.stroke();
+  // fire-control bearing (gate rev 2): while an order is held, show the live cursor bearing so the
+  // main battery can be laid on blips beyond the screen
+  if (orderLabel() && !sim.run_over) {
+    const ba = angleTo(sim.ship, { x: input.aimX, y: input.aimY });
+    const bd = dirOf(ba);
+    const mbR = cfg.weapons.mb16.range * k;
+    ctx.strokeStyle = "rgba(217,79,43,0.7)";
+    ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + bd.x * mbR, cy + bd.y * mbR); ctx.stroke();
+    ctx.strokeStyle = "rgba(217,79,43,0.3)";
+    ctx.beginPath(); ctx.moveTo(cx + bd.x * mbR, cy + bd.y * mbR); ctx.lineTo(cx + bd.x * R, cy + bd.y * R); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx + bd.x * mbR, cy + bd.y * mbR, 2.6, 0, TAU);
+    ctx.strokeStyle = "rgba(217,79,43,0.9)"; ctx.stroke();
+  }
   // clip blips to the scope
   ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.clip();
   for (const e of sim.enemies) {

@@ -47,6 +47,21 @@ budget. When the hull gives out, the run ends on a card and a fresh seed starts.
   later gates SUB blips by detection radius — air/surface blips are free, as here. Render-side
   one-way read; scope range lives in config (`radar_range`, future sonar config's neighbor).
 
+## Gate revision 2 (owner, 2026-07-08 — at the mockup): over-the-horizon main battery
+
+The hull's screen size vs the main battery's 900 u reach meant force-fired `mb16` shells burst at
+the cursor — which can only express ~a screen's worth of distance — so the big guns couldn't touch
+radar contacts beyond the view. Owner call: **the cursor sets the bearing, not the burst point.**
+- **Forced `mb16` shells fly their full range** along the cursor bearing and burst at the end —
+  auto-fire keeps bursting at its computed intercept point.
+- **Proximity fuse** (all `mb16` shells, auto + forced): a shell passing within a few units of a
+  surface enemy detonates on the flyby, so radar-bearing shots at unseen contacts pay off.
+- **Radar fire-control line:** while any force order is held, the scope draws the live cursor
+  bearing from your ship out past the main-battery range ring — line the bearing up with a blip,
+  hold RMB, and Judgement reaches over the horizon.
+Trade accepted with the owner's eyes open: near-point empty-water area denial is gone (rounds
+overfly to max range); with the fuse, shelling anything real still works at any distance.
+
 ## Player-facing behavior
 
 - A run starts at **WAVE 1**: a small formation of swarmers appears at long range and bores in. The
