@@ -115,6 +115,21 @@ Two-part mockup, one page: `design/tech-tree.html` —
 Owner judges the loop (earn → level → spend → feel it next sortie), tree readability, and each
 marquee; approves; then it ports. C2/C3 look stays LOOK-LOCKED.
 
+## Dev test kit (added 2026-07-08, owner request)
+
+A debug overlay for hands-on tuning — in the mockup, toggled with the `` ` `` key; the Godot port
+carries it as a debug-build-only overlay (never in a shipped build). Controls: INVULNERABLE (hull
+takes no damage), FREEZE WAVES (director paused; manual spawns still live), GOD GUNS (×20 dmg / ×2.5
+rate), + SWARMER / + GUNBOAT / + BOMBER / SWARM ×8 (spawn at a random bearing ~650–1000 u), KILL
+ALL, NEXT WAVE, HEAL HULL, MAX LEVEL (grant XP to L41 for testing the whole tree).
+
+**Determinism discipline:** the two intercepts that live in the sim — `godmode` (guards
+`damageShip`) and `freeze_waves` (guards the director) — are flags that DEFAULT OFF; a run that never
+enables them is byte-identical to a normal run, and the acceptance harness (which never sets them)
+stays green. Spawn bearings use a NON-sim RNG (never `world.rng`), so an untouched run's draw stream
+is unchanged. Enabling any cheat obviously voids same-seed reproducibility for that run — that's the
+point. In the port these gate behind `OS.is_debug_build()`.
+
 ## Determinism notes
 
 - The tree changes CONFIG VALUES before the sim starts, never sim state mid-run. Same seed + same

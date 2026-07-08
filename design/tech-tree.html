@@ -146,6 +146,26 @@
   #lost-xp { font-family: var(--mono); font-size: 13px; color: var(--brass); margin-top: 8px; letter-spacing: 0.1em; }
   #lost-xp b { color: var(--signal-red); }
   #lost-btns { margin-top: 20px; display: flex; gap: 14px; justify-content: center; }
+
+  /* ── dev test kit ── */
+  #dev-panel {
+    position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+    z-index: 8; display: none; flex-direction: column; gap: 6px;
+    background: rgba(6,18,24,0.94); border: 1px solid #6f5bd6; padding: 9px 12px;
+    box-shadow: 0 0 18px rgba(111,91,214,0.3);
+  }
+  #dev-panel.on { display: flex; }
+  .dev-title { font-size: 10px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #b7a8f0; }
+  .dev-hint { color: #6b6a7e; letter-spacing: 0.1em; margin-left: 8px; }
+  .dev-row { display: flex; gap: 6px; }
+  .dev-btn {
+    font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--brass); background: rgba(228,240,242,0.04);
+    border: 1px solid var(--brass-dim); padding: 5px 9px; cursor: pointer; white-space: nowrap;
+  }
+  .dev-btn:hover { border-color: var(--brass); color: var(--foam); }
+  .dev-btn.tog.active { background: #6f5bd6; border-color: #8a78e8; color: #fff; }
+  .dev-btn:focus-visible { outline: 2px solid #8a78e8; outline-offset: 2px; }
 </style>
 
 <canvas id="sea"></canvas>
@@ -220,6 +240,28 @@
     <span class="sub" id="hdg">HDG 000°</span>
   </div>
 </section>
+
+<!-- ── DEV TEST KIT (mockup only; toggle with the ` key) ── -->
+<div id="dev-panel">
+  <div class="dev-title">◆ TEST KIT <span class="dev-hint">` to hide</span></div>
+  <div class="dev-row">
+    <button class="dev-btn tog" id="dev-invuln">INVULNERABLE</button>
+    <button class="dev-btn tog" id="dev-freeze">FREEZE WAVES</button>
+    <button class="dev-btn tog" id="dev-godguns">GOD GUNS</button>
+  </div>
+  <div class="dev-row">
+    <button class="dev-btn" id="dev-swarmer">+ SWARMER</button>
+    <button class="dev-btn" id="dev-gunboat">+ GUNBOAT</button>
+    <button class="dev-btn" id="dev-bomber">+ BOMBER</button>
+    <button class="dev-btn" id="dev-swarm">SWARM ×8</button>
+  </div>
+  <div class="dev-row">
+    <button class="dev-btn" id="dev-killall">KILL ALL</button>
+    <button class="dev-btn" id="dev-next">NEXT WAVE</button>
+    <button class="dev-btn" id="dev-heal">HEAL HULL</button>
+    <button class="dev-btn" id="dev-maxlvl">MAX LEVEL</button>
+  </div>
+</div>
 
 <div id="lost-overlay">
   <div id="lost-card">
@@ -382,6 +424,7 @@ function makeSim(seed, cfg) {
     hull: cfg.waves.hull_pips, grace_until: 0, run_over: false,
     wave: 0, wave_state: "lull", lull_until: cfg.waves.first_wave_delay,
     crash_until: -1, crash_ready: 0,
+    godmode: false, freeze_waves: false,   // DEV test-kit flags — default OFF (harness never sets them)
   };
 }
 function draw(sim) { sim.rngCalls++; return sim.rand(); }
@@ -433,7 +476,7 @@ function stepCrashTurn(sim, inp, cfg) {
 }
 
 function damageShip(sim, dmg, cfg) {
-  if (sim.run_over || sim.t < sim.grace_until) return;
+  if (sim.run_over || sim.t < sim.grace_until || sim.godmode) return;   // godmode: DEV invulnerability
   sim.hull -= dmg;
   sim.grace_until = sim.t + cfg.waves.grace_secs;
   sim.effects.push({ type: "shiphit", x: sim.ship.x, y: sim.ship.y });
@@ -472,6 +515,7 @@ function spawnWave(sim, cfg) {
   }
 }
 function stepWaves(sim, cfg, dt) {
+  if (sim.freeze_waves) return;   // DEV: pause the director (manual spawns still live/attack)
   if (sim.wave_state === "lull") {
     if (sim.t >= sim.lull_until) {
       sim.wave += 1;
@@ -716,11 +760,13 @@ function refreshTitle() {
 }
 function startSortie() {
   cfg = applyTech(baseCfg, profile.unlocked);   // tech derives config BEFORE the run (determinism)
+  if (godGuns) for (const w of Object.values(cfg.weapons)) { w.dmg *= 20; w.rate *= 2.5; }   // DEV
   sortie++;
   sim = makeSim((0xC4C4 + sortie * 0x9E37) >>> 0, cfg);
   fx.length = 0;
   wake.length = 0;
   buildPips();
+  devToggle("dev-invuln", false); devToggle("dev-freeze", false);   // fresh sim = cheats reset
   show("game");
 }
 function endSortie() {   // bank the run's XP into the profile
@@ -801,7 +847,7 @@ addEventListener("blur", () => { held.clear(); lmb = false; rmb = false; mmb = f
 addEventListener("contextmenu", (e) => { if (screenState === "game") e.preventDefault(); });
 addEventListener("mousemove", (e) => { mouseX = e.clientX; mouseY = e.clientY; });
 addEventListener("mousedown", (e) => {
-  if (screenState !== "game" || e.target.closest("#lost-overlay")) return;
+  if (screenState !== "game" || e.target.closest("#lost-overlay") || e.target.closest("#dev-panel")) return;
   if (e.button === 0) lmb = true;
   if (e.button === 1) { mmb = true; e.preventDefault(); }
   if (e.button === 2) rmb = true;
@@ -822,6 +868,56 @@ function pollInput() {
   input.aimX = sim.ship.x + (mouseX - W / 2) / ZOOM;
   input.aimY = sim.ship.y + (mouseY - H / 2) / ZOOM;
 }
+
+/* ── DEV TEST KIT (mockup only). Uses Math.random for spawn bearings — NEVER the sim stream, so a
+   run with the kit untouched stays byte-identical/deterministic. God-guns is a render-time config
+   override rebuilt each sortie. Enabling any cheat obviously breaks same-seed reproducibility. ── */
+let godGuns = false;
+function devActive() { return sim && screenState === "game" && !sim.run_over; }
+function devSpawn(type, n) {
+  if (!devActive()) return;
+  for (let i = 0; i < (n || 1); i++) {
+    const e = makeEnemy(type, cfg);
+    const ang = Math.random() * TAU;
+    const dist = 650 + Math.random() * 350;
+    e.x = sim.ship.x + Math.sin(ang) * dist;
+    e.y = sim.ship.y - Math.cos(ang) * dist;
+    e.heading = angleTo(e, sim.ship);
+    sim.enemies.push(e);
+  }
+  if (sim.wave_state === "lull") sim.wave_state = "fighting";   // treat manual spawns as the live wave
+}
+function devToggle(btn, on) { $(btn).classList.toggle("active", on); }
+$("dev-invuln").addEventListener("click", () => { if (sim) { sim.godmode = !sim.godmode; devToggle("dev-invuln", sim.godmode); } });
+$("dev-freeze").addEventListener("click", () => { if (sim) { sim.freeze_waves = !sim.freeze_waves; devToggle("dev-freeze", sim.freeze_waves); } });
+$("dev-godguns").addEventListener("click", () => {
+  godGuns = !godGuns; devToggle("dev-godguns", godGuns);
+  cfg = applyTech(baseCfg, profile.unlocked);
+  if (godGuns) for (const w of Object.values(cfg.weapons)) { w.dmg *= 20; w.rate *= 2.5; }   // shred everything
+});
+$("dev-swarmer").addEventListener("click", () => devSpawn("swarmer", 1));
+$("dev-gunboat").addEventListener("click", () => devSpawn("gunboat", 1));
+$("dev-bomber").addEventListener("click", () => devSpawn("bomber", 1));
+$("dev-swarm").addEventListener("click", () => devSpawn("swarmer", 8));
+$("dev-killall").addEventListener("click", () => { if (devActive()) sim.enemies.forEach((e) => { e.active = false; }); });
+$("dev-next").addEventListener("click", () => {
+  if (!devActive()) return;
+  sim.enemies.forEach((e) => { e.active = false; });
+  sim.wave_state = "lull"; sim.lull_until = sim.t;   // fire the next wave next tick (unfreeze if frozen)
+  sim.freeze_waves = false; devToggle("dev-freeze", false);
+});
+$("dev-heal").addEventListener("click", () => { if (devActive()) sim.hull = cfg.waves.hull_pips; });
+$("dev-maxlvl").addEventListener("click", () => {
+  let xp = 0;
+  for (let n = 1; n < 41; n++) xp += PC.level_xp_base + PC.level_xp_step * (n - 1);   // reach level 41
+  profile.xp = Math.max(profile.xp, xp);
+  saveProfile();
+  if (screenState === "tree") renderTree(); else refreshTitle();
+});
+// panel visibility: ` (Backquote) toggles anytime; keep god-guns rebuild in sync when a sortie starts
+addEventListener("keydown", (e) => {
+  if (e.code === "Backquote") { e.preventDefault(); $("dev-panel").classList.toggle("on"); }
+});
 
 /* ── render (C3 look, LOOK-LOCKED; new fx: ignite trail, airburst, crash-turn wash) ── */
 const canvas = $("sea");
