@@ -12,4 +12,5 @@ var vel: Vector2 = Vector2.ZERO
 var dmg: int = 1
 var splash: float = 0.0
 var life: float = 0.0
-var wid: String = ""           # weapon id, render reads it for tracer style
+var wid: String = ""           # weapon id ("hostile" for enemy shells), render reads it for style
+var hostile: bool = false      # true = enemy shell: tests the hull capsule, not enemies (C3)

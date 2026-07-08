@@ -1,5 +1,5 @@
 # Decisions Manifest — Earth Defense Force (working title)
-**Started:** 2026-07-08  ·  **Last Updated:** 2026-07-08  ·  **Status:** C2 Hardpoint Hull BUILT (C0 + C1 also 2026-07-08)
+**Started:** 2026-07-08  ·  **Last Updated:** 2026-07-08  ·  **Status:** C3 Wave Director BUILT — it's a game (C0–C2 also 2026-07-08)
 
 > The single source of truth, written *for the next agent* — not a doc anyone maintains by hand.
 > Every future agent consults this before an architectural/behavioral change. Never silently rewrite
@@ -188,13 +188,30 @@ treated as locked:
   blooming AA), LOOK-LOCKED, and ported: `Drones`/`Turrets`/`Projectiles` systems, `Configs` bundle,
   three new per-system configs, pooled shells, mockup-matched render/HUD, `probe_hardpoints` gate.
   Spec: `docs/specs/hardpoint-hull.md`.
-- **C3+ — not yet scoped.** Wave/spawn director (first real enemies), sonar + subs, depth charges,
-  hardpoint purchase economy, hull damage — each needs its own `/spec-feature` interview before
+- **C3 — Wave director & first enemies (built 2026-07-08).** Interviewed, spec'd, mockup-gated
+  (two owner gate revisions: MMB secondaries + radar scope; over-the-horizon main battery with
+  proximity fuse), and ported: seeded budget director, swarmer/gunboat/bomber roster, hull pips +
+  grace, SHIP LOST card + fresh-seed restart, radar fire-control. The C2 practice range retired.
+  Spec: `docs/specs/wave-director.md`.
+- **C4+ — not yet scoped.** Sonar + subs + depth charges (completes the three domains), hardpoint
+  purchase economy, boss ladder — each needs its own `/spec-feature` interview before
   implementation, per this repo's `CLAUDE.md`.
 
 ---
 
 ## Change Log
+- **2026-07-08 — C3 Wave Director built; the game has stakes.** The approved C3 spec (two owner gate
+  revisions) ported to Godot: `Waves.gd` (seeded budget director), `Enemies.gd` (swarmer/gunboat/
+  bomber, beyond-the-edge arrival, led + dodgeable gunboat shells), `Hull.gd` (pip pool per D1.8
+  with a grace-window refinement, capsule contact, run end), `WaveConfig`/`waves.tres` +
+  `EnemyConfig`/`enemies.tres` (EnemyDef sub-resources), hostile projectiles, MMB medium force-fire,
+  radar scope with fire-control bearing (RadarView analog — D1.10 will sonar-gate SUB blips later),
+  over-the-horizon main battery with proximity fuse, SHIP LOST card + fresh-seed restart in Main.
+  **The C2 practice range retired by owner decision** (Drones/RangeConfig/range.tres deleted; the
+  turret probe suite re-targeted at hand-placed enemies). **Port fix, applied to the mockup too:**
+  turret auto-fire now leads its target — no-lead fire proved unable to hit orbiting gunboats, so
+  waves could never clear. `probe_waves` added to the gate. D1.9 note: with contact damage live,
+  domain tags remain targeting-capability only (a shell that physically arrives hits regardless).
 - **2026-07-08 — C2 Hardpoint Hull built; open thread #5 resolved; D1.7 refined.** The approved C2
   spec (three owner gate revisions, LOOK-LOCK condition) ported to Godot: `Drones.gd`/`Turrets.gd`/
   `Projectiles.gd` in `Sim.step`'s fixed order behind `Movement`, a `Configs` bundle so the step

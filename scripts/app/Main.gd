@@ -25,17 +25,26 @@ func _ready() -> void:
 	cfgs = Configs.load_all()
 	_step = 1.0 / float(sim_cfg.sim_hz)
 	_cam.make_current()
+	_new_sortie()
+
+func _new_sortie() -> void:
+	# fresh seed each run — same seed would replay the identical war (D1.4)
 	world = GameWorld.new(int(Time.get_ticks_usec()))
+	_accum = 0.0
 	_field.bind(world, field_cfg, cfgs)
-	_gauges.bind(world, cfgs.movement)
+	_gauges.bind(world, cfgs)
 
 func _process(delta: float) -> void:
-	# input snapshot first, then step — held-key throttle/helm + hold-only force-fire (C2 spec)
+	if world.run_over and (Input.is_action_just_pressed("new_sortie")
+			or Input.is_action_just_pressed("force_fire_all")):
+		_new_sortie()
+	# input snapshot first, then step — held-key throttle/helm + hold-only force-fire (C2/C3 spec)
 	world.input.thrust = Input.get_axis("helm_astern", "helm_ahead")
 	world.input.rudder = Input.get_axis("helm_port", "helm_starboard")
 	var all_guns: bool = Input.is_action_pressed("force_fire_all")
 	world.input.force_all = all_guns
 	world.input.force_large = Input.is_action_pressed("force_fire_large") and not all_guns
+	world.input.force_medium = Input.is_action_pressed("force_fire_medium") and not all_guns
 	world.input.aim_world = get_global_mouse_position()
 	var steps: int = 0
 	_accum += delta

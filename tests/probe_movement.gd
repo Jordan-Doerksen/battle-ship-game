@@ -3,9 +3,9 @@ extends SceneTree
 # docs/specs/naval-movement.md §Acceptance, run headless against the real Sim/Movement code. Input is
 # scripted by writing world.input directly, exactly the way Main does.
 #
-# Movement is ISOLATED by running with zero practice drones (C2): no drones means no spawn or spread
-# draws, so the "movement adds zero RNG" tripwire stays exact. C2's own randomness is probed by
-# tests/probe_hardpoints.gd.
+# Movement is ISOLATED by silencing the wave director (zero budget, first wave never arrives): no
+# enemies means no spawn or spread draws, so the "movement adds zero RNG" tripwire stays exact.
+# Combat randomness is probed by tests/probe_hardpoints.gd and tests/probe_waves.gd.
 
 const DT: float = 1.0 / 60.0
 
@@ -17,8 +17,9 @@ func _initialize() -> void:
 	var m := load("res://config/movement.tres") as MovementConfig
 	if m != null:
 		cfgs.movement = m
-	cfgs.gunnery.air_count = 0
-	cfgs.gunnery.surf_count = 0
+	cfgs.waves.base_budget = 0
+	cfgs.waves.budget_per_wave = 0
+	cfgs.waves.first_wave_delay = 1e12
 	var cfg: MovementConfig = cfgs.movement
 
 	# 1 — determinism: same seed + same scripted input => identical state; movement adds ZERO rng draws

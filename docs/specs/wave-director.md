@@ -2,7 +2,14 @@
 
 **Status:** APPROVED 2026-07-08 (owner) · Interviewed 2026-07-08 · Mockup APPROVED 2026-07-08
 (owner, with gate revisions 1–2: MMB secondaries, radar scope, over-the-horizon main battery) ·
-Not built
+BUILT — ported to Godot 2026-07-08 (probe_waves + re-targeted probe_hardpoints green; look verified
+by side-by-side Xvfb screenshots)
+
+**Port fix (2026-07-08, applied to the mockup reference too):** turret AUTO-fire now leads its
+target (intercept aim from the target's heading × speed). Discovered at the port gate: with no lead,
+an orbiting gunboat's crosswise motion outran every shell and waves could never clear — the enemy
+had `lead` in its spec table while our own guns aimed at the past. Forced fire is unchanged (the
+cursor bearing is the player's own lead).
 **Builds on:** C1 movement (dodging is piloting), C2 hardpoints (the guns finally have a war),
 D1.8 (single hull pool, pip-style), D1.9 (domain tags). **Retires:** the C2 practice range (owner
 decision — waves replace it; no dead mechanics left behind).

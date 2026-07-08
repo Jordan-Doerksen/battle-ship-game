@@ -402,8 +402,13 @@ function stepTurrets(sim, inp, cfg, dt) {
       m.mode = "forced";
     } else {
       const tgt = pickTarget(sim, wpn, mpos);
-      if (tgt) { aim = { x: tgt.x, y: tgt.y }; m.mode = "auto"; }
-      else m.mode = "stow";
+      if (tgt) {   // lead the target — without intercept aim, crosswise movers outrun every shell
+        const tdef = cfg.enemies[tgt.type];
+        const flight = Math.hypot(tgt.x - mpos.x, tgt.y - mpos.y) / wpn.speed;
+        const td = dirOf(tgt.heading);
+        aim = { x: tgt.x + td.x * tdef.speed * flight, y: tgt.y + td.y * tdef.speed * flight };
+        m.mode = "auto";
+      } else m.mode = "stow";
     }
     const desired = aim ? angleTo(mpos, aim) : sim.ship.heading;
     m.ang += Math.max(-wpn.traverse * dt, Math.min(wpn.traverse * dt, angDiff(desired, m.ang)));

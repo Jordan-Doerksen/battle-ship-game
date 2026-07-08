@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="WaveConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://config/WaveConfig.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+base_budget = 6
+budget_per_wave = 4
+lull_secs = 8.0
+first_wave_delay = 3.0
+spawn_ring_min = 1700.0
+spawn_ring_max = 2000.0
+cluster_min = 1
+cluster_max = 3
+hull_pips = 10
+grace_secs = 0.8
+radar_range = 2200.0

@@ -37,29 +37,36 @@ drones, force-fire (hold LMB = all guns on cursor, RMB = main battery), reticle 
 gate everything in `verify.sh`. The C2 spec's LOOK-LOCK (owner: "if it doesn't look this good it
 doesn't get approved") binds any future render change that touches this chunk.
 
-**C3 — Wave director & first enemies** is mid-gate: the spec (`docs/specs/wave-director.md`, from
-the 2026-07-08 owner interview) is owner-APPROVED, and the interactive mockup
-`design/wave-director.html` is built — seeded budget director (discrete waves + lulls),
-swarmer/gunboat/bomber roster arriving from beyond the edge, hostile dodgeable shells, 10 hull pips
-+ grace window, SHIP LOST card + fresh-seed restart; the C2 practice range is retired inside it.
-Its sim region passes a 7-check harness mirroring the spec acceptance list. Per the mockup gate, the
-owner must approve wave rhythm / threat readability / dodge feel before the Godot port. No C3 Godot
-code exists yet. DECISIONS open threads #1–#4 remain (naming, #2, is the nearest).
+**C3 — Wave director & first enemies** is BUILT (2026-07-08): seeded budget director (discrete
+waves + lulls, costs/unlocks, cluster bearings, beyond-the-edge arrival), swarmer/gunboat/bomber
+roster, hull pips + grace, SHIP LOST card + fresh-seed restart, MMB secondary force-fire, radar
+scope with fire-control bearing, over-the-horizon main battery with proximity fuse. The C2 practice
+range retired with it (Drones/RangeConfig deleted; probes re-targeted). One port fix worth knowing:
+turret auto-fire LEADS its target now — no-lead fire couldn't hit orbiting gunboats and waves never
+cleared; the fix is in the mockup reference too. `probe_waves` + re-targeted `probe_hardpoints`
+gate it all in `verify.sh`.
+
+**Next:** C4 is unscoped — strongest candidates: sonar + subs + depth charges (completes the three
+domains; sonar-gates SUB blips on the existing radar per D1.10, and D1.11's depth-charge failsafe
+is already designed), the hardpoint purchase economy (lulls are its shop window), or the boss
+ladder + naming pass (open thread #2). Each needs its own `/spec-feature` interview first.
+DECISIONS open threads #1–#4 remain.
 
 ## 3. Tree layout
 
 ```
 scripts/
   app/            root scene + fixed-step loop plumbing (Main.gd — writes InputState pre-step,
-                  plumbs the sim effects queue to the renderer post-step)
+                  plumbs the sim effects queue post-step, owns the fresh-seed sortie restart)
   engine/         the deterministic sim
-    Sim.gd        step root — fixed order: Movement, Drones, Turrets, Projectiles
+    Sim.gd        step root — fixed order: Movement, Waves, Enemies, Turrets, Projectiles
     data/         GameWorld truth object, InputState, Configs bundle
-    entities/     plain data classes (Drone, Projectile, Mount)
-    systems/      static funcs that mutate GameWorld (Movement C1; Drones/Turrets/Projectiles C2)
+    entities/     plain data classes (Enemy, Projectile, Mount)
+    systems/      static funcs that mutate GameWorld (Movement C1; Turrets/Projectiles C2;
+                  Waves/Enemies/Hull C3)
     util/         Rng, Pool — determinism primitives (Pool feeds projectiles)
-  render/         one-way sim → view (FieldRenderer: sea/wake/hull/turrets/drones/fx; patina.gdshader)
-  ui/             screens + HUD (HelmGauges.gd — gauges, kills plate, force-fire reticle)
+  render/         one-way sim → view (FieldRenderer: sea/wake/hull/turrets/enemies/fx; patina.gdshader)
+  ui/             screens + HUD (HelmGauges.gd — gauges, pips, wave plate, radar, reticle, lost card)
 config/           typed Resource tunables (.tres)
 docs/             SPEC.md, HANDOFF.md (this file), CHANGELOG.md, DESIGN-BRIEF.md
 design/           approved HTML mockups (visual spec, mock → approve → port)

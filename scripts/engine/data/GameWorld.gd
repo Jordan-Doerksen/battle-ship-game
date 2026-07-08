@@ -2,7 +2,8 @@ class_name GameWorld
 extends RefCounted
 # THE WORLD — the single mutable source of truth. Grows one chunk at a time; carries ONLY state a
 # landed system reads (DECISIONS Non-Negotiable Constraints: no dead mechanics). C1 added the ship;
-# C2 added mounts, practice drones, pooled shells, the kill tally, and the effects queue.
+# C2 added mounts, pooled shells, kills, and the effects queue; C3 added enemies, the hull pool, and
+# the wave-director state (the C2 practice drones retired with their range).
 #
 # `effects` is the one-way sim→render event stream (muzzle/splash/death/hit). The sim appends;
 # Main (app layer) hands the batch to the renderer after stepping and clears it — the renderer
@@ -20,10 +21,16 @@ var ship_vel: Vector2 = Vector2.ZERO
 var ship_heading: float = 0.0            # radians; 0 = north (screen up), positive = clockwise
 var input: InputState = InputState.new() # written by Main pre-step; read-only inside the sim
 var mounts: Array = []                   # Mount runtime state, index-locked to HardpointConfig
-var drones: Array = []                   # Drone slots, fixed order (Drones.gd sizes lazily)
+var enemies: Array = []                  # Enemy slots for the current wave (Waves.gd fills/clears)
 var projectiles: Pool
 var kills: int = 0
 var effects: Array = []
+var hull: int = -1                       # pips; -1 = uninitialized, Waves.step sets from WaveConfig
+var grace_until: float = 0.0             # post-hit invulnerability end time (Hull.gd)
+var run_over: bool = false               # hull reached 0 — Main shows the card and restarts
+var wave: int = 0
+var wave_state: String = "lull"          # lull | fighting
+var lull_until: float = -1.0             # -1 = arm from first_wave_delay on the first step
 
 func _init(seed_val: int) -> void:
 	world_seed = seed_val

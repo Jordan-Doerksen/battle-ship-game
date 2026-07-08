@@ -1,11 +1,12 @@
 class_name Turrets
 extends RefCounted
-# C2 hardpoint turrets (docs/specs/hardpoint-hull.md) — system #3 in Sim.step's fixed order.
-# Per mount, in mount-index order: pick a target (weapon policy, or the forced cursor point),
-# slew the barrel clamped by the weapon's traverse rate, fire when aligned within tolerance.
-# Force-fire (owner decision #3): input.force_all = every mount obeys the cursor with domain tags
-# OVERRIDDEN; input.force_large = large mounts only; hold-only, release resumes auto next tick.
-# Only the per-shot spread draws from world.rng — targeting/traverse/bloom are pure arithmetic.
+# Hardpoint turrets (C2 spec, re-targeted at C3 enemies; docs/specs/{hardpoint-hull,wave-director}.md).
+# Per mount, in mount-index order: pick a target (weapon policy, or the forced cursor point), slew
+# the barrel clamped by the weapon's traverse rate, fire when aligned within tolerance.
+# Force-fire is hold-only: LMB = ALL mounts with domain tags OVERRIDDEN; RMB = large only;
+# MMB = medium only (C3 gate rev 1); RMB+MMB combine. Forced splash shells fly their FULL range
+# along the cursor bearing (C3 gate rev 2 — the cursor sets bearing, not burst point; the radar lays
+# the main battery on contacts beyond the screen). Only per-shot spread draws from world.rng.
 
 static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 	var hp_cfg: HardpointConfig = cfg.hardpoints
@@ -20,15 +21,22 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 		if wpn == null:
 			continue
 		var mpos: Vector2 = mount_world(world, hp_cfg.mount_pos[i])
-		var forced: bool = world.input.force_all or (world.input.force_large and size == "L")
+		var forced: bool = world.input.force_all \
+			or (world.input.force_large and size == "L") \
+			or (world.input.force_medium and size == "M")
 		var aim: Vector2 = Vector2.INF
 		if forced:
 			aim = world.input.aim_world
 			m.mode = "forced"
 		else:
-			var tgt: Drone = _pick_target(world, wpn, mpos)
+			var tgt: Enemy = _pick_target(world, wpn, mpos)
 			if tgt != null:
-				aim = tgt.pos
+				# lead the target: aim at the intercept, not the current position — without this,
+				# anything moving crosswise (an orbiting gunboat) outruns every shell forever
+				var tdef: EnemyDef = cfg.enemies.by_id(tgt.type_id)
+				var flight: float = tgt.pos.distance_to(mpos) / wpn.speed
+				var tvel: Vector2 = Vector2(sin(tgt.heading), -cos(tgt.heading)) * (tdef.speed if tdef != null else 0.0)
+				aim = tgt.pos + tvel * flight
 				m.mode = "auto"
 			else:
 				m.mode = "stow"
@@ -46,9 +54,11 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 			p.vel = Vector2(sin(shot_ang), -cos(shot_ang)) * wpn.speed
 			p.dmg = wpn.dmg
 			p.splash = wpn.splash
+			p.hostile = false
 			p.wid = wpn.id
 			p.life = wpn.range_u / wpn.speed
-			if wpn.splash > 0.0:   # heavy shells burst AT the aim point (area denial)
+			# AUTO splash shells burst at their computed intercept; FORCED ones fly full range (rev 2)
+			if wpn.splash > 0.0 and not forced:
 				p.life = minf(mpos.distance_to(aim), wpn.range_u) / wpn.speed
 			world.effects.append({ "type": "muzzle", "idx": i, "pos": mpos, "ang": m.ang, "size": size })
 
@@ -58,21 +68,21 @@ static func mount_world(world: GameWorld, local: Vector2) -> Vector2:
 static func _angle_to(from: Vector2, to: Vector2) -> float:
 	return atan2(to.x - from.x, -(to.y - from.y))   # heading space: 0 = north, positive clockwise
 
-static func _pick_target(world: GameWorld, wpn: WeaponDef, mpos: Vector2) -> Drone:
-	var best: Drone = null
+static func _pick_target(world: GameWorld, wpn: WeaponDef, mpos: Vector2) -> Enemy:
+	var best: Enemy = null
 	var best_key: float = INF
-	for d in world.drones:
-		if not d.active:
+	for e in world.enemies:
+		if not e.active:
 			continue
-		var domain: String = "air" if d.layer == "air" else "surface"
+		var domain: String = "air" if e.layer == "air" else "surface"
 		if not wpn.domains.has(domain):
 			continue
-		var dist: float = d.pos.distance_to(mpos)
+		var dist: float = e.pos.distance_to(mpos)
 		if dist > wpn.range_u:
 			continue
 		# STRONG: toughest first, ties by distance; CLOSE: nearest
-		var key: float = (-d.hp_max * 1e6 + dist) if wpn.policy == "STRONG" else dist
+		var key: float = (-e.hp_max * 1e6 + dist) if wpn.policy == "STRONG" else dist
 		if key < best_key:
 			best_key = key
-			best = d
+			best = e
 	return best

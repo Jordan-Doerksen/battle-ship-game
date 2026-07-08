@@ -1,11 +1,11 @@
 class_name FieldRenderer
 extends Node2D
 # Draws the world in WORLD coordinates; the Camera2D centers on `world.ship_pos` (Main sets this each
-# frame). Reads the world, writes nothing back (one-way sim → render). C2: 1:1 port of the
-# owner-approved design/hardpoint-hull.html revision 3 (LOOK-LOCK in the spec): battleship-scale hull
-# (×2.4), class-distinct turret art ON the hull (D1.5) with render-side recoil, practice drones,
-# tracers/shells, and muzzle/splash/death/hit effects. Effects arrive via consume_effects() — Main
-# plumbs the sim's event batch here after stepping; this node never touches world.effects itself.
+# frame). Reads the world, writes nothing back (one-way sim → render). C2 look is LOOK-LOCKED
+# (battleship hull ×2.4, class-distinct turret art ON the hull per D1.5, recoil); C3 adds the war
+# per the approved design/wave-director.html: red enemy silhouettes, hostile shells, ship-hit and
+# grace feedback, and the B-movie death blast. Effects arrive via consume_effects() — Main plumbs
+# the sim's event batch here after stepping; this node never touches world.effects itself.
 
 const SEA := Color(0.039, 0.118, 0.157)      # #0A1E28
 const FOAM := Color(0.894, 0.941, 0.949)     # #E4F0F2
@@ -28,6 +28,7 @@ var _fx: Array = []                          # render-side animated effects
 var _recoil: Array = []                      # per-mount barrel kick, fed by muzzle effects
 var _last_emit: float = -1.0
 var _hull_outline: PackedVector2Array
+var _death_ms: int = -1                      # when the shipdeath effect landed (wreck fade timer)
 
 func bind(world: GameWorld, field_cfg: FieldConfig, cfgs: Configs) -> void:
 	_world = world
@@ -37,6 +38,10 @@ func bind(world: GameWorld, field_cfg: FieldConfig, cfgs: Configs) -> void:
 	_hull_outline = _build_hull_outline()
 	_recoil.resize(cfgs.hardpoints.mount_pos.size())
 	_recoil.fill(0.0)
+	_fx.clear()
+	_wake.clear()
+	_last_emit = -1.0
+	_death_ms = -1
 
 # Main hands over the sim's effect batch each frame (one-way; see GameWorld.effects)
 func consume_effects(events: Array) -> void:
@@ -44,6 +49,8 @@ func consume_effects(events: Array) -> void:
 	for e in events:
 		if e["type"] == "muzzle" and e["idx"] < _recoil.size():
 			_recoil[e["idx"]] = 1.0
+		if e["type"] == "shipdeath":
+			_death_ms = now
 		var fxe: Dictionary = e.duplicate()
 		fxe["t0"] = now
 		_fx.append(fxe)
@@ -90,6 +97,8 @@ func _process(_delta: float) -> void:
 		_wake.pop_front()
 
 func _emit_wake() -> void:
+	if _world.run_over:
+		return
 	var speed: float = _world.ship_vel.length()
 	var along: float = Movement.keel_speeds(_world).x
 	var braking: bool = _world.input.thrust < 0.0 and along > 5.0
@@ -110,7 +119,7 @@ func _draw() -> void:
 	_draw_grid()
 	_draw_flecks()
 	_draw_wake()
-	_draw_drones()
+	_draw_enemies()
 	_draw_projectiles()
 	_draw_hull()
 	_draw_mounts()
@@ -154,22 +163,34 @@ func _draw_wake() -> void:
 		var r: float = (2.0 + p["w"] * 7.0) * (0.5 + age * 1.6)
 		draw_circle(p["pos"], r, Color(FOAM.r, FOAM.g, FOAM.b, 0.30 * p["w"] * (1.0 - age)))
 
-func _draw_drones() -> void:
-	for d in _world.drones:
-		if not d.active:
+# enemy identity (approved mockup): hostile = signal-red family. Swarmer = small darting delta,
+# gunboat = low dark hull with red edge + deck gun, bomber = broad heavy delta with engine dots.
+func _draw_enemies() -> void:
+	for e in _world.enemies:
+		if not e.active:
 			continue
-		var va: float = atan2(d.vel.x, -d.vel.y)
-		draw_set_transform(d.pos, va, Vector2.ONE)
-		if d.layer == "air":
-			var wing := PackedVector2Array([Vector2(0, -11), Vector2(9, 7), Vector2(0, 3), Vector2(-9, 7)])
-			draw_colored_polygon(wing, Color(FOAM.r, FOAM.g, FOAM.b, 0.85))
-		else:
-			draw_rect(Rect2(-10, -14, 20, 28), Color(0.180, 0.243, 0.271))
-			draw_rect(Rect2(-10, -14, 20, 28), Color(FOAM.r, FOAM.g, FOAM.b, 0.4), false, 1.0)
-		draw_set_transform(d.pos, 0.0, Vector2.ONE)
-		if d.layer == "surf":
-			for i in range(d.hp):
-				draw_rect(Rect2(-9 + i * 7, 17, 5, 2.5), Color(FOAM.r, FOAM.g, FOAM.b, 0.7))
+		draw_set_transform(e.pos, e.heading, Vector2.ONE)
+		if e.type_id == "swarmer":
+			draw_colored_polygon(PackedVector2Array([Vector2(0, -8), Vector2(6, 6), Vector2(0, 3), Vector2(-6, 6)]),
+				Color(0.851, 0.310, 0.169, 0.95))
+			draw_circle(Vector2(0, -1), 1.4, FOAM)
+		elif e.type_id == "gunboat":
+			var boat := PackedVector2Array([Vector2(0, -16), Vector2(8, -6), Vector2(8, 12), Vector2(-8, 12), Vector2(-8, -6)])
+			draw_colored_polygon(boat, Color(0.118, 0.180, 0.212))
+			var bc := PackedVector2Array(boat); bc.append(boat[0])
+			draw_polyline(bc, Color(0.851, 0.310, 0.169, 0.8), 1.2, true)
+			draw_rect(Rect2(-1.5, -10, 3, 8), RED)
+		else:   # bomber
+			var wing := PackedVector2Array([Vector2(0, -14), Vector2(16, 10), Vector2(0, 4), Vector2(-16, 10)])
+			draw_colored_polygon(wing, Color(0.588, 0.176, 0.098, 0.95))
+			var wc := PackedVector2Array(wing); wc.append(wing[0])
+			draw_polyline(wc, Color(0.851, 0.310, 0.169, 0.9), 1.2, true)
+			draw_circle(Vector2(-6, 6), 1.6, FLASH)
+			draw_circle(Vector2(6, 6), 1.6, FLASH)
+		draw_set_transform(e.pos, 0.0, Vector2.ONE)
+		if e.hp < e.hp_max and e.hp_max > 2:   # hp pips under damaged toughs
+			for i in range(e.hp):
+				draw_rect(Rect2(-10 + i * 4, 16, 2.6, 2.2), Color(FOAM.r, FOAM.g, FOAM.b, 0.7))
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _draw_projectiles() -> void:
@@ -177,8 +198,11 @@ func _draw_projectiles() -> void:
 		var p: Projectile = _world.projectiles.items[i]
 		if not p.active:
 			continue
-		var tail: Vector2 = p.pos - p.vel * 0.03
-		if p.splash > 0.0:
+		var tail: Vector2 = p.pos - p.vel * (0.05 if p.hostile else 0.03)
+		if p.hostile:
+			draw_line(tail, p.pos, Color(0.914, 0.404, 0.259, 0.95), 2.0)
+			draw_circle(p.pos, 2.4, Color(0.914, 0.404, 0.259, 0.95))
+		elif p.splash > 0.0:
 			draw_circle(p.pos, 2.6, Color(FOAM.r, FOAM.g, FOAM.b, 0.95))
 			draw_line(tail, p.pos, Color(FOAM.r, FOAM.g, FOAM.b, 0.35), 2.0)
 		elif p.wid == "aa20":
@@ -186,26 +210,43 @@ func _draw_projectiles() -> void:
 		else:
 			draw_line(tail, p.pos, Color(FOAM.r, FOAM.g, FOAM.b, 0.85), 1.2)
 
+func _wreck_alpha() -> float:
+	if not _world.run_over or _death_ms < 0:
+		return 1.0
+	return clampf(1.0 - (Time.get_ticks_msec() - _death_ms) / 1400.0, 0.0, 1.0)   # the wreck slips under
+
+func _wreck_fade(c: Color, fade: float) -> Color:
+	return Color(c.r, c.g, c.b, c.a * fade)
+
 func _draw_hull() -> void:
+	var fade: float = _wreck_alpha()
+	if fade <= 0.0:
+		return
 	draw_set_transform(_world.ship_pos, _world.ship_heading, Vector2.ONE)
-	draw_colored_polygon(_hull_outline, HULL)
+	draw_colored_polygon(_hull_outline, _wreck_fade(HULL, fade))
 	var speed: float = _world.ship_vel.length()
-	var edge := Color(FOAM.r, FOAM.g, FOAM.b, minf(0.55, 0.12 + speed / _cfgs.movement.max_speed_ahead * 0.5))
+	var graced: bool = _world.elapsed < _world.grace_until and not _world.run_over
+	var flick: bool = graced and (Time.get_ticks_msec() / 60) % 2 == 0
+	var edge := Color(RED.r, RED.g, RED.b, 0.9) if flick \
+		else Color(FOAM.r, FOAM.g, FOAM.b, minf(0.55, 0.12 + speed / _cfgs.movement.max_speed_ahead * 0.5))
 	var closed := PackedVector2Array(_hull_outline)
 	closed.append(_hull_outline[0])
-	draw_polyline(closed, edge, 1.2, true)
+	draw_polyline(closed, _wreck_fade(edge, fade), 2.0 if flick else 1.2, true)
 	# deck furniture (mockup rev 3): superstructure, bridge, funnel, helipad, bow jack line
-	draw_rect(Rect2(-13, -31, 26, 41), DECK)
-	draw_rect(Rect2(-8, -43, 16, 12), DECK)
-	draw_rect(Rect2(-4, -18, 8, 8), Color(0.290, 0.373, 0.408))
-	draw_arc(Vector2(0, 65), 14.0, 0.0, TAU, 32, STEEL, 1.0, true)
-	draw_line(Vector2(-8, 65), Vector2(8, 65), STEEL, 1.0)
-	draw_line(Vector2(0, -120), Vector2(0, -90), STEEL, 1.0)
+	draw_rect(Rect2(-13, -31, 26, 41), _wreck_fade(DECK, fade))
+	draw_rect(Rect2(-8, -43, 16, 12), _wreck_fade(DECK, fade))
+	draw_rect(Rect2(-4, -18, 8, 8), _wreck_fade(Color(0.290, 0.373, 0.408), fade))
+	draw_arc(Vector2(0, 65), 14.0, 0.0, TAU, 32, _wreck_fade(STEEL, fade), 1.0, true)
+	draw_line(Vector2(-8, 65), Vector2(8, 65), _wreck_fade(STEEL, fade), 1.0)
+	draw_line(Vector2(0, -120), Vector2(0, -90), _wreck_fade(STEEL, fade), 1.0)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 # Class-distinct turret art (LOOK-LOCK): L twin-barrel armored turret, M single-gun angular house,
 # S open AA ring. Houses + barrels rotate to the WORLD barrel angle; barbettes stay hull-fixed.
 func _draw_mounts() -> void:
+	var fade: float = _wreck_alpha()
+	if fade <= 0.0:
+		return
 	var hp_cfg: HardpointConfig = _cfgs.hardpoints
 	for i in range(mini(_world.mounts.size(), hp_cfg.mount_pos.size())):
 		var m: Mount = _world.mounts[i]
@@ -214,19 +255,19 @@ func _draw_mounts() -> void:
 		_recoil[i] *= 0.9
 		var rec: float = _recoil[i]
 		var forced: bool = m.mode == "forced"
-		var house: Color = HOUSE_FORCED if forced else HOUSE
+		var house: Color = _wreck_fade(HOUSE_FORCED if forced else HOUSE, fade)
 		# barbette rings — hull-fixed under the rotating turret
 		draw_set_transform(mpos, 0.0, Vector2.ONE)
 		if size == "L":
-			draw_arc(Vector2.ZERO, 11.5, 0.0, TAU, 32, Color(FOAM.r, FOAM.g, FOAM.b, 0.25), 1.5, true)
+			draw_arc(Vector2.ZERO, 11.5, 0.0, TAU, 32, Color(FOAM.r, FOAM.g, FOAM.b, 0.25 * fade), 1.5, true)
 		elif size == "M":
-			draw_arc(Vector2.ZERO, 7.5, 0.0, TAU, 24, Color(FOAM.r, FOAM.g, FOAM.b, 0.25), 1.0, true)
+			draw_arc(Vector2.ZERO, 7.5, 0.0, TAU, 24, Color(FOAM.r, FOAM.g, FOAM.b, 0.25 * fade), 1.0, true)
 		# house + barrels at the world barrel angle
 		draw_set_transform(mpos, m.ang, Vector2.ONE)
 		if size == "L":
 			for bx in [-3.2, 3.2]:
-				draw_rect(Rect2(bx - 1.3, -9.0 - 26.0 + rec * 4.0, 2.6, 26.0), STEEL)
-				draw_rect(Rect2(bx - 1.9, -9.0 - 26.0 + rec * 4.0, 3.8, 3.0), STEEL)   # muzzle brakes
+				draw_rect(Rect2(bx - 1.3, -9.0 - 26.0 + rec * 4.0, 2.6, 26.0), _wreck_fade(STEEL, fade))
+				draw_rect(Rect2(bx - 1.9, -9.0 - 26.0 + rec * 4.0, 3.8, 3.0), _wreck_fade(STEEL, fade))   # muzzle brakes
 			var lh := PackedVector2Array()
 			lh.append(Vector2(-8, 12)); lh.append(Vector2(-8, -4))
 			_quad(lh, Vector2(-8, -4), Vector2(-8, -10), Vector2(0, -10), 5)
@@ -235,11 +276,11 @@ func _draw_mounts() -> void:
 			draw_colored_polygon(lh, house)
 			var lhc := PackedVector2Array(lh); lhc.append(lh[0])
 			draw_polyline(lhc, Color(0.039, 0.118, 0.157, 0.55), 1.0, true)
-			draw_rect(Rect2(-10, 3, 3, 2.4), STEEL)     # rangefinder ears
-			draw_rect(Rect2(7, 3, 3, 2.4), STEEL)
+			draw_rect(Rect2(-10, 3, 3, 2.4), _wreck_fade(STEEL, fade))     # rangefinder ears
+			draw_rect(Rect2(7, 3, 3, 2.4), _wreck_fade(STEEL, fade))
 		elif size == "M":
-			draw_rect(Rect2(-1.1, -6.0 - 16.0 + rec * 3.0, 2.2, 16.0), STEEL)
-			draw_rect(Rect2(-1.7, -6.0 - 7.0 + rec * 3.0, 3.4, 7.0), STEEL)             # recoil sleeve
+			draw_rect(Rect2(-1.1, -6.0 - 16.0 + rec * 3.0, 2.2, 16.0), _wreck_fade(STEEL, fade))
+			draw_rect(Rect2(-1.7, -6.0 - 7.0 + rec * 3.0, 3.4, 7.0), _wreck_fade(STEEL, fade))             # recoil sleeve
 			var mh := PackedVector2Array([
 				Vector2(-5.5, 8), Vector2(-5.5, -2), Vector2(-3, -6.5),
 				Vector2(3, -6.5), Vector2(5.5, -2), Vector2(5.5, 8),
@@ -248,10 +289,10 @@ func _draw_mounts() -> void:
 			var mhc := PackedVector2Array(mh); mhc.append(mh[0])
 			draw_polyline(mhc, Color(0.039, 0.118, 0.157, 0.55), 1.0, true)
 		else:
-			var ring := Color(0.690, 0.537, 0.408) if forced else Color(0.494, 0.576, 0.612)
+			var ring := _wreck_fade(Color(0.690, 0.537, 0.408) if forced else Color(0.494, 0.576, 0.612), fade)
 			draw_arc(Vector2.ZERO, 5.5, 0.0, TAU, 20, ring, 1.2, true)                  # open ring mount
 			for bx in [-1.5, 1.5]:
-				draw_rect(Rect2(bx - 0.55, -2.0 - 11.0 + rec * 2.0, 1.1, 11.0), STEEL)
+				draw_rect(Rect2(bx - 0.55, -2.0 - 11.0 + rec * 2.0, 1.1, 11.0), _wreck_fade(STEEL, fade))
 			draw_circle(Vector2(0, 2.2), 2.6, house)                                    # pedestal + tub
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 

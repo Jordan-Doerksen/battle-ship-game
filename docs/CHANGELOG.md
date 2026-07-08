@@ -4,6 +4,38 @@ Chunk log, newest first. Each chunk ships only after it passes the cross-check a
 
 ---
 
+## C3 — WAVE DIRECTOR & FIRST ENEMIES · 2026-07-08 · Built
+
+It's a game: enemies attack, the hull takes damage, runs end and restart. Full pipeline again —
+interview (8 decisions) → approved spec → interactive mockup through two owner gate revisions
+(MMB secondary-battery force-fire + radar scope; over-the-horizon main battery with proximity fuse
+and radar fire-control bearing) → approval → Godot port verified side-by-side.
+
+- **Sim:** `Waves.gd` — seeded budget director (base 6 + 4/wave threat points, costs swarmer 1 /
+  gunboat 3 / bomber 5, unlock milestones 1/3/5, 1–3 cluster bearings, spawns beyond the view ring;
+  discrete waves + lulls). `Enemies.gd` — divers pursue under per-type turn caps and pay themselves
+  for hull contact; gunboats hold standoff, orbit, and fire led dodgeable shells. `Hull.gd` — pip
+  pool (10) + 0.8s grace window, keel-capsule contact, run end freezing the war. `Turrets.gd` gains
+  MMB medium-only force-fire, over-the-horizon forced splash shells (cursor = bearing, full-range
+  flight), and — port fix, applied to the mockup reference too — intercept LEAD on auto-fire (no-lead
+  fire could never hit an orbiting gunboat; waves stalled forever). `Projectiles.gd` gains hostile
+  shells (hull capsule + grace) and the mb16 proximity fuse. Restart = fresh `GameWorld` seed (Main).
+- **Retired:** the C2 practice range (owner decision) — `Drones.gd`, `Drone.gd`, `RangeConfig`,
+  `range.tres` deleted; the turret probe suite re-targeted at hand-placed enemies.
+- **Config:** `waves.tres` (director, hull pips/grace, radar range), `enemies.tres` (EnemyDef
+  sub-resources). Roster ids await the naming pass (open thread #2).
+- **Render/UI:** red enemy identity (darting swarmer delta / low gunboat hull with deck gun / heavy
+  bomber wing), hostile orange shells, ship-hit rings, grace flicker on hull + pips, B-movie death
+  blast with the wreck slipping under, wave plate (`WAVE N · CONTACTS: X` / lull countdown), radar
+  scope with typed blips, incoming-fire sparks, viewport extent, main-battery ring, and the live
+  fire-control bearing while force-firing; SHIP LOST card + `[R] NEW SORTIE`. Input map adds MMB +
+  R. C2 LOOK-LOCK carried.
+- **Verify:** `probe_waves.gd` (determinism through combat, exact budget spends [6,10,14,18,22,26],
+  unlock milestones, lull timing, damage + grace, gunboat standoff/fire, run end + fresh-seed) and
+  the re-targeted `probe_hardpoints.gd` (traverse, domain, policy, three force orders + release,
+  fuse + trajectory, bloom) both gate in verify.sh. `probe_movement` isolates via a silenced
+  director. `ScreenshotC3` harness replaces C2's.
+
 ## C2 — HARDPOINT HULL & GUNNERY RANGE · 2026-07-08 · Built
 
 The hull grows teeth: visible hardpoints with real weapons, proven on a practice range. Full

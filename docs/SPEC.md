@@ -5,8 +5,8 @@
 > front-load design that will drift. Pairs with `DECISIONS.md` (the manifest) and `ARCHITECTURE.md`
 > (the map). Full source narrative: `docs/DESIGN-BRIEF.md`.
 >
-> **Status:** C0 + C1 + C2 built. C3+ planned, high-level only — each is locked in detail at the top
-> of its own chunk via `/spec-feature`.
+> **Status:** C0–C3 built — the game plays end to end (sail, fight, sink, restart). C4+ planned,
+> high-level only — each is locked in detail at the top of its own chunk via `/spec-feature`.
 
 ---
 
@@ -59,6 +59,12 @@ at the moment it's built — recorded then, not now.
   `docs/specs/hardpoint-hull.md` (owner LOOK-LOCK on mockup rev 3 — `design/hardpoint-hull.html`
   stays the visual reference).
 
-- **C3+ — not yet scoped.** Wave/spawn director (first real enemies + hull damage), sonar detection +
-  subs, depth charges, hardpoint purchase economy, meta-progression shop. Order and grouping TBD —
-  see `DECISIONS.md` Build Timeline.
+- **C3 — Wave director & first enemies (built 2026-07-08).** Seeded budget-director waves with
+  lulls; swarmer/gunboat/bomber arriving beyond the edge; hull pips + grace; radar scope with
+  fire-control bearing; MMB secondary force-fire; over-the-horizon main battery with proximity
+  fuse; SHIP LOST → fresh-seed restart. The C2 practice range retired. Locked by
+  `docs/specs/wave-director.md` (`design/wave-director.html` stays the visual reference).
+
+- **C4+ — not yet scoped.** Sonar + subs + depth charges (completes the three domains), hardpoint
+  purchase economy (the lull is its shop window), boss ladder + enemy naming (open thread #2),
+  meta-progression shop. Order TBD — see `DECISIONS.md` Build Timeline.
