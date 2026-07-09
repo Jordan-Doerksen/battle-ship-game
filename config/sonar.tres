@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="SonarConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://config/SonarConfig.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+radius = 350.0
+contact_hold = 2.5
+ripple_range = 260.0
+dc_range = 220.0
+dc_count = 4
+dc_ring = 85.0
+dc_scatter = 90.0
+dc_fuse = 1.5
+dc_blast = 55.0
+dc_dmg = 3
+dc_cooldown = 4.0

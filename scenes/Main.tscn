@@ -1,7 +1,15 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/app/Main.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/render/FieldRenderer.gd" id="2"]
+[ext_resource type="Shader" path="res://scripts/render/patina.gdshader" id="3"]
+[ext_resource type="Script" path="res://scripts/ui/HelmGauges.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/ui/TitleScreen.gd" id="5"]
+[ext_resource type="Script" path="res://scripts/ui/TechTreeScreen.gd" id="6"]
+[ext_resource type="Script" path="res://scripts/ui/DevKit.gd" id="7"]
+
+[sub_resource type="ShaderMaterial" id="patina_mat"]
+shader = ExtResource("3")
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1")
@@ -10,3 +18,40 @@ script = ExtResource("1")
 script = ExtResource("2")
 
 [node name="Cam" type="Camera2D" parent="."]
+zoom = Vector2(0.85, 0.85)
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="Patina" type="ColorRect" parent="HUD"]
+material = SubResource("patina_mat")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="Gauges" type="Control" parent="HUD"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = ExtResource("4")
+
+[node name="Title" type="Control" parent="HUD"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("5")
+
+[node name="Tree" type="Control" parent="HUD"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("6")
+
+[node name="DevKit" type="Control" parent="HUD"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("7")

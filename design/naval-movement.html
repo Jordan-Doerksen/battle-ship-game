@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EDF Helm Trials — C1 Naval Movement</title>
+</head>
+<body>
+<!-- ================================================================================
+  Earth Defense Force (working title) — C1 NAVAL MOVEMENT MOCKUP
+  Mockup gate (DECISIONS.md): this page is the visual + feel spec for C1. The owner
+  pilots it hands-on and approves BEFORE any Godot port. It implements
+  docs/specs/naval-movement.md exactly: same integration model, same tunable names,
+  same start values as the future config/movement.tres. Fixed 60 Hz timestep.
+  Keys: W ahead · S brake/astern · A/D helm (screen-fixed) · R reset ship.
+================================================================================= -->
+<style>
+  :root {
+    --sea-deep:   #0A1E28;
+    --sea-lane:   #12303C;
+    --foam:       #E4F0F2;
+    --signal-red: #D94F2B;
+    --brass:      #CDBA8E;
+    --brass-dim:  #8E815F;
+    --steel:     #93A7AE;
+    --plate:      rgba(13, 32, 40, 0.88);
+    --plate-edge: rgba(205, 186, 142, 0.5);
+    --mono: ui-monospace, "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --disp: "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    background: var(--sea-deep);
+    color: var(--brass);
+    font-family: var(--disp);
+    user-select: none;
+  }
+  #sea { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  /* vignette + scanline patina — cosmetic only */
+  #patina {
+    position: absolute; inset: 0; pointer-events: none;
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.07) 0 1px, transparent 1px 3px),
+      radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(2, 10, 14, 0.55) 100%);
+  }
+
+  .plate {
+    position: absolute;
+    background: var(--plate);
+    border: 1px solid var(--plate-edge);
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    padding: 12px 16px;
+  }
+  .eyebrow {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.32em;
+    text-transform: uppercase; color: var(--brass-dim);
+  }
+  h1 {
+    font-size: 17px; font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--foam); margin-top: 3px;
+    text-wrap: balance;
+  }
+  #mission { top: 18px; left: 18px; max-width: 320px; }
+  #mission .star { color: var(--signal-red); }
+  .legend { margin-top: 10px; display: grid; grid-template-columns: auto 1fr; gap: 5px 10px; align-items: center; }
+  .keys { display: flex; gap: 3px; }
+  kbd {
+    font-family: var(--mono); font-size: 11px; color: var(--foam);
+    border: 1px solid var(--brass-dim); border-bottom-width: 2px; border-radius: 2px;
+    padding: 1px 5px; min-width: 18px; text-align: center; background: rgba(228,240,242,0.06);
+  }
+  .legend .what { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--brass); }
+  #mission .gate-note {
+    margin-top: 10px; font-size: 10px; line-height: 1.5; color: var(--brass-dim);
+    letter-spacing: 0.04em;
+  }
+
+  /* ── gauge bank ─────────────────────────────────────────────── */
+  #gauges { left: 18px; bottom: 18px; width: 330px; display: grid; gap: 10px; }
+  .g-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--brass-dim); margin-bottom: 4px;
+  }
+  #order {
+    font-family: var(--mono); font-size: 15px; font-weight: 700; letter-spacing: 0.12em;
+    color: var(--signal-red);
+  }
+  .row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .big { font-family: var(--mono); font-size: 26px; font-weight: 700; color: var(--foam); font-variant-numeric: tabular-nums; }
+  .unit { font-size: 10px; letter-spacing: 0.2em; color: var(--brass-dim); text-transform: uppercase; }
+  .sub  { font-family: var(--mono); font-size: 12px; color: var(--brass); font-variant-numeric: tabular-nums; }
+
+  .bar { position: relative; height: 12px; border: 1px solid var(--brass-dim); background: rgba(228,240,242,0.04); margin-top: 5px; }
+  .bar .fill { position: absolute; top: 0; bottom: 0; background: var(--steel); opacity: 0.85; }
+  .bar .zero { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--brass); }
+  .bar .needle { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--signal-red); }
+  .ticks { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 8px; color: var(--brass-dim); margin-top: 2px; }
+
+  /* ── tuning drawer ──────────────────────────────────────────── */
+  #tuning {
+    position: absolute; top: 18px; right: 18px; width: 300px;
+    max-height: calc(100% - 36px); overflow-y: auto;
+  }
+  #tuning summary {
+    cursor: pointer; list-style: none;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--foam);
+    background: var(--plate); border: 1px solid var(--plate-edge);
+    clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
+    padding: 10px 16px;
+  }
+  #tuning summary::before { content: "▸ "; color: var(--signal-red); }
+  #tuning[open] summary::before { content: "▾ "; }
+  #tuning .body {
+    background: var(--plate); border: 1px solid var(--plate-edge); border-top: none;
+    padding: 12px 16px 14px;
+  }
+  .tun { margin-bottom: 10px; }
+  .tun .row { margin-bottom: 2px; }
+  .tun .name { font-family: var(--mono); font-size: 11px; color: var(--brass); }
+  .tun .val  { font-family: var(--mono); font-size: 11px; color: var(--foam); font-variant-numeric: tabular-nums; }
+  .tun input[type="range"] { width: 100%; accent-color: var(--signal-red); height: 14px; }
+  .tun .hint { font-size: 9px; letter-spacing: 0.05em; color: var(--brass-dim); }
+  #reset-cfg {
+    font-family: var(--disp); font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--sea-deep); background: var(--brass);
+    border: none; padding: 7px 14px; cursor: pointer; margin-top: 4px;
+  }
+  #reset-cfg:hover { background: var(--foam); }
+  #reset-cfg:focus-visible, #tuning summary:focus-visible, .tun input:focus-visible, #helm-btn:focus-visible {
+    outline: 2px solid var(--signal-red); outline-offset: 2px;
+  }
+
+  /* ── take-the-helm overlay ──────────────────────────────────── */
+  #helm-overlay {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(4, 14, 19, 0.72); z-index: 10;
+  }
+  #helm-btn {
+    font-family: var(--disp); text-transform: uppercase; cursor: pointer;
+    background: var(--signal-red); color: var(--foam); border: none;
+    font-size: 18px; font-weight: 700; letter-spacing: 0.3em;
+    padding: 18px 34px 18px 40px;
+    clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  }
+  #helm-btn:hover { background: #EA6742; }
+  #helm-overlay .sub-line {
+    position: absolute; margin-top: 110px; font-size: 11px; letter-spacing: 0.3em;
+    text-transform: uppercase; color: var(--brass);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    #helm-btn { animation: pulse 1.6s ease-in-out infinite; }
+    @keyframes pulse { 50% { transform: scale(1.03); } }
+  }
+</style>
+
+<canvas id="sea"></canvas>
+<div id="patina"></div>
+
+<section id="mission" class="plate">
+  <div class="eyebrow"><span class="star">★</span> Earth Defense Force · Naval Trials Bureau</div>
+  <h1>Helm Trials — C1 Naval Movement</h1>
+  <div class="legend">
+    <span class="keys"><kbd>W</kbd></span><span class="what">All ahead</span>
+    <span class="keys"><kbd>S</kbd></span><span class="what">Brake, then astern</span>
+    <span class="keys"><kbd>A</kbd><kbd>D</kbd></span><span class="what">Helm (screen-fixed)</span>
+    <span class="keys"><kbd>R</kbd></span><span class="what">Reset ship</span>
+  </div>
+  <div class="gate-note">Mockup gate: this page IS the C1 spec's feel. Judge by hand — ~4–5 s to
+  full ahead, a long coast, helm that always answers, and visible lateral slip in a hard turn —
+  then approve before the Godot port. Tunables mirror the future <code>config/movement.tres</code>.</div>
+</section>
+
+<section id="gauges" class="plate">
+  <div>
+    <div class="g-label">Engine Order</div>
+    <div id="order">ALL STOP</div>
+  </div>
+  <div>
+    <div class="g-label">Way on Ship</div>
+    <div class="row">
+      <span class="big" id="speed">0.0</span><span class="unit">u/s along keel</span>
+      <span class="sub" id="speed-pct">0% of full ahead</span>
+    </div>
+    <div class="bar" id="way-bar">
+      <div class="zero"></div>
+      <div class="fill" id="way-fill"></div>
+    </div>
+    <div class="ticks"><span>ASTERN 35%</span><span>0</span><span>AHEAD 100%</span></div>
+  </div>
+  <div>
+    <div class="g-label">Helm</div>
+    <div class="row">
+      <span class="sub" id="rudder-txt">RUDDER AMIDSHIPS</span>
+      <span class="sub" id="authority">AUTHORITY 25%</span>
+    </div>
+    <div class="bar" id="rudder-bar">
+      <div class="zero" style="left: 50%"></div>
+      <div class="needle" id="rudder-needle" style="left: 50%"></div>
+    </div>
+    <div class="ticks"><span>PORT</span><span>STBD</span></div>
+  </div>
+  <div class="row">
+    <span class="sub" id="slip">SLIP 0.0 u/s</span>
+    <span class="sub" id="hdg">HDG 000°</span>
+  </div>
+</section>
+
+<details id="tuning">
+  <summary>Tuning — movement.tres</summary>
+  <div class="body" id="tuning-body"></div>
+</details>
+
+<div id="helm-overlay">
+  <button id="helm-btn">Take the Helm</button>
+  <div class="sub-line">Keyboard required — W · S · A · D</div>
+</div>
+
+<script>
+"use strict";
+/* ════════════════════════════════════════════════════════════════════════════
+   SIM — the exact model that ports to scripts/engine/systems/Movement.gd.
+   Pure arithmetic, no RNG, fixed 60 Hz. Heading drives velocity (never
+   heading = vel.angle()). Everything below the SIM block is render-side
+   cosmetics and would never touch the Godot sim.
+   ════════════════════════════════════════════════════════════════════════════ */
+const DEFAULT_CFG = {                    // == config/movement.tres start values
+  max_speed_ahead: 220.0,   // full ahead speed, u/s
+  astern_frac:      0.35,   // reverse cap as a fraction of ahead
+  thrust_accel:     55.0,   // u/s² under full throttle (~4.5 s to full)
+  brake_accel:      90.0,   // u/s² while the order opposes current keel motion
+  drag_forward:     0.08,   // 1/s exponential along-keel drag (long coast)
+  drag_lateral:     1.8,    // 1/s lateral drag (slip decays, visibly)
+  turn_rate_max:    0.55,   // rad/s at full speed, full rudder
+  turn_speed_floor: 0.25,   // min fraction of turn authority at a standstill
+};
+const SIM_DT = 1 / 60;
+
+let cfg = { ...DEFAULT_CFG };
+const ship = { x: 0, y: 0, vx: 0, vy: 0, heading: 0, along: 0, lat: 0 };
+const input = { thrust: 0, rudder: 0 };   // sim-side snapshot == InputState.gd
+
+function stepShip(s, inp, c, dt) {
+  // 1. Helm — authority couples to speed with a floor; the ship always answers,
+  //    just sluggishly when slow. Screen-fixed: D is clockwise even astern.
+  const speed = Math.hypot(s.vx, s.vy);
+  const authority = Math.max(c.turn_speed_floor, Math.min(1.0, speed / c.max_speed_ahead));
+  s.heading += c.turn_rate_max * authority * inp.rudder * dt;
+
+  // 2. Decompose velocity on the NEW keel axes — the turn re-aims the keel while
+  //    velocity lags behind; the leftover cross-keel component IS the slip.
+  const fx = Math.sin(s.heading), fy = -Math.cos(s.heading);  // heading 0 = north
+  const rx = -fy, ry = fx;                                     // starboard
+  let along = s.vx * fx + s.vy * fy;
+  let lat   = s.vx * rx + s.vy * ry;
+
+  // 3. Throttle — one continuous control: braking (order opposes keel motion)
+  //    bites harder than thrust, and S carries smoothly through the stop to astern.
+  if (inp.thrust !== 0) {
+    const opposing = (inp.thrust > 0 && along < -0.01) || (inp.thrust < 0 && along > 0.01);
+    along += (opposing ? c.brake_accel : c.thrust_accel) * inp.thrust * dt;
+  }
+
+  // 4. Anisotropic exponential water drag — long coast along the keel,
+  //    strong-but-finite lateral drag so slip decays but visibly exists.
+  along *= Math.exp(-c.drag_forward * dt);
+  lat   *= Math.exp(-c.drag_lateral  * dt);
+
+  // 5. Hull speed caps.
+  along = Math.min(c.max_speed_ahead, Math.max(-c.max_speed_ahead * c.astern_frac, along));
+
+  // 6. Recompose and integrate.
+  s.vx = fx * along + rx * lat;
+  s.vy = fy * along + ry * lat;
+  s.x += s.vx * dt;
+  s.y += s.vy * dt;
+  s.along = along;  s.lat = lat;  // gauge feed
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   INPUT — Main.gd's role: write the snapshot from raw keys; sim only reads it.
+   ════════════════════════════════════════════════════════════════════════════ */
+const held = new Set();
+const KEYMAP = {
+  KeyW: "up", ArrowUp: "up", KeyS: "down", ArrowDown: "down",
+  KeyA: "left", ArrowLeft: "left", KeyD: "right", ArrowRight: "right",
+};
+function pollInput() {
+  input.thrust = (held.has("up") ? 1 : 0) - (held.has("down") ? 1 : 0);
+  input.rudder = (held.has("right") ? 1 : 0) - (held.has("left") ? 1 : 0);
+}
+addEventListener("keydown", (e) => {
+  const k = KEYMAP[e.code];
+  if (k) { held.add(k); e.preventDefault(); }
+  if (e.code === "KeyR") resetShip();
+});
+addEventListener("keyup", (e) => { const k = KEYMAP[e.code]; if (k) held.delete(k); });
+addEventListener("blur", () => held.clear());
+
+function resetShip() {
+  ship.x = 0; ship.y = 0; ship.vx = 0; ship.vy = 0;
+  ship.heading = 0; ship.along = 0; ship.lat = 0;
+  wake.length = 0;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   RENDER — cosmetic only, one-way read of ship state. Maps to FieldRenderer +
+   the small ui/ speed readout in the Godot port.
+   ════════════════════════════════════════════════════════════════════════════ */
+const canvas = document.getElementById("sea");
+const ctx = canvas.getContext("2d");
+const ZOOM = 0.85;
+let W = 0, H = 0, DPR = 1;
+function resize() {
+  DPR = Math.min(devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight;
+  canvas.width = W * DPR; canvas.height = H * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+addEventListener("resize", resize);
+resize();
+
+// foam flecks — toroidal tile, same trick as C0's starfield; cosmetic RNG only.
+const FLECK_TILE = 1600, FLECKS = [];
+for (let i = 0; i < 110; i++) {
+  FLECKS.push({
+    x: Math.random() * FLECK_TILE, y: Math.random() * FLECK_TILE,
+    len: 3 + Math.random() * 9, ph: Math.random() * Math.PI * 2,
+  });
+}
+
+// wake — render-side ring buffer of stern samples (world-anchored, so slip reads
+// as the hull visibly sliding off its own foam line).
+const wake = [];
+const WAKE_LIFE = 4.5, WAKE_MAX = 700;
+let simTime = 0;
+
+function emitWake() {
+  const speed = Math.hypot(ship.vx, ship.vy);
+  const braking = input.thrust < 0 && ship.along > 5;
+  if (speed < 6 && !braking) return;
+  const fx = Math.sin(ship.heading), fy = -Math.cos(ship.heading);
+  wake.push({
+    x: ship.x - fx * 42, y: ship.y - fy * 42,
+    t: simTime,
+    w: Math.min(1, speed / cfg.max_speed_ahead) + (braking ? 0.7 : 0),
+  });
+  if (wake.length > WAKE_MAX) wake.shift();
+}
+
+function worldToScreen(wx, wy) {
+  return [(wx - ship.x) * ZOOM + W / 2, (wy - ship.y) * ZOOM + H / 2];
+}
+
+function drawSea(now) {
+  ctx.fillStyle = "#0A1E28";
+  ctx.fillRect(0, 0, W, H);
+
+  // chart grid — north-up; the world never rotates (spec: fixed camera).
+  const steps = [[200, "rgba(228,240,242,0.035)"], [1000, "rgba(228,240,242,0.07)"]];
+  for (const [step, col] of steps) {
+    ctx.strokeStyle = col; ctx.lineWidth = 1;
+    ctx.beginPath();
+    const sx0 = ship.x - (W / 2) / ZOOM, sy0 = ship.y - (H / 2) / ZOOM;
+    for (let gx = Math.floor(sx0 / step) * step; ; gx += step) {
+      const [px] = worldToScreen(gx, 0); if (px > W) break;
+      ctx.moveTo(px, 0); ctx.lineTo(px, H);
+    }
+    for (let gy = Math.floor(sy0 / step) * step; ; gy += step) {
+      const [, py] = worldToScreen(0, gy); if (py > H) break;
+      ctx.moveTo(0, py); ctx.lineTo(W, py);
+    }
+    ctx.stroke();
+  }
+
+  // drifting foam flecks
+  ctx.strokeStyle = "rgba(228,240,242,0.16)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (const f of FLECKS) {
+    const wx = mod(f.x - ship.x + FLECK_TILE / 2, FLECK_TILE) - FLECK_TILE / 2 + ship.x;
+    const wy = mod(f.y - ship.y + FLECK_TILE / 2, FLECK_TILE) - FLECK_TILE / 2 + ship.y;
+    const [px, py] = worldToScreen(wx, wy);
+    if (px < -20 || px > W + 20 || py < -20 || py > H + 20) continue;
+    const bob = Math.sin(now * 0.0006 + f.ph) * 1.5;
+    ctx.moveTo(px - f.len / 2, py + bob); ctx.lineTo(px + f.len / 2, py + bob);
+  }
+  ctx.stroke();
+}
+function mod(a, n) { return ((a % n) + n) % n; }
+
+function drawWake() {
+  for (const p of wake) {
+    const age = (simTime - p.t) / WAKE_LIFE;
+    if (age >= 1) continue;
+    const [px, py] = worldToScreen(p.x, p.y);
+    const r = (2 + p.w * 7) * (0.5 + age * 1.6) * ZOOM;
+    ctx.fillStyle = `rgba(228,240,242,${(0.30 * p.w * (1 - age)).toFixed(3)})`;
+    ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+function drawHull() {
+  ctx.save();
+  ctx.translate(W / 2, H / 2);
+  ctx.scale(ZOOM, ZOOM);
+  ctx.rotate(ship.heading);
+
+  // hull silhouette — distinct bow/stern, top-down battleship read (bow = up)
+  ctx.beginPath();
+  ctx.moveTo(0, -50);                       // bow tip
+  ctx.quadraticCurveTo(8, -38, 9.5, -24);   // starboard bow flare
+  ctx.lineTo(10, 20);
+  ctx.quadraticCurveTo(10, 32, 6, 35);      // stern taper
+  ctx.quadraticCurveTo(0, 38, -6, 35);
+  ctx.quadraticCurveTo(-10, 32, -10, 20);
+  ctx.lineTo(-9.5, -24);
+  ctx.quadraticCurveTo(-8, -38, 0, -50);
+  ctx.closePath();
+  ctx.fillStyle = "#3C4F57";
+  ctx.fill();
+  const speed = Math.hypot(ship.vx, ship.vy);
+  ctx.strokeStyle = `rgba(228,240,242,${Math.min(0.55, 0.12 + speed / cfg.max_speed_ahead * 0.5)})`;
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+
+  // deck hints — superstructure, turret barbettes fore/aft, stern helipad ring
+  ctx.fillStyle = "#5A707A";
+  ctx.fillRect(-5.5, -13, 11, 17);          // superstructure block
+  ctx.fillRect(-3.5, -18, 7, 5);            // bridge
+  ctx.beginPath(); ctx.arc(0, -27, 5, 0, Math.PI * 2); ctx.fill();   // fore turret
+  ctx.beginPath(); ctx.arc(0, 13, 5, 0, Math.PI * 2); ctx.fill();    // aft turret
+  ctx.fillStyle = "#93A7AE";
+  ctx.fillRect(-1.2, -36, 2.4, 9);          // fore barrels (hint)
+  ctx.fillRect(-1.2, 18, 2.4, 8);           // aft barrels (hint)
+  ctx.strokeStyle = "#93A7AE"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(0, 27, 6, 0, Math.PI * 2); ctx.stroke();  // helipad ring
+  ctx.restore();
+}
+
+/* ── gauges ─────────────────────────────────────────────────────────────── */
+const $ = (id) => document.getElementById(id);
+function orderText() {
+  if (input.thrust > 0) return ship.along < -1 ? "AHEAD — COMING ABOUT" : "ALL AHEAD FULL";
+  if (input.thrust < 0) return ship.along > 1 ? "EMERGENCY BACK — BRAKING" : "ALL ASTERN";
+  return Math.hypot(ship.vx, ship.vy) < 2 ? "ALL STOP" : "ADRIFT — COASTING";
+}
+function drawGauges() {
+  $("order").textContent = orderText();
+  const pct = ship.along / cfg.max_speed_ahead;
+  $("speed").textContent = Math.abs(ship.along).toFixed(1);
+  $("speed-pct").textContent = `${Math.round(Math.abs(pct) * 100)}% of full ahead${ship.along < -0.5 ? " (astern)" : ""}`;
+  // way bar spans [-astern_frac .. 1]; zero notch sits at astern_frac's share
+  const span = cfg.astern_frac + 1;
+  const zeroPct = (cfg.astern_frac / span) * 100;
+  $("way-bar").querySelector(".zero").style.left = zeroPct + "%";
+  const fill = $("way-fill");
+  if (pct >= 0) {
+    fill.style.left = zeroPct + "%";
+    fill.style.width = (pct / span) * 100 + "%";
+  } else {
+    const w = (-pct / span) * 100;
+    fill.style.left = (zeroPct - w) + "%";
+    fill.style.width = w + "%";
+  }
+  const speed = Math.hypot(ship.vx, ship.vy);
+  const authority = Math.max(cfg.turn_speed_floor, Math.min(1, speed / cfg.max_speed_ahead));
+  $("authority").textContent = `AUTHORITY ${Math.round(authority * 100)}%`;
+  $("rudder-txt").textContent =
+    input.rudder === 0 ? "RUDDER AMIDSHIPS" : input.rudder > 0 ? "RUDDER TO STARBOARD" : "RUDDER TO PORT";
+  $("rudder-needle").style.left = (50 + input.rudder * 46) + "%";
+  const slipDir = ship.lat > 0.5 ? "→ STBD" : ship.lat < -0.5 ? "← PORT" : "";
+  $("slip").textContent = `SLIP ${Math.abs(ship.lat).toFixed(1)} u/s ${slipDir}`;
+  const deg = mod(ship.heading * 180 / Math.PI, 360);
+  $("hdg").textContent = `HDG ${deg.toFixed(0).padStart(3, "0")}°`;
+}
+
+/* ── tuning drawer ──────────────────────────────────────────────────────── */
+const TUN = [
+  ["max_speed_ahead", 80, 400, 5,    "full ahead speed, u/s"],
+  ["astern_frac",     0.10, 0.80, 0.01, "reverse cap, fraction of ahead"],
+  ["thrust_accel",    15, 150, 1,    "u/s² at full throttle"],
+  ["brake_accel",     20, 250, 1,    "u/s² when opposing keel motion"],
+  ["drag_forward",    0.01, 0.40, 0.005, "1/s along-keel drag (coast length)"],
+  ["drag_lateral",    0.2, 6.0, 0.05, "1/s cross-keel drag (slip decay)"],
+  ["turn_rate_max",   0.15, 1.50, 0.01, "rad/s at full speed, full rudder"],
+  ["turn_speed_floor", 0.0, 1.0, 0.01, "min turn authority at standstill"],
+];
+const tunBody = $("tuning-body");
+for (const [key, min, max, step, hint] of TUN) {
+  const div = document.createElement("div");
+  div.className = "tun";
+  div.innerHTML =
+    `<div class="row"><span class="name">${key}</span><span class="val" id="val-${key}"></span></div>` +
+    `<input type="range" id="in-${key}" min="${min}" max="${max}" step="${step}" aria-label="${key}">` +
+    `<div class="hint">${hint}</div>`;
+  tunBody.appendChild(div);
+  const inp = div.querySelector("input");
+  inp.value = cfg[key];
+  inp.addEventListener("input", () => {
+    cfg[key] = parseFloat(inp.value);
+    syncTun();
+  });
+}
+const resetBtn = document.createElement("button");
+resetBtn.id = "reset-cfg";
+resetBtn.textContent = "Reset to spec values";
+resetBtn.addEventListener("click", () => {
+  cfg = { ...DEFAULT_CFG };
+  for (const [key] of TUN) $("in-" + key).value = cfg[key];
+  syncTun();
+});
+tunBody.appendChild(resetBtn);
+function syncTun() {
+  for (const [key] of TUN) {
+    const v = cfg[key];
+    $("val-" + key).textContent = v >= 10 ? v.toFixed(0) : v.toFixed(v < 1 ? 3 : 2).replace(/0+$/, "").replace(/\.$/, ".0");
+  }
+}
+syncTun();
+
+/* ── fixed-timestep loop (mirrors Main.gd's accumulator) ────────────────── */
+let running = false, last = 0, acc = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (!running) { drawSea(now); drawHull(); return; }
+  const dtReal = Math.min((now - last) / 1000, 0.25);
+  last = now;
+  acc += dtReal;
+  while (acc >= SIM_DT) {
+    pollInput();
+    stepShip(ship, input, cfg, SIM_DT);
+    simTime += SIM_DT;
+    emitWake();
+    acc -= SIM_DT;
+  }
+  drawSea(now);
+  drawWake();
+  drawHull();
+  drawGauges();
+}
+requestAnimationFrame(frame);
+
+$("helm-btn").addEventListener("click", () => {
+  $("helm-overlay").remove();
+  running = true;
+  last = performance.now();
+  window.focus();
+});
+</script>
+</body>
+</html>

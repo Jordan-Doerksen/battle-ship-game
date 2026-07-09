@@ -1,15 +1,27 @@
 extends Node2D
-# Root (app domain) — C0 Heartbeat only. Owns the fixed-step accumulator that drives `Sim.step` and
-# binds the renderer to the world. No gameplay lives here; this proves the loop, the seeded RNG, and
-# the one-way sim→render split are alive before any system is built (see docs/SPEC.md C0).
+# Root (app domain). Owns the fixed-step accumulator, the C4 state machine (title / tree / game),
+# the persistent Profile (banked at run end; the sim never reads it), and the InputState snapshot —
+# still the ONLY door input enters the sim through. Each sortie derives its Configs from the base
+# .tres values + the profile's unlocked tech (Tech.apply) BEFORE the world is created, so
+# determinism per (seed, unlock set) holds. The DEV test kit exists only in debug builds.
 
 var world: GameWorld
 var sim_cfg: SimConfig
 var field_cfg: FieldConfig
+var base_cfgs: Configs
+var cfgs: Configs
+var profile: Profile
+var god_guns: bool = false        # DEV kit weapon override, rebuilt into cfgs per toggle/sortie
+var state: String = "title"       # title | tree | game
 var _accum: float = 0.0
 var _step: float = 1.0 / 60.0
+var _banked: bool = false
 @onready var _field: FieldRenderer = $Field
 @onready var _cam: Camera2D = $Cam
+@onready var _gauges: HelmGauges = $HUD/Gauges
+@onready var _title: TitleScreen = $HUD/Title
+@onready var _tree: TechTreeScreen = $HUD/Tree
+@onready var _devkit: DevKit = $HUD/DevKit
 
 func _ready() -> void:
 	sim_cfg = load("res://config/sim.tres") as SimConfig
@@ -18,19 +30,125 @@ func _ready() -> void:
 	field_cfg = load("res://config/field.tres") as FieldConfig
 	if field_cfg == null:
 		field_cfg = FieldConfig.new()
+	base_cfgs = Configs.load_all()
+	profile = Profile.load_profile()
 	_step = 1.0 / float(sim_cfg.sim_hz)
 	_cam.make_current()
+	_title.bind(profile, base_cfgs.progress)
+	_tree.bind(profile, base_cfgs.tech, base_cfgs.progress)
+	_title.sortie_requested.connect(start_sortie)
+	_title.tree_requested.connect(func() -> void: show_screen("tree"))
+	_tree.back_requested.connect(func() -> void: show_screen("title"))
+	if OS.is_debug_build():
+		_devkit.bind(self)
+	else:
+		_devkit.queue_free()
+	# a quiet world idles behind the menus (never stepped until a sortie starts)
+	cfgs = Tech.apply(base_cfgs, profile.unlocked)
+	world = GameWorld.new(0)
+	_field.bind(world, field_cfg, cfgs)
+	_gauges.bind(world, cfgs)
+	show_screen("title")
+
+func show_screen(next: String) -> void:
+	state = next
+	_title.visible = next == "title"
+	_tree.visible = next == "tree"
+	_gauges.visible = next == "game"
+	_field.show_ship = next == "game"   # open sea behind the menus, no ghost hull under the title
+	_field.queue_redraw()
+	if next == "title":
+		_title.queue_redraw()
+	if next == "tree":
+		_tree.queue_redraw()
+
+func start_sortie() -> void:
+	cfgs = Tech.apply(base_cfgs, profile.unlocked)   # tech derives config BEFORE the run
+	if god_guns:
+		_apply_god_guns()
 	world = GameWorld.new(int(Time.get_ticks_usec()))
-	_field.bind(world, field_cfg)
+	_accum = 0.0
+	_banked = false
+	_gauges.lost_report = {}
+	_field.bind(world, field_cfg, cfgs)
+	_gauges.bind(world, cfgs)
+	show_screen("game")
+
+func _bank_run() -> void:   # the sortie's XP becomes career XP (the sim only ever wrote xp_run)
+	_banked = true
+	var before: int = base_cfgs.progress.level_info(profile.xp)["level"]
+	profile.xp += world.xp_run
+	profile.save()
+	var after: int = base_cfgs.progress.level_info(profile.xp)["level"]
+	_gauges.lost_report = { "xp": world.xp_run, "leveled_to": after if after > before else 0 }
+
+func _apply_god_guns() -> void:
+	for w in cfgs.weapons.catalog:
+		w.dmg *= 20
+		w.rate *= 2.5
+
+func toggle_god_guns() -> void:   # DEV kit: rebuild the derived configs so the override is clean
+	god_guns = not god_guns
+	cfgs = Tech.apply(base_cfgs, profile.unlocked)
+	if god_guns:
+		_apply_god_guns()
+	_field.bind(world, field_cfg, cfgs)
+	_gauges.bind(world, cfgs)
+
+func dev_max_level() -> void:     # DEV kit: enough XP for the whole tree (level 41)
+	var xp: int = 0
+	for n in range(1, 41):
+		xp += base_cfgs.progress.xp_for_next(n)
+	profile.xp = maxi(profile.xp, xp)
+	profile.save()
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		match state:
+			"title":
+				if event.is_action("ui_accept"):
+					start_sortie()
+				elif event.physical_keycode == KEY_T:
+					show_screen("tree")
+			"tree":
+				if event.is_action("ui_cancel"):
+					show_screen("title")
 
 func _process(delta: float) -> void:
+	if state != "game":
+		return
+	if OS.is_debug_build() and Input.is_action_just_pressed("dev_toggle"):
+		_devkit.visible = not _devkit.visible
+		_devkit.queue_redraw()
+	if world.run_over:
+		if not _banked:
+			_bank_run()
+		if Input.is_action_just_pressed("new_sortie") or Input.is_action_just_pressed("force_fire_all"):
+			start_sortie()
+			return
+		if Input.is_action_just_pressed("open_tree"):
+			show_screen("tree")
+			return
+	# input snapshot first, then step — held-key throttle/helm + hold-only force-fire
+	world.input.thrust = Input.get_axis("helm_astern", "helm_ahead")
+	world.input.rudder = Input.get_axis("helm_port", "helm_starboard")
+	var all_guns: bool = Input.is_action_pressed("force_fire_all")
+	world.input.force_all = all_guns
+	world.input.force_large = Input.is_action_pressed("force_fire_large") and not all_guns
+	world.input.force_medium = Input.is_action_pressed("force_fire_medium") and not all_guns
+	world.input.aim_world = get_global_mouse_position()
 	var steps: int = 0
 	_accum += delta
 	while _accum >= _step and steps < sim_cfg.max_frame_catchup:
-		Sim.step(world, _step)
+		Sim.step(world, _step, cfgs)
 		_accum -= _step
 		steps += 1
 	if steps >= sim_cfg.max_frame_catchup:
 		_accum = 0.0   # don't spiral-of-death catch up past the cap
+	_field.consume_effects(world.effects)   # one-way effect plumbing: sim wrote, render consumes,
+	world.effects.clear()                   # the app layer clears — renderer never touches the world
 	_cam.position = world.ship_pos
 	_field.queue_redraw()
+	_gauges.queue_redraw()
+	if _devkit != null and is_instance_valid(_devkit) and _devkit.visible:
+		_devkit.queue_redraw()

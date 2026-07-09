@@ -1,16 +1,18 @@
 extends SceneTree
-# C0 boot probe (run with `godot --headless -s tests/probe_sim.gd`). No gameplay systems exist yet —
-# this only proves the fixed-step sim clock advances deterministically and the seeded Rng stream is
-# reproducible for a fixed seed, same as fulfillment's probe_sim proves for its own C0.
+# C0 boot probe (run with `godot --headless -s tests/probe_sim.gd`). Proves the fixed-step sim clock
+# advances deterministically and the seeded Rng stream is reproducible for a fixed seed, same as
+# fulfillment's probe_sim proves for its own C0. Runs with idle input (movement is exercised by
+# tests/probe_movement.gd); the checks below are unchanged since C0.
 
 func _initialize() -> void:
 	var fails: int = 0
+	var cfgs := Configs.defaults()   # class defaults mirror every config/*.tres
 
 	var world_a := GameWorld.new(777001)
 	var world_b := GameWorld.new(777001)
 	for i in range(600):   # 10 sim-seconds at 60Hz
-		Sim.step(world_a, 1.0 / 60.0)
-		Sim.step(world_b, 1.0 / 60.0)
+		Sim.step(world_a, 1.0 / 60.0, cfgs)
+		Sim.step(world_b, 1.0 / 60.0, cfgs)
 		world_a.rng.nextf()   # draw from both streams identically to prove replay-stability
 		world_b.rng.nextf()
 

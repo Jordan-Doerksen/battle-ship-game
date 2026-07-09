@@ -1,0 +1,89 @@
+[gd_resource type="Resource" script_class="EnemyConfig" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://config/EnemyConfig.gd" id="1"]
+[ext_resource type="Script" path="res://config/EnemyDef.gd" id="2"]
+
+[sub_resource type="Resource" id="swarmer"]
+script = ExtResource("2")
+id = "swarmer"
+rep = "GNAT"
+layer = "air"
+hp = 2
+speed = 115.0
+turn = 2.2
+dmg = 1
+radius = 9.0
+cost = 1
+unlock = 1
+standoff = 0.0
+fire_range = 0.0
+fire_period = 0.0
+shell_speed = 0.0
+shell_dmg = 0
+lead = 0.0
+spread = 0.0
+
+[sub_resource type="Resource" id="gunboat"]
+script = ExtResource("2")
+id = "gunboat"
+rep = "JACKAL"
+layer = "surf"
+hp = 5
+speed = 65.0
+turn = 1.2
+dmg = 0
+radius = 14.0
+cost = 3
+unlock = 3
+standoff = 500.0
+fire_range = 700.0
+fire_period = 4.0
+shell_speed = 150.0
+shell_dmg = 1
+lead = 0.6
+spread = 0.05
+
+[sub_resource type="Resource" id="bomber"]
+script = ExtResource("2")
+id = "bomber"
+rep = "VULTURE"
+layer = "air"
+hp = 8
+speed = 45.0
+turn = 0.5
+dmg = 2
+radius = 16.0
+cost = 5
+unlock = 5
+standoff = 0.0
+fire_range = 0.0
+fire_period = 0.0
+shell_speed = 0.0
+shell_dmg = 0
+lead = 0.0
+spread = 0.0
+
+[sub_resource type="Resource" id="sub"]
+script = ExtResource("2")
+id = "sub"
+rep = "LAMPREY"
+layer = "sub"
+hp = 6
+speed = 35.0
+turn = 0.5
+dmg = 0
+radius = 16.0
+cost = 6
+unlock = 7
+standoff = 600.0
+fire_range = 800.0
+fire_period = 8.0
+shell_speed = 130.0
+shell_dmg = 2
+lead = 0.5
+spread = 0.03
+torp_run = 900.0
+
+[resource]
+script = ExtResource("1")
+roster = [SubResource("swarmer"), SubResource("gunboat"), SubResource("bomber"), SubResource("sub")]

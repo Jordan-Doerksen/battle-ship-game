@@ -24,23 +24,104 @@ next chunk begins.** No dead mechanics, no orphan pointers, no dead tags strappe
 
 ## 2. Current status
 
-Only **C0 — Heartbeat** exists: a fixed-timestep deterministic loop, seeded RNG, the `GameWorld` truth
-object, and a minimal render harness proving the loop is alive. No gameplay systems (movement, combat,
-hardpoints, sonar) are wired yet. See `DECISIONS.md`'s Build Timeline for what's next.
+**C0 — Heartbeat, C1 — Naval movement, and C2 — Hardpoint hull & gunnery range** are all built
+(2026-07-08), each through the full pipeline: owner interview → approved spec → owner-approved
+interactive mockup → Godot port verified against it.
+
+C1: `Movement.gd` (system #1), `InputState` one-way input door, `movement.tres`, mockup-matched
+sea/hull/wake render + helm gauges. C2: `Drones`/`Turrets`/`Projectiles` behind it in the fixed step
+order, the `Configs` bundle, `hardpoint.tres`/`weapons.tres`/`range.tres`, pooled shells, and the
+LOOK-LOCKED render — battleship-scale hull with class-distinct traversing turret art, practice
+drones, force-fire (hold LMB = all guns on cursor, RMB = main battery), reticle + kills HUD.
+`design/*.html` mockups remain the visual references; `tests/probe_{sim,movement,hardpoints}.gd`
+gate everything in `verify.sh`. The C2 spec's LOOK-LOCK (owner: "if it doesn't look this good it
+doesn't get approved") binds any future render change that touches this chunk.
+
+**C3 — Wave director & first enemies** is BUILT (2026-07-08): seeded budget director (discrete
+waves + lulls, costs/unlocks, cluster bearings, beyond-the-edge arrival), swarmer/gunboat/bomber
+roster, hull pips + grace, SHIP LOST card + fresh-seed restart, MMB secondary force-fire, radar
+scope with fire-control bearing, over-the-horizon main battery with proximity fuse. The C2 practice
+range retired with it (Drones/RangeConfig deleted; probes re-targeted). One port fix worth knowing:
+turret auto-fire LEADS its target now — no-lead fire couldn't hit orbiting gunboats and waves never
+cleared; the fix is in the mockup reference too. `probe_waves` + re-targeted `probe_hardpoints`
+gate it all in `verify.sh`.
+
+**Direction change (owner, 2026-07-08 — see the DECISIONS Change Log):** the hardpoint purchase
+economy is DEAD. Ships have set hulls/turrets; progression is persistent levels unlocking a tech
+tree (movement, turret-size-specific, bullet effects, traverse, and a helicopter branch — function
+TBD). The fixed loadout already in the build matches this.
+
+**C4 — Levels & tech tree** is BUILT (2026-07-08): persistent career XP/levels in the FIRST save
+file (`user://profile.cfg`, app-layer only), `Tech.apply` deriving each sortie's Configs from
+duplicated base resources + unlocked nodes (zero tech = byte-identical C3, probe-gated), the
+24-node tree + CLASSIFIED AIR WING on a custom-drawn tree screen, the title hub, lost-card XP
+report, four marquee sim features behind default-off flags, muzzle-origin shells (owner's approval
+fix), and the DEV TEST KIT (debug builds only, ` to toggle). `probe_tech` (9 checks) gates it in
+`verify.sh`; `design/tech-tree.html` stays the visual/loop reference.
+
+**C5 — Sonar, subs & depth charges is BUILT (2026-07-09):** interview → approved spec → approved
+mockup (`design/sonar-subs.html` stays the visual reference) → Godot port. The third D1.9 domain:
+`sub` roster elite (cost 6, unlock wave 7) torpedoing from standoff with wake-drawing torpedoes;
+`Sonar.gd` passive detection + contact latch (`Enemy.detected_until`, D1.10); `DepthCharges.gd`
+contact-gated stern volleys — the owner superseded D1.11's blind-backstop clause at interview
+(no contact, no ASW; charges stay free/auto/inaccurate), and NO gun can hurt a sub (domain
+exclusion, probe-gated). `SonarConfig`/`sonar.tres`, SONAR tech branch (son1–son5, ASDIC LOCK
+marquee), `xp_sub` 80, radar sonar ring + sonar-gated diamond blips, ripple tell, DC sink/blast
+fx, six-column tree, dev-kit `+SUB`. `probe_sonar` (8 checks incl. zero-tech baseline) gates it
+in `verify.sh`.
+
+**C6 — AIR WING is BUILT (2026-07-09):** interview → approved spec → mockup through two owner
+gate revisions (weaving escort + speed-coupled throttle; DOOR GUNNER ×2) → Godot port. The stern
+pad flies an autonomous, invulnerable ASW wingman: air1 WHIRLYBIRD unlocks it and de-redacts the
+seven-node column (`tech.tres` at 36 nodes); `AirWing.gd` (after DepthCharges, inert without
+`tech.helo` — zero-tech probe-gated) runs the pad→air→rtb state machine, the escort weave +
+throttle (aim point rides the ship and leads with its speed; astern beeline; acceptance contract
+is RECOVERY — back ahead of the bow <5s from any transient dip), dipping sonar on the C5 latch
+(MAD GEAR: bird latches never decay), contact-centered light drops (detector-first: softens, the
+stern racks finish), door gunners (wild short-reach tracers vs air/surface; `gunsplash` water
+slaps; the deep draws zero fire). Torpedo launches mark `helo_mark` for its investigate behavior.
+Render: rotor/shadow/dip ring/pad rearm arc + radar bird blip. `probe_airwing` (10 checks) gates
+it; `probe_tech`'s AIR-WING-locked check superseded (air1 buys, air2 gates). Also this chunk: the
+deaf-deep law went PHYSICAL (latent C5 gap — shells/airbursts now skip submerged hulls everywhere).
+
+**C7 — Boss ladder & naming pass is BUILT (2026-07-09):** interview → approved spec → approved
+mockup (`design/boss-ladder.html` stays the visual reference) → Godot port. Every 5th wave a
+mothership war machine + `escort_frac` budget escort: THE JUGGERNAUT (surface; turret/director
+parts, panic-fires when the director dies), THE CANOPY (air — mb16 can't touch it; bays + drone
+hive), THE MAW (deep; 20s/8s dive–breach cycle, torpedo fans while down, cowls exposed while up,
+every cowl lost extends the breach). `Bosses.gd` after Enemies; parts + phases; soft-gated cores
+(×0.25 until parts fall); machines integrate with sonar/racks/bird/turrets/projectiles (turret
+`_pick_target` refactored to pseudo-targets; machine strikes respect domain tags physically).
+Rewards: per-part XP + lap-scaled bounty + 2-pip hull patch (D1.8 refined, not superseded).
+Naming pass: `EnemyDef.rep` GNAT/JACKAL/VULTURE/LAMPREY in the wave-plate newsreel tally,
+PRIORITY TARGET plate (core bar + strike-through part pips), oversized radar blips, dev-kit
+machine spawn buttons. **Owner tune at this gate (C5 behavior change): the stern racks throw a
+K-GUN SPREAD** — stations around the beams + stern (`sonar.dc_ring`), scatter as jitter — the
+blind auto racks needed a blanket, not a point. `probe_bosses` (8 checks) gates it;
+`probe_waves`'s budget scenario isolates the ladder (`bosses.every_n = 0`).
+
+**The founding brief is SYSTEMS-COMPLETE.** Remaining open threads are narrative/naming only:
+#1 water-mystery payoff, #4 working-title trademark check. New systems (a win mode? new hulls?
+D1.12 says one hull until revisited) start with fresh `/spec-feature` interviews.
 
 ## 3. Tree layout
 
 ```
 scripts/
-  app/            root scene + fixed-step loop plumbing (Main.gd)
+  app/            root scene + loop plumbing + meta layer (Main.gd — state machine title/tree/game,
+                  InputState pre-step, effects plumbing post-step, sortie restarts;
+                  Profile.gd — the save file; Tech.gd — config derivation + spend rules)
   engine/         the deterministic sim
-    Sim.gd        step root — calls systems in order (empty for now)
-    data/         GameWorld truth object + tunable tables
-    entities/     plain pooled data classes
-    systems/      static funcs that mutate GameWorld (empty until C1)
-    util/         Rng, Pool — determinism primitives
-  render/         one-way sim → view (FieldRenderer)
-  ui/             screens + HUD (not built yet)
+    Sim.gd        step root — fixed order: Movement, Waves, Enemies, Bosses, Sonar,
+                  DepthCharges, AirWing, Turrets, Projectiles
+    data/         GameWorld truth object, InputState, Configs bundle
+    entities/     plain data classes (Enemy, Projectile, Mount, Boss)
+    systems/      static funcs that mutate GameWorld (Movement C1; Turrets/Projectiles C2;
+                  Waves/Enemies/Hull C3; Sonar/DepthCharges C5; AirWing C6; Bosses C7)
+    util/         Rng, Pool — determinism primitives (Pool feeds projectiles)
+  render/         one-way sim → view (FieldRenderer: sea/wake/hull/turrets/enemies/fx; patina.gdshader)
+  ui/             screens + HUD (HelmGauges — gauges/pips/wave plate/radar/reticle/lost card;
+                  TitleScreen, TechTreeScreen; DevKit — debug builds only)
 config/           typed Resource tunables (.tres)
 docs/             SPEC.md, HANDOFF.md (this file), CHANGELOG.md, DESIGN-BRIEF.md
 design/           approved HTML mockups (visual spec, mock → approve → port)

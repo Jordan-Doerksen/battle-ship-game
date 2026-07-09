@@ -1,13 +1,22 @@
 class_name Sim
 extends RefCounted
 # The deterministic step root (DECISIONS D1.4). ONE fixed-timestep tick mutates `world` in a stable,
-# index-ordered sequence. Called only by Main's fixed-step accumulator — never from a render path.
-# C0 has no gameplay systems yet; this only proves the clock advances deterministically. Systems slot
-# into this fixed order as chunks land (naval movement first — see docs/SPEC.md C1); the order is part
-# of determinism.
+# index-ordered sequence. Called only by Main's fixed-step accumulator (or a headless probe) — never
+# from a render path. Each system is a static func taking its own <Domain>Config; the call order below
+# is part of determinism.
 
-static func step(world: GameWorld, dt: float) -> void:
+static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 	world.elapsed += dt
 	world.tick += 1
-	# …future: Movement.step(world, dt, movement_cfg) — naval momentum/turning (C1)
-	# …future: Turrets/Sonar/DepthCharges/Spawn — later chunks, each reading its own <Domain>Config.tres
+	if not world.run_over:                     # a sunk ship freezes the war; shells already flying land
+		Movement.step(world, dt, cfg)          # C1 — naval momentum/turning, always system #1
+		Waves.step(world, dt, cfg)             # C3 — the seeded budget director
+		Enemies.step(world, dt, cfg)           # C3/C5 — enemy movement + gunboat/sub fire
+		Bosses.step(world, dt, cfg)            # C7 — the war machine (parts, phases, attacks)
+		Sonar.step(world, dt, cfg)             # C5 — passive detection + contact latch
+		DepthCharges.step(world, dt, cfg)      # C5 — contact-gated stern volleys
+		AirWing.step(world, dt, cfg)           # C6 — the ASW wingman (inert without tech.helo)
+		Turrets.step(world, dt, cfg)           # C2 — hardpoint targeting/traverse/fire
+	Projectiles.step(world, dt, cfg)           # C2/C3/C5/C6 — shells, torpedoes, charges, tracers
+	if world.effects.size() > 400:             # render drains every frame; cap is a headless backstop
+		world.effects = world.effects.slice(world.effects.size() - 400)

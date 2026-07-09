@@ -1,0 +1,1360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EDF Career Trials — C4 Levels & Tech Tree</title>
+</head>
+<body>
+<!-- ================================================================================
+  Earth Defense Force (working title) — C4 LEVELS & TECH TREE MOCKUP
+  Mockup gate (DECISIONS.md): the full career loop in one page, per
+  docs/specs/tech-tree.md: title hub → tech tree (24 buyable nodes, variable costs,
+  strict in-branch order, free respec, AIR WING redacted/locked) → BEGIN SORTIE
+  launches the approved C3 wave game with purchased tech APPLIED (stat mods derive
+  the config; four marquee effects: CRASH TURN, INCENDIARY LOAD, PROXIMITY BURST,
+  FULL SALVO) → XP from kills + wave bonuses banks to the persistent profile
+  (localStorage here; user://profile.cfg in the port) → level-ups → more points.
+  The sim stays deterministic: tech only derives CONFIG before a sortie starts.
+  Keys in-sortie: W/S · A/D · LMB all · MMB secondaries · RMB main · R new sortie.
+================================================================================= -->
+<style>
+  :root {
+    --sea-deep:   #0A1E28;
+    --foam:       #E4F0F2;
+    --signal-red: #D94F2B;
+    --brass:      #CDBA8E;
+    --brass-dim:  #8E815F;
+    --steel:      #93A7AE;
+    --plate:      rgba(13, 32, 40, 0.88);
+    --plate-edge: rgba(205, 186, 142, 0.5);
+    --mono: ui-monospace, "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --disp: "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; }
+  body { background: var(--sea-deep); color: var(--brass); font-family: var(--disp); user-select: none; }
+  #sea { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; }
+  #patina {
+    position: absolute; inset: 0; pointer-events: none;
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.07) 0 1px, transparent 1px 3px),
+      radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(2, 10, 14, 0.55) 100%);
+  }
+  .plate {
+    position: absolute; background: var(--plate); border: 1px solid var(--plate-edge);
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    padding: 12px 16px; pointer-events: none;
+  }
+  .eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 0.32em; text-transform: uppercase; color: var(--brass-dim); }
+  .eyebrow .star { color: var(--signal-red); }
+  .btn {
+    font-family: var(--disp); text-transform: uppercase; cursor: pointer;
+    background: var(--signal-red); color: var(--foam); border: none;
+    font-size: 16px; font-weight: 700; letter-spacing: 0.26em; padding: 14px 30px 14px 34px;
+    clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  }
+  .btn:hover { background: #EA6742; }
+  .btn.ghost { background: transparent; border: 1px solid var(--brass-dim); color: var(--brass); clip-path: none; }
+  .btn.ghost:hover { border-color: var(--brass); color: var(--foam); }
+  .btn:focus-visible { outline: 2px solid var(--signal-red); outline-offset: 2px; }
+
+  /* ── screens ── */
+  .screen { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 5; }
+  .screen.on { display: flex; }
+  #screen-title h1 {
+    font-size: 54px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase;
+    color: var(--foam); text-align: center; text-shadow: 0 0 24px rgba(217,79,43,0.35);
+  }
+  #screen-title .sub { margin-top: 8px; font-size: 13px; letter-spacing: 0.5em; text-transform: uppercase; color: var(--signal-red); font-weight: 700; }
+  #screen-title .tag { margin-top: 4px; font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--brass-dim); }
+  #title-level { margin-top: 34px; width: 380px; }
+  .lvlrow { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 12px; color: var(--brass); margin-bottom: 4px; }
+  .xpbar { height: 10px; border: 1px solid var(--brass-dim); background: rgba(228,240,242,0.05); }
+  .xpbar .fill { height: 100%; background: var(--signal-red); }
+  #title-btns { margin-top: 30px; display: flex; gap: 18px; }
+
+  /* ── tech tree screen ── */
+  #screen-tree { justify-content: flex-start; padding: 26px 30px; background: rgba(4,14,19,0.55); }
+  #tree-head {
+    width: 100%; max-width: 1220px; display: flex; align-items: center; gap: 20px;
+    background: var(--plate); border: 1px solid var(--plate-edge); padding: 12px 18px;
+  }
+  #tree-head .grow { flex: 1; }
+  #tree-head .stat { font-family: var(--mono); font-size: 13px; color: var(--foam); }
+  #tree-head .stat b { color: var(--signal-red); }
+  #tree-cols {
+    width: 100%; max-width: 1220px; flex: 1; display: grid;
+    grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 12px; overflow-y: auto;
+    align-content: start;
+  }
+  .branch { border: 1px solid rgba(205,186,142,0.25); background: rgba(13,32,40,0.75); padding: 10px; }
+  .branch h3 { font-size: 12px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: var(--foam); margin-bottom: 10px; }
+  .branch h3 small { display: block; font-size: 9px; letter-spacing: 0.16em; color: var(--brass-dim); margin-top: 2px; }
+  .node {
+    border: 1px solid var(--brass-dim); padding: 8px 9px; margin-bottom: 8px; cursor: pointer;
+    background: rgba(228,240,242,0.03); position: relative;
+  }
+  .node .nm { font-size: 11.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--brass); }
+  .node .ds { font-family: var(--mono); font-size: 10px; color: var(--brass-dim); margin-top: 3px; }
+  .node .ct { position: absolute; top: 6px; right: 8px; font-family: var(--mono); font-size: 10px; color: var(--brass-dim); }
+  .node.owned { border-color: var(--signal-red); background: rgba(217,79,43,0.12); }
+  .node.owned .nm { color: var(--foam); }
+  .node.owned .ct { color: var(--signal-red); }
+  .node.avail:hover { border-color: var(--brass); background: rgba(228,240,242,0.07); }
+  .node.locked { opacity: 0.45; cursor: not-allowed; }
+  .node.marquee .nm { color: var(--signal-red); }
+  .node.owned.marquee .nm { color: var(--foam); text-shadow: 0 0 8px rgba(217,79,43,0.8); }
+  .branch.classified .node { cursor: not-allowed; opacity: 0.55; }
+  .branch.classified .nm { color: var(--brass-dim); letter-spacing: 0.05em; }
+  .stamp {
+    margin-top: 8px; border: 2px solid rgba(217,79,43,0.65); color: rgba(217,79,43,0.85);
+    font-weight: 700; font-size: 11px; letter-spacing: 0.24em; text-align: center; padding: 6px 4px;
+    transform: rotate(-4deg); text-transform: uppercase;
+  }
+
+  /* ── in-game HUD (C3, unchanged look) ── */
+  #wave-plate { top: 18px; left: 18px; min-width: 330px; }
+  #wave-line { font-family: var(--mono); font-size: 17px; font-weight: 700; letter-spacing: 0.1em; color: var(--foam); margin-top: 5px; }
+  #wave-line b { color: var(--signal-red); }
+  #kills, #xp-line { margin-top: 6px; font-family: var(--mono); font-size: 12px; color: var(--brass); letter-spacing: 0.08em; }
+  #gauges { left: 18px; bottom: 18px; width: 330px; display: grid; gap: 10px; }
+  .g-label { font-size: 9px; font-weight: 700; letter-spacing: 0.28em; text-transform: uppercase; color: var(--brass-dim); margin-bottom: 4px; }
+  #order { font-family: var(--mono); font-size: 15px; font-weight: 700; letter-spacing: 0.12em; color: var(--signal-red); }
+  .row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .big { font-family: var(--mono); font-size: 26px; font-weight: 700; color: var(--foam); font-variant-numeric: tabular-nums; }
+  .unit { font-size: 10px; letter-spacing: 0.2em; color: var(--brass-dim); text-transform: uppercase; }
+  .sub { font-family: var(--mono); font-size: 12px; color: var(--brass); font-variant-numeric: tabular-nums; }
+  .bar { position: relative; height: 12px; border: 1px solid var(--brass-dim); background: rgba(228,240,242,0.04); margin-top: 5px; }
+  .bar .fill { position: absolute; top: 0; bottom: 0; background: var(--steel); opacity: 0.85; }
+  .bar .zero { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--brass); }
+  .bar .needle { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--signal-red); }
+  .ticks { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 8px; color: var(--brass-dim); margin-top: 2px; }
+  #pips { display: flex; gap: 4px; margin-top: 5px; }
+  #pips span { flex: 1; height: 12px; background: var(--steel); border: 1px solid var(--brass-dim); }
+  #pips span.gone { background: transparent; }
+  #pips.grace span:not(.gone) { animation: flicker 0.12s steps(2) infinite; }
+  @keyframes flicker { 50% { background: var(--signal-red); } }
+
+  #lost-overlay { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; background: rgba(20,6,4,0.55); z-index: 6; }
+  #lost-card {
+    background: var(--plate); border: 1px solid var(--signal-red); padding: 28px 44px; text-align: center;
+    clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  }
+  #lost-card h2 { font-size: 30px; font-weight: 700; letter-spacing: 0.26em; text-transform: uppercase; color: var(--signal-red); }
+  #lost-stats { font-family: var(--mono); font-size: 15px; color: var(--foam); margin-top: 12px; letter-spacing: 0.1em; }
+  #lost-xp { font-family: var(--mono); font-size: 13px; color: var(--brass); margin-top: 8px; letter-spacing: 0.1em; }
+  #lost-xp b { color: var(--signal-red); }
+  #lost-btns { margin-top: 20px; display: flex; gap: 14px; justify-content: center; }
+
+  /* ── dev test kit ── */
+  #dev-panel {
+    position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+    z-index: 8; display: none; flex-direction: column; gap: 6px;
+    background: rgba(6,18,24,0.94); border: 1px solid #6f5bd6; padding: 9px 12px;
+    box-shadow: 0 0 18px rgba(111,91,214,0.3);
+  }
+  #dev-panel.on { display: flex; }
+  .dev-title { font-size: 10px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #b7a8f0; }
+  .dev-hint { color: #6b6a7e; letter-spacing: 0.1em; margin-left: 8px; }
+  .dev-row { display: flex; gap: 6px; }
+  .dev-btn {
+    font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--brass); background: rgba(228,240,242,0.04);
+    border: 1px solid var(--brass-dim); padding: 5px 9px; cursor: pointer; white-space: nowrap;
+  }
+  .dev-btn:hover { border-color: var(--brass); color: var(--foam); }
+  .dev-btn.tog.active { background: #6f5bd6; border-color: #8a78e8; color: #fff; }
+  .dev-btn:focus-visible { outline: 2px solid #8a78e8; outline-offset: 2px; }
+</style>
+
+<canvas id="sea"></canvas>
+<div id="patina"></div>
+
+<!-- ── TITLE HUB ── -->
+<div id="screen-title" class="screen on">
+  <div class="eyebrow"><span class="star">★</span> Naval Trials Bureau · Restricted</div>
+  <h1>Earth<br>Defense Force</h1>
+  <div class="sub">Sortie Command</div>
+  <div class="tag">They came for our water. We answered with the fleet.</div>
+  <div id="title-level">
+    <div class="lvlrow"><span id="title-lvl">COMMANDER · LEVEL 1</span><span id="title-xp">0 / 150 XP</span></div>
+    <div class="xpbar"><div class="fill" id="title-fill" style="width:0%"></div></div>
+  </div>
+  <div id="title-btns">
+    <button class="btn" id="btn-sortie">Begin Sortie</button>
+    <button class="btn ghost" id="btn-tree">Tech Tree</button>
+  </div>
+</div>
+
+<!-- ── TECH TREE ── -->
+<div id="screen-tree" class="screen">
+  <div id="tree-head">
+    <span class="stat" id="tree-lvl">LEVEL 1</span>
+    <span class="stat">POINTS: <b id="tree-pts">1</b></span>
+    <div class="grow">
+      <div class="xpbar"><div class="fill" id="tree-fill" style="width:0%"></div></div>
+    </div>
+    <span class="stat" id="tree-xp">0 / 150</span>
+    <button class="btn ghost" id="btn-respec">Respec</button>
+    <button class="btn ghost" id="btn-grantxp" title="mockup only — simulates a good sortie">+800 XP (mock)</button>
+    <button class="btn" id="btn-back">Title</button>
+  </div>
+  <div id="tree-cols"></div>
+</div>
+
+<!-- ── IN-GAME HUD ── -->
+<section id="wave-plate" class="plate" style="display:none">
+  <div class="eyebrow"><span class="star">★</span> Earth Defense Force · Sortie Command</div>
+  <div id="wave-line">AWAITING CONTACT</div>
+  <div id="kills">DRONES DESTROYED: 0</div>
+  <div id="xp-line">XP +0</div>
+</section>
+
+<section id="gauges" class="plate" style="display:none">
+  <div>
+    <div class="g-label">Hull Integrity</div>
+    <div id="pips"></div>
+  </div>
+  <div>
+    <div class="g-label">Engine Order</div>
+    <div id="order">ALL STOP</div>
+  </div>
+  <div>
+    <div class="g-label">Way on Ship</div>
+    <div class="row">
+      <span class="big" id="speed">0.0</span><span class="unit">u/s keel</span>
+      <span class="sub" id="speed-pct">0% FULL AHEAD</span>
+    </div>
+    <div class="bar" id="way-bar"><div class="zero"></div><div class="fill" id="way-fill"></div></div>
+    <div class="ticks"><span>ASTERN 35%</span><span>0</span><span>AHEAD 100%</span></div>
+  </div>
+  <div>
+    <div class="g-label">Helm</div>
+    <div class="row"><span class="sub" id="rudder-txt">RUDDER AMIDSHIPS</span><span class="sub" id="authority">AUTHORITY 25%</span></div>
+    <div class="bar"><div class="zero" style="left:50%"></div><div class="needle" id="rudder-needle" style="left:50%"></div></div>
+    <div class="ticks"><span>PORT</span><span>STBD</span></div>
+  </div>
+  <div class="row">
+    <span class="sub" id="batteries">BATTERIES: AUTO</span>
+    <span class="sub" id="hdg">HDG 000°</span>
+  </div>
+</section>
+
+<!-- ── DEV TEST KIT (mockup only; toggle with the ` key) ── -->
+<div id="dev-panel">
+  <div class="dev-title">◆ TEST KIT <span class="dev-hint">` to hide</span></div>
+  <div class="dev-row">
+    <button class="dev-btn tog" id="dev-invuln">INVULNERABLE</button>
+    <button class="dev-btn tog" id="dev-freeze">FREEZE WAVES</button>
+    <button class="dev-btn tog" id="dev-godguns">GOD GUNS</button>
+  </div>
+  <div class="dev-row">
+    <button class="dev-btn" id="dev-swarmer">+ SWARMER</button>
+    <button class="dev-btn" id="dev-gunboat">+ GUNBOAT</button>
+    <button class="dev-btn" id="dev-bomber">+ BOMBER</button>
+    <button class="dev-btn" id="dev-swarm">SWARM ×8</button>
+  </div>
+  <div class="dev-row">
+    <button class="dev-btn" id="dev-killall">KILL ALL</button>
+    <button class="dev-btn" id="dev-next">NEXT WAVE</button>
+    <button class="dev-btn" id="dev-heal">HEAL HULL</button>
+    <button class="dev-btn" id="dev-maxlvl">MAX LEVEL</button>
+  </div>
+</div>
+
+<div id="lost-overlay">
+  <div id="lost-card">
+    <h2>Ship Lost</h2>
+    <div id="lost-stats">WAVE 0 · 0 DRONES DESTROYED</div>
+    <div id="lost-xp">+0 XP</div>
+    <div id="lost-btns">
+      <button class="btn" id="btn-again">[R] New Sortie</button>
+      <button class="btn ghost" id="btn-losttree">[T] Tech Tree</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ═══════════════════════════ SIM-BEGIN ═══════════════════════════
+   Deterministic sim + the C4 meta layer's PURE logic (tech catalog, config derivation, XP/level
+   math, spend/respec rules) — everything here ports to Godot sim/config code and is validated
+   headless. No DOM, no Date, no Math.random. Tech modifies CONFIG before a sortie starts; the
+   marquee flags default OFF, making zero-tech runs byte-identical to C3. */
+
+const DEFAULT_CFG = {
+  move: {
+    max_speed_ahead: 220.0, astern_frac: 0.35, thrust_accel: 55.0, brake_accel: 90.0,
+    drag_forward: 0.08, drag_lateral: 1.8, turn_rate_max: 0.55, turn_speed_floor: 0.25,
+  },
+  weapons: {
+    aa20: { size: "S", name: "VIGILANT 20MM",  domains: ["air"],            policy: "CLOSE",  range: 420, rate: 12.0, traverse: 4.0, dmg: 1, speed: 700, spread: 0.045, splash: 0,  bloom_add: 0.01, bloom_max: 0.10, bloom_decay: 0.06 },
+    dp5:  { size: "M", name: "SENTINEL 5-IN",  domains: ["air", "surface"], policy: "CLOSE",  range: 560, rate: 1.2,  traverse: 2.2, dmg: 2, speed: 620, spread: 0.02,  splash: 0,  bloom_add: 0,    bloom_max: 0,    bloom_decay: 0 },
+    mb16: { size: "L", name: "JUDGEMENT 16-IN", domains: ["surface"],       policy: "STRONG", range: 900, rate: 0.33, traverse: 0.9, dmg: 4, speed: 420, spread: 0.012, splash: 36, bloom_add: 0,    bloom_max: 0,    bloom_decay: 0 },
+  },
+  mounts: [
+    { x: 0,   y: -72, size: "L" }, { x: 0,   y: 36,  size: "L" },
+    { x: -19, y: -28, size: "M" }, { x: 19,  y: -28, size: "M" },
+    { x: -19, y: 14,  size: "M" }, { x: 19,  y: 14,  size: "M" },
+    { x: -16, y: -55, size: "S" }, { x: 16,  y: -55, size: "S" },
+    { x: -17, y: 52,  size: "S" }, { x: 17,  y: 52,  size: "S" },
+  ],
+  loadout: { S: "aa20", M: "dp5", L: "mb16" },
+  aim_tol: 0.06,
+  waves: {
+    base_budget: 6, budget_per_wave: 4, lull_secs: 8.0, first_wave_delay: 3.0,
+    spawn_ring_min: 1700, spawn_ring_max: 2000, cluster_min: 1, cluster_max: 3,
+    hull_pips: 10, grace_secs: 0.8, radar_range: 2200,
+  },
+  enemies: {
+    swarmer: { layer: "air",  hp: 2, speed: 115, turn: 2.2, dmg: 1, radius: 9,  cost: 1, unlock: 1 },
+    gunboat: { layer: "surf", hp: 5, speed: 65,  turn: 1.2, dmg: 0, radius: 14, cost: 3, unlock: 3,
+               standoff: 500, fire_range: 700, fire_period: 4.0, shell_speed: 150, shell_dmg: 1, lead: 0.6, spread: 0.05 },
+    bomber:  { layer: "air",  hp: 8, speed: 45,  turn: 0.5, dmg: 2, radius: 16, cost: 5, unlock: 5 },
+  },
+  hull_capsule: { half_len: 85, radius: 26 },
+  progress: {   // == config/progress.tres — XP + level curve (C4 spec table)
+    xp_swarmer: 10, xp_gunboat: 30, xp_bomber: 50, xp_wave_bonus: 25,
+    level_xp_base: 150, level_xp_step: 100,
+  },
+  tech: {       // marquee flags + params — all OFF = exact C3 behavior (baseline invariance)
+    crash_turn: false, crash_mult: 1.8, crash_secs: 3.0, crash_cooldown: 13.0, crash_min_frac: 0.7,
+    incendiary: false, burn_ticks: 3, burn_dmg: 1,
+    airburst: false, airburst_trigger: 8, airburst_radius: 20,
+    salvo: false, salvo_offset: 0.015,
+  },
+};
+const SIM_DT = 1 / 60;
+
+/* ── C4 tech catalog == config/tech.tres. In-branch order is strict; costs by tier. ── */
+const TECH = [
+  { id: "sea1", br: "SEAMANSHIP", name: "Trim Ballast",     cost: 1, desc: "+10% max speed",        mods: [{ p: "move.max_speed_ahead", mul: 1.10 }] },
+  { id: "sea2", br: "SEAMANSHIP", name: "Keel Shave",       cost: 1, desc: "+15% turn rate",        mods: [{ p: "move.turn_rate_max", mul: 1.15 }] },
+  { id: "sea3", br: "SEAMANSHIP", name: "Engine Overhaul",  cost: 1, desc: "+20% thrust",           mods: [{ p: "move.thrust_accel", mul: 1.20 }] },
+  { id: "sea4", br: "SEAMANSHIP", name: "Hard Rudder",      cost: 2, desc: "turn floor 0.25→0.40",  mods: [{ p: "move.turn_speed_floor", set: 0.40 }] },
+  { id: "sea5", br: "SEAMANSHIP", name: "Sea Legs",         cost: 2, desc: "+2 hull pips",          mods: [{ p: "waves.hull_pips", add: 2 }] },
+  { id: "sea6", br: "SEAMANSHIP", name: "CRASH TURN",       cost: 3, desc: "EMERGENCY BACK at speed: ×1.8 turn, 3s (cd 10s)", mods: [{ p: "tech.crash_turn", set: true }], marquee: true },
+  { id: "flk1", br: "FLAK", name: "Gun Oil",          cost: 1, desc: "+15% AA fire rate",      mods: [{ p: "weapons.aa20.rate", mul: 1.15 }] },
+  { id: "flk2", br: "FLAK", name: "Tight Chokes",     cost: 1, desc: "−25% AA spread",         mods: [{ p: "weapons.aa20.spread", mul: 0.75 }] },
+  { id: "flk3", br: "FLAK", name: "Rapid Traverse",   cost: 1, desc: "+25% S traverse",        mods: [{ p: "weapons.aa20.traverse", mul: 1.25 }] },
+  { id: "flk4", br: "FLAK", name: "Cooling Jackets",  cost: 2, desc: "−40% bloom gain",        mods: [{ p: "weapons.aa20.bloom_add", mul: 0.60 }] },
+  { id: "flk5", br: "FLAK", name: "Extended Belts",   cost: 2, desc: "+15% AA range",          mods: [{ p: "weapons.aa20.range", mul: 1.15 }] },
+  { id: "flk6", br: "FLAK", name: "INCENDIARY LOAD",  cost: 3, desc: "AA hits ignite air targets: 3 dmg over 3s", mods: [{ p: "tech.incendiary", set: true }], marquee: true },
+  { id: "gun1", br: "GUNNERY", name: "Calibrated Sights", cost: 1, desc: "−30% 5-in spread",   mods: [{ p: "weapons.dp5.spread", mul: 0.70 }] },
+  { id: "gun2", br: "GUNNERY", name: "Power Rammer",      cost: 1, desc: "+25% 5-in fire rate", mods: [{ p: "weapons.dp5.rate", mul: 1.25 }] },
+  { id: "gun3", br: "GUNNERY", name: "Fast Slew",         cost: 1, desc: "+25% M traverse",    mods: [{ p: "weapons.dp5.traverse", mul: 1.25 }] },
+  { id: "gun4", br: "GUNNERY", name: "Long Barrels",      cost: 2, desc: "+15% range & shell speed", mods: [{ p: "weapons.dp5.range", mul: 1.15 }, { p: "weapons.dp5.speed", mul: 1.15 }] },
+  { id: "gun5", br: "GUNNERY", name: "Heavy Shells",      cost: 2, desc: "+1 5-in damage",     mods: [{ p: "weapons.dp5.dmg", add: 1 }] },
+  { id: "gun6", br: "GUNNERY", name: "PROXIMITY BURST",   cost: 3, desc: "5-in shells airburst: 20u flak cloud vs air", mods: [{ p: "tech.airburst", set: true }], marquee: true },
+  { id: "ord1", br: "ORDNANCE", name: "Turret Gearing",  cost: 1, desc: "+30% L traverse",     mods: [{ p: "weapons.mb16.traverse", mul: 1.30 }] },
+  { id: "ord2", br: "ORDNANCE", name: "Bigger Charges",  cost: 1, desc: "+15% 16-in range",    mods: [{ p: "weapons.mb16.range", mul: 1.15 }] },
+  { id: "ord3", br: "ORDNANCE", name: "Wide Bursting",   cost: 2, desc: "+25% splash radius",  mods: [{ p: "weapons.mb16.splash", mul: 1.25 }] },
+  { id: "ord4", br: "ORDNANCE", name: "Fire Control",    cost: 2, desc: "−50% 16-in spread",   mods: [{ p: "weapons.mb16.spread", mul: 0.50 }] },
+  { id: "ord5", br: "ORDNANCE", name: "Fast Reload",     cost: 2, desc: "+30% 16-in fire rate", mods: [{ p: "weapons.mb16.rate", mul: 1.30 }] },
+  { id: "ord6", br: "ORDNANCE", name: "FULL SALVO",      cost: 3, desc: "both barrels: 2 shells per trigger", mods: [{ p: "tech.salvo", set: true }], marquee: true },
+  { id: "air1", br: "AIR WING", name: "████████",  cost: 0, desc: "PENDING BUREAU AUTHORIZATION", locked: true },
+  { id: "air2", br: "AIR WING", name: "██████",    cost: 0, desc: "████ ████████ ████",           locked: true },
+  { id: "air3", br: "AIR WING", name: "█████████", cost: 0, desc: "REDACTED — EXECUTIVE ORDER",   locked: true },
+  { id: "air4", br: "AIR WING", name: "███████",   cost: 0, desc: "████████",                     locked: true },
+  { id: "air5", br: "AIR WING", name: "████ ████", cost: 0, desc: "CLEARANCE INSUFFICIENT",       locked: true },
+];
+const BRANCHES = ["SEAMANSHIP", "FLAK", "GUNNERY", "ORDNANCE", "AIR WING"];
+
+/* config derivation: base + unlocked nodes' mods, applied in catalog order (deterministic) */
+function applyTech(baseCfg, unlockedIds) {
+  const cfg = structuredClone(baseCfg);
+  for (const node of TECH) {
+    if (node.locked || !unlockedIds.includes(node.id) || !node.mods) continue;
+    for (const m of node.mods) {
+      const path = m.p.split(".");
+      let o = cfg;
+      for (let i = 0; i < path.length - 1; i++) o = o[path[i]];
+      const k = path[path.length - 1];
+      if ("set" in m) o[k] = m.set;
+      else if ("mul" in m) o[k] = o[k] * m.mul;
+      else if ("add" in m) o[k] = o[k] + m.add;
+    }
+  }
+  return cfg;
+}
+
+/* level curve: XP needed to go from level n to n+1 = base + step*(n-1); level 1 starts at 0 XP */
+function xpForNext(level, pc) { return pc.level_xp_base + pc.level_xp_step * (level - 1); }
+function levelFromXp(totalXp, pc) {
+  let level = 1, spentXp = 0;
+  while (totalXp - spentXp >= xpForNext(level, pc)) {
+    spentXp += xpForNext(level, pc);
+    level += 1;
+  }
+  return { level, into: totalXp - spentXp, next: xpForNext(level, pc) };
+}
+
+/* spend rules: strict in-branch order, variable costs, points = (level−1) − spent; free respec */
+function pointsAvailable(profile, pc) {
+  let spent = 0;
+  for (const n of TECH) if (profile.unlocked.includes(n.id)) spent += n.cost;
+  return (levelFromXp(profile.xp, pc).level - 1) - spent;
+}
+function canBuy(profile, nodeId, pc) {
+  const node = TECH.find((n) => n.id === nodeId);
+  if (!node || node.locked || profile.unlocked.includes(nodeId)) return false;
+  const branch = TECH.filter((n) => n.br === node.br);
+  const idx = branch.findIndex((n) => n.id === nodeId);
+  for (let i = 0; i < idx; i++) if (!profile.unlocked.includes(branch[i].id)) return false;
+  return pointsAvailable(profile, pc) >= node.cost;
+}
+
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function makeSim(seed, cfg) {
+  return {
+    rand: mulberry32(seed), rngCalls: 0, t: 0, kills: 0, xp: 0,
+    ship: { x: 0, y: 0, vx: 0, vy: 0, heading: 0, along: 0, lat: 0 },
+    mounts: cfg.mounts.map(() => ({ ang: 0, cool: 0, bloom: 0, mode: "stow" })),
+    enemies: [], projectiles: [], effects: [],
+    hull: cfg.waves.hull_pips, grace_until: 0, run_over: false,
+    wave: 0, wave_state: "lull", lull_until: cfg.waves.first_wave_delay,
+    crash_until: -1, crash_ready: 0,
+    godmode: false, freeze_waves: false,   // DEV test-kit flags — default OFF (harness never sets them)
+  };
+}
+function draw(sim) { sim.rngCalls++; return sim.rand(); }
+function angDiff(a, b) { return ((a - b + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; }
+function dirOf(a) { return { x: Math.sin(a), y: -Math.cos(a) }; }
+function angleTo(from, to) { return Math.atan2(to.x - from.x, -(to.y - from.y)); }
+function mountWorld(ship, m) {
+  const c = Math.cos(ship.heading), s = Math.sin(ship.heading);
+  return { x: ship.x + m.x * c - m.y * s, y: ship.y + m.x * s + m.y * c };
+}
+function distToHull(sim, cfg, px, py) {
+  const f = dirOf(sim.ship.heading), hl = cfg.hull_capsule.half_len;
+  const ax = sim.ship.x - f.x * hl, ay = sim.ship.y - f.y * hl;
+  const bx = sim.ship.x + f.x * hl, by = sim.ship.y + f.y * hl;
+  const abx = bx - ax, aby = by - ay;
+  const t = Math.max(0, Math.min(1, ((px - ax) * abx + (py - ay) * aby) / (abx * abx + aby * aby)));
+  return Math.hypot(px - (ax + abx * t), py - (ay + aby * t));
+}
+
+function stepShip(s, inp, c, dt, turnMult) {
+  const speed = Math.hypot(s.vx, s.vy);
+  const authority = Math.max(c.turn_speed_floor, Math.min(1.0, speed / c.max_speed_ahead));
+  s.heading += c.turn_rate_max * turnMult * authority * inp.rudder * dt;
+  const f = dirOf(s.heading), r = { x: -f.y, y: f.x };
+  let along = s.vx * f.x + s.vy * f.y;
+  let lat = s.vx * r.x + s.vy * r.y;
+  if (inp.thrust !== 0) {
+    const opposing = (inp.thrust > 0 && along < -0.01) || (inp.thrust < 0 && along > 0.01);
+    along += (opposing ? c.brake_accel : c.thrust_accel) * inp.thrust * dt;
+  }
+  along *= Math.exp(-c.drag_forward * dt);
+  lat *= Math.exp(-c.drag_lateral * dt);
+  along = Math.min(c.max_speed_ahead, Math.max(-c.max_speed_ahead * c.astern_frac, along));
+  s.vx = f.x * along + r.x * lat; s.vy = f.y * along + r.y * lat;
+  s.x += s.vx * dt; s.y += s.vy * dt;
+  s.along = along; s.lat = lat;
+}
+
+// CRASH TURN (marquee): ordering EMERGENCY BACK above the speed threshold arms a turn-rate window
+function stepCrashTurn(sim, inp, cfg) {
+  const tc = cfg.tech;
+  if (!tc.crash_turn) return 1.0;
+  if (inp.thrust < 0 && sim.ship.along > tc.crash_min_frac * cfg.move.max_speed_ahead && sim.t >= sim.crash_ready) {
+    sim.crash_until = sim.t + tc.crash_secs;
+    sim.crash_ready = sim.t + tc.crash_cooldown;
+    sim.effects.push({ type: "crashturn", x: sim.ship.x, y: sim.ship.y });
+  }
+  return sim.t < sim.crash_until ? tc.crash_mult : 1.0;
+}
+
+function damageShip(sim, dmg, cfg) {
+  if (sim.run_over || sim.t < sim.grace_until || sim.godmode) return;   // godmode: DEV invulnerability
+  sim.hull -= dmg;
+  sim.grace_until = sim.t + cfg.waves.grace_secs;
+  sim.effects.push({ type: "shiphit", x: sim.ship.x, y: sim.ship.y });
+  if (sim.hull <= 0) {
+    sim.hull = 0;
+    sim.run_over = true;
+    sim.effects.push({ type: "shipdeath", x: sim.ship.x, y: sim.ship.y });
+  }
+}
+
+function makeEnemy(type, cfg) {
+  const def = cfg.enemies[type];
+  return { type, layer: def.layer, active: true, x: 0, y: 0, heading: 0,
+    hp: def.hp, hp_max: def.hp, cool: 0, burn_left: 0, next_burn: 0 };
+}
+function spawnWave(sim, cfg) {
+  const wc = cfg.waves;
+  let budget = wc.base_budget + wc.budget_per_wave * (sim.wave - 1);
+  const clusters = wc.cluster_min + Math.floor(draw(sim) * (wc.cluster_max - wc.cluster_min + 1));
+  const bearings = [];
+  for (let i = 0; i < clusters; i++) bearings.push(draw(sim) * 2 * Math.PI);
+  while (true) {
+    const unlocked = Object.keys(cfg.enemies).filter(
+      (t) => cfg.enemies[t].unlock <= sim.wave && cfg.enemies[t].cost <= budget);
+    if (!unlocked.length) break;
+    const type = unlocked[Math.floor(draw(sim) * unlocked.length)];
+    budget -= cfg.enemies[type].cost;
+    const bearing = bearings[Math.floor(draw(sim) * clusters)];
+    const ang = bearing + (draw(sim) - 0.5) * 0.5;
+    const dist = wc.spawn_ring_min + draw(sim) * (wc.spawn_ring_max - wc.spawn_ring_min);
+    const e = makeEnemy(type, cfg);
+    e.x = sim.ship.x + Math.sin(ang) * dist;
+    e.y = sim.ship.y - Math.cos(ang) * dist;
+    e.heading = angleTo(e, sim.ship);
+    sim.enemies.push(e);
+  }
+}
+function stepWaves(sim, cfg, dt) {
+  if (sim.freeze_waves) return;   // DEV: pause the director (manual spawns still live/attack)
+  if (sim.wave_state === "lull") {
+    if (sim.t >= sim.lull_until) {
+      sim.wave += 1;
+      spawnWave(sim, cfg);
+      sim.wave_state = "fighting";
+    }
+  } else if (!sim.enemies.some((e) => e.active)) {
+    sim.enemies.length = 0;
+    sim.xp += cfg.progress.xp_wave_bonus * sim.wave;   // wave-clear bonus (C4)
+    sim.effects.push({ type: "waveclear", wave: sim.wave });
+    sim.wave_state = "lull";
+    sim.lull_until = sim.t + cfg.waves.lull_secs;
+  }
+}
+
+function stepEnemies(sim, cfg, dt) {
+  for (const e of sim.enemies) {
+    if (!e.active) continue;
+    const def = cfg.enemies[e.type];
+    // INCENDIARY LOAD (marquee): burn ticks
+    if (e.burn_left > 0 && sim.t >= e.next_burn) {
+      e.burn_left--;
+      e.next_burn = sim.t + 1.0;
+      damageEnemy(sim, e, cfg.tech.burn_dmg, cfg);
+      if (!e.active) continue;
+    }
+    const distShip = Math.hypot(e.x - sim.ship.x, e.y - sim.ship.y);
+    let desired;
+    if (e.type === "gunboat") {
+      desired = distShip > def.standoff ? angleTo(e, sim.ship) : angleTo(e, sim.ship) + Math.PI / 2;
+    } else {
+      desired = angleTo(e, sim.ship);
+    }
+    e.heading += Math.max(-def.turn * dt, Math.min(def.turn * dt, angDiff(desired, e.heading)));
+    const d = dirOf(e.heading);
+    e.x += d.x * def.speed * dt;
+    e.y += d.y * def.speed * dt;
+    if (e.type === "gunboat") {
+      e.cool -= dt;
+      if (distShip <= def.fire_range && e.cool <= 0) {
+        e.cool = def.fire_period;
+        const flight = distShip / def.shell_speed;
+        const aim = { x: sim.ship.x + sim.ship.vx * flight * def.lead, y: sim.ship.y + sim.ship.vy * flight * def.lead };
+        const ang = angleTo(e, aim) + (draw(sim) * 2 - 1) * def.spread;
+        const dir = dirOf(ang);
+        sim.projectiles.push({ x: e.x + dir.x * 14, y: e.y + dir.y * 14,   // gunboat muzzle, not hull center
+          vx: dir.x * def.shell_speed, vy: dir.y * def.shell_speed,
+          dmg: def.shell_dmg, splash: 0, life: (def.fire_range * 1.4) / def.shell_speed, wid: "hostile", hostile: true });
+        sim.effects.push({ type: "gunflash", x: e.x, y: e.y, ang });
+      }
+    } else if (distToHull(sim, cfg, e.x, e.y) <= def.radius + cfg.hull_capsule.radius) {
+      e.active = false;
+      damageShip(sim, def.dmg, cfg);
+      sim.effects.push({ type: "death", x: e.x, y: e.y, layer: e.layer });
+    }
+  }
+}
+
+function enemyDomain(e) { return e.layer === "air" ? "air" : "surface"; }
+function pickTarget(sim, wpn, mpos) {
+  let best = null, bestKey = Infinity;
+  for (const e of sim.enemies) {
+    if (!e.active || !wpn.domains.includes(enemyDomain(e))) continue;
+    const dist = Math.hypot(e.x - mpos.x, e.y - mpos.y);
+    if (dist > wpn.range) continue;
+    const key = wpn.policy === "STRONG" ? -e.hp_max * 1e6 + dist : dist;
+    if (key < bestKey) { bestKey = key; best = e; }
+  }
+  return best;
+}
+const MUZZLE = { L: 35, M: 22, S: 13 };   // shells spawn at the barrel TIP, never inside the house
+function fireShell(sim, cfg, mpos, barrelAng, ang, wpn, wid, aim, forced, size) {
+  const bd = dirOf(barrelAng);
+  const ox = mpos.x + bd.x * MUZZLE[size], oy = mpos.y + bd.y * MUZZLE[size];
+  const dir = dirOf(ang);
+  const p = { x: ox, y: oy, vx: dir.x * wpn.speed, vy: dir.y * wpn.speed,
+    dmg: wpn.dmg, splash: wpn.splash, life: wpn.range / wpn.speed, wid, hostile: false };
+  if (wpn.splash > 0 && !forced) p.life = Math.min(Math.hypot(aim.x - ox, aim.y - oy), wpn.range) / wpn.speed;
+  sim.projectiles.push(p);
+}
+function stepTurrets(sim, inp, cfg, dt) {
+  for (let i = 0; i < cfg.mounts.length; i++) {
+    const mcfg = cfg.mounts[i], m = sim.mounts[i];
+    const wid = cfg.loadout[mcfg.size];
+    const wpn = cfg.weapons[wid];
+    const mpos = mountWorld(sim.ship, mcfg);
+    const forced = inp.forceAll || (inp.forceLarge && mcfg.size === "L") || (inp.forceMedium && mcfg.size === "M");
+    let aim = null;
+    if (forced) {
+      aim = { x: inp.aimX, y: inp.aimY };
+      m.mode = "forced";
+    } else {
+      const tgt = pickTarget(sim, wpn, mpos);
+      if (tgt) {
+        const tdef = cfg.enemies[tgt.type];
+        const flight = Math.hypot(tgt.x - mpos.x, tgt.y - mpos.y) / wpn.speed;
+        const td = dirOf(tgt.heading);
+        aim = { x: tgt.x + td.x * tdef.speed * flight, y: tgt.y + td.y * tdef.speed * flight };
+        m.mode = "auto";
+      } else m.mode = "stow";
+    }
+    const desired = aim ? angleTo(mpos, aim) : sim.ship.heading;
+    m.ang += Math.max(-wpn.traverse * dt, Math.min(wpn.traverse * dt, angDiff(desired, m.ang)));
+    m.cool -= dt;
+    m.bloom = Math.max(0, m.bloom - wpn.bloom_decay * dt);
+    if (aim && m.cool <= 0 && Math.abs(angDiff(desired, m.ang)) <= cfg.aim_tol) {
+      m.cool = 1 / wpn.rate;
+      const shotAng = m.ang + (draw(sim) * 2 - 1) * (wpn.spread + m.bloom);
+      m.bloom = Math.min(wpn.bloom_max, m.bloom + wpn.bloom_add);
+      if (wid === "mb16" && cfg.tech.salvo) {   // FULL SALVO: both barrels, one spread draw
+        fireShell(sim, cfg, mpos, m.ang, shotAng - cfg.tech.salvo_offset, wpn, wid, aim, forced, mcfg.size);
+        fireShell(sim, cfg, mpos, m.ang, shotAng + cfg.tech.salvo_offset, wpn, wid, aim, forced, mcfg.size);
+      } else {
+        fireShell(sim, cfg, mpos, m.ang, shotAng, wpn, wid, aim, forced, mcfg.size);
+      }
+      sim.effects.push({ type: "muzzle", idx: i, x: mpos.x, y: mpos.y, ang: m.ang, size: mcfg.size });
+    }
+  }
+}
+
+function damageEnemy(sim, e, dmg, cfg) {
+  e.hp -= dmg;
+  if (e.hp <= 0) {
+    e.active = false;
+    sim.kills++;
+    sim.xp += cfg.progress["xp_" + e.type] || 0;   // kill XP (C4)
+    sim.effects.push({ type: "death", x: e.x, y: e.y, layer: e.layer });
+  } else {
+    sim.effects.push({ type: "hit", x: e.x, y: e.y });
+  }
+}
+function igniteIfIncendiary(sim, cfg, e, wid) {
+  if (cfg.tech.incendiary && wid === "aa20" && e.active && e.layer === "air" && e.burn_left <= 0) {
+    e.burn_left = cfg.tech.burn_ticks;
+    e.next_burn = sim.t + 1.0;
+    sim.effects.push({ type: "ignite", x: e.x, y: e.y });
+  }
+}
+function stepProjectiles(sim, cfg, dt) {
+  for (let i = sim.projectiles.length - 1; i >= 0; i--) {
+    const p = sim.projectiles[i];
+    p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
+    let dead = p.life <= 0;
+    if (p.hostile) {
+      if (distToHull(sim, cfg, p.x, p.y) <= cfg.hull_capsule.radius) {
+        damageShip(sim, p.dmg, cfg);
+        sim.effects.push({ type: "shiphit", x: p.x, y: p.y });
+        dead = true;
+      }
+    } else if (p.splash > 0) {
+      if (!dead) {
+        for (const e of sim.enemies) {
+          if (e.active && e.layer === "surf" && Math.hypot(e.x - p.x, e.y - p.y) <= cfg.enemies[e.type].radius + 4) {
+            dead = true;
+            break;
+          }
+        }
+      }
+      if (dead) {
+        sim.effects.push({ type: "splash", x: p.x, y: p.y, r: p.splash });
+        for (const e of sim.enemies)
+          if (e.active && e.layer === "surf" && Math.hypot(e.x - p.x, e.y - p.y) <= p.splash)
+            damageEnemy(sim, e, p.dmg, cfg);
+      }
+    } else if (p.wid === "dp5" && cfg.tech.airburst) {
+      // PROXIMITY BURST (marquee): 5-in shells become flak vs air — near-miss detonation, small AoE
+      let burst = false;
+      for (const e of sim.enemies) {
+        if (!e.active) continue;
+        const trigger = e.layer === "air" ? cfg.enemies[e.type].radius + cfg.tech.airburst_trigger
+                                          : cfg.enemies[e.type].radius + 2;
+        if (Math.hypot(e.x - p.x, e.y - p.y) <= trigger) { burst = true; break; }
+      }
+      if (burst) {
+        sim.effects.push({ type: "airburst", x: p.x, y: p.y, r: cfg.tech.airburst_radius });
+        for (const e of sim.enemies) {
+          if (!e.active) continue;
+          if (Math.hypot(e.x - p.x, e.y - p.y) <= cfg.tech.airburst_radius + cfg.enemies[e.type].radius) {
+            damageEnemy(sim, e, p.dmg, cfg);
+          }
+        }
+        dead = true;
+      }
+    } else {
+      for (const e of sim.enemies) {
+        if (!e.active) continue;
+        if (Math.hypot(e.x - p.x, e.y - p.y) <= cfg.enemies[e.type].radius + 2) {
+          damageEnemy(sim, e, p.dmg, cfg);
+          igniteIfIncendiary(sim, cfg, e, p.wid);
+          dead = true;
+          break;
+        }
+      }
+    }
+    if (dead) sim.projectiles.splice(i, 1);
+  }
+}
+
+function stepSim(sim, inp, cfg, dt) {
+  sim.t += dt;
+  if (!sim.run_over) {
+    const turnMult = stepCrashTurn(sim, inp, cfg);
+    stepShip(sim.ship, inp, cfg.move, dt, turnMult);
+    stepWaves(sim, cfg, dt);
+    stepEnemies(sim, cfg, dt);
+    stepTurrets(sim, inp, cfg, dt);
+  }
+  stepProjectiles(sim, cfg, dt);
+  if (sim.effects.length > 400) sim.effects.splice(0, sim.effects.length - 400);
+}
+/* ═══════════════════════════ SIM-END ═══════════════════════════ */
+
+/* ── profile (meta layer; user://profile.cfg in the port, localStorage here) ── */
+const PC = DEFAULT_CFG.progress;
+let profile = { xp: 0, unlocked: [] };
+try {
+  const raw = localStorage.getItem("edf_profile_c4");
+  if (raw) profile = JSON.parse(raw);
+} catch (e) { /* fresh profile */ }
+function saveProfile() { try { localStorage.setItem("edf_profile_c4", JSON.stringify(profile)); } catch (e) {} }
+
+let baseCfg = structuredClone(DEFAULT_CFG);
+let cfg = applyTech(baseCfg, profile.unlocked);
+let sortie = 0;
+let sim = null;
+const input = { thrust: 0, rudder: 0, forceAll: false, forceLarge: false, forceMedium: false, aimX: 0, aimY: 0 };
+let screenState = "title";   // title | tree | game
+
+/* ── screens ── */
+const $ = (id) => document.getElementById(id);
+function show(state) {
+  screenState = state;
+  $("screen-title").className = "screen" + (state === "title" ? " on" : "");
+  $("screen-tree").className = "screen" + (state === "tree" ? " on" : "");
+  $("wave-plate").style.display = state === "game" ? "block" : "none";
+  $("gauges").style.display = state === "game" ? "block" : "none";
+  $("lost-overlay").style.display = "none";
+  if (state === "title") refreshTitle();
+  if (state === "tree") renderTree();
+}
+function refreshTitle() {
+  const lv = levelFromXp(profile.xp, PC);
+  $("title-lvl").textContent = `COMMANDER · LEVEL ${lv.level}`;
+  $("title-xp").textContent = `${lv.into} / ${lv.next} XP`;
+  $("title-fill").style.width = (100 * lv.into / lv.next) + "%";
+}
+function startSortie() {
+  cfg = applyTech(baseCfg, profile.unlocked);   // tech derives config BEFORE the run (determinism)
+  if (godGuns) for (const w of Object.values(cfg.weapons)) { w.dmg *= 20; w.rate *= 2.5; }   // DEV
+  sortie++;
+  sim = makeSim((0xC4C4 + sortie * 0x9E37) >>> 0, cfg);
+  fx.length = 0;
+  wake.length = 0;
+  buildPips();
+  devToggle("dev-invuln", false); devToggle("dev-freeze", false);   // fresh sim = cheats reset
+  show("game");
+}
+function endSortie() {   // bank the run's XP into the profile
+  const before = levelFromXp(profile.xp, PC).level;
+  profile.xp += sim.xp;
+  saveProfile();
+  const after = levelFromXp(profile.xp, PC).level;
+  $("lost-stats").textContent = `WAVE ${sim.wave} · ${sim.kills} DRONES DESTROYED`;
+  $("lost-xp").innerHTML = `+${sim.xp} XP` + (after > before ? ` · <b>LEVEL UP → ${after}</b>` : "");
+  $("lost-overlay").style.display = "flex";
+}
+
+/* ── tech tree UI ── */
+function renderTree() {
+  const lv = levelFromXp(profile.xp, PC);
+  $("tree-lvl").textContent = `LEVEL ${lv.level}`;
+  $("tree-pts").textContent = pointsAvailable(profile, PC);
+  $("tree-xp").textContent = `${lv.into} / ${lv.next}`;
+  $("tree-fill").style.width = (100 * lv.into / lv.next) + "%";
+  const cols = $("tree-cols");
+  cols.innerHTML = "";
+  for (const br of BRANCHES) {
+    const col = document.createElement("div");
+    const classified = br === "AIR WING";
+    col.className = "branch" + (classified ? " classified" : "");
+    const subtitle = { "SEAMANSHIP": "movement & hull", "FLAK": "small mounts", "GUNNERY": "medium mounts",
+      "ORDNANCE": "main battery", "AIR WING": "helicopter operations" }[br];
+    col.innerHTML = `<h3>${br}<small>${subtitle}</small></h3>`;
+    for (const node of TECH.filter((n) => n.br === br)) {
+      const owned = profile.unlocked.includes(node.id);
+      const buyable = canBuy(profile, node.id, PC);
+      const div = document.createElement("div");
+      div.className = "node" + (owned ? " owned" : buyable ? " avail" : " locked") + (node.marquee ? " marquee" : "");
+      div.innerHTML = `<div class="nm">${node.name}</div><div class="ds">${node.desc}</div>` +
+        (node.locked ? "" : `<div class="ct">${owned ? "OWNED" : node.cost + " PT"}</div>`);
+      if (!node.locked) {
+        div.addEventListener("click", () => {
+          if (canBuy(profile, node.id, PC)) {
+            profile.unlocked.push(node.id);
+            saveProfile();
+            renderTree();
+          }
+        });
+      }
+      col.appendChild(div);
+    }
+    if (classified) {
+      const st = document.createElement("div");
+      st.className = "stamp";
+      st.textContent = "CLASSIFIED";
+      col.appendChild(st);
+    }
+    cols.appendChild(col);
+  }
+}
+$("btn-respec").addEventListener("click", () => { profile.unlocked = []; saveProfile(); renderTree(); });
+$("btn-grantxp").addEventListener("click", () => { profile.xp += 800; saveProfile(); renderTree(); });
+$("btn-back").addEventListener("click", () => show("title"));
+$("btn-sortie").addEventListener("click", () => startSortie());
+$("btn-tree").addEventListener("click", () => show("tree"));
+$("btn-again").addEventListener("click", () => startSortie());
+$("btn-losttree").addEventListener("click", () => show("tree"));
+
+/* ── input ── */
+const held = new Set();
+const KEYMAP = { KeyW: "up", ArrowUp: "up", KeyS: "down", ArrowDown: "down",
+                 KeyA: "left", ArrowLeft: "left", KeyD: "right", ArrowRight: "right" };
+let mouseX = 0, mouseY = 0, lmb = false, rmb = false, mmb = false;
+addEventListener("keydown", (e) => {
+  if (screenState !== "game") return;
+  const k = KEYMAP[e.code];
+  if (k) { held.add(k); e.preventDefault(); }
+  if (e.code === "KeyR" && sim && sim.run_over) startSortie();
+  if (e.code === "KeyT" && sim && sim.run_over) show("tree");
+});
+addEventListener("keyup", (e) => { const k = KEYMAP[e.code]; if (k) held.delete(k); });
+addEventListener("blur", () => { held.clear(); lmb = false; rmb = false; mmb = false; });
+addEventListener("contextmenu", (e) => { if (screenState === "game") e.preventDefault(); });
+addEventListener("mousemove", (e) => { mouseX = e.clientX; mouseY = e.clientY; });
+addEventListener("mousedown", (e) => {
+  if (screenState !== "game" || e.target.closest("#lost-overlay") || e.target.closest("#dev-panel")) return;
+  if (e.button === 0) lmb = true;
+  if (e.button === 1) { mmb = true; e.preventDefault(); }
+  if (e.button === 2) rmb = true;
+});
+addEventListener("mouseup", (e) => {
+  if (e.button === 0) lmb = false;
+  if (e.button === 1) mmb = false;
+  if (e.button === 2) rmb = false;
+});
+addEventListener("auxclick", (e) => { if (screenState === "game") e.preventDefault(); });
+
+function pollInput() {
+  input.thrust = (held.has("up") ? 1 : 0) - (held.has("down") ? 1 : 0);
+  input.rudder = (held.has("right") ? 1 : 0) - (held.has("left") ? 1 : 0);
+  input.forceAll = lmb;
+  input.forceLarge = rmb && !lmb;
+  input.forceMedium = mmb && !lmb;
+  input.aimX = sim.ship.x + (mouseX - W / 2) / ZOOM;
+  input.aimY = sim.ship.y + (mouseY - H / 2) / ZOOM;
+}
+
+/* ── DEV TEST KIT (mockup only). Uses Math.random for spawn bearings — NEVER the sim stream, so a
+   run with the kit untouched stays byte-identical/deterministic. God-guns is a render-time config
+   override rebuilt each sortie. Enabling any cheat obviously breaks same-seed reproducibility. ── */
+let godGuns = false;
+function devActive() { return sim && screenState === "game" && !sim.run_over; }
+function devSpawn(type, n) {
+  if (!devActive()) return;
+  for (let i = 0; i < (n || 1); i++) {
+    const e = makeEnemy(type, cfg);
+    const ang = Math.random() * TAU;
+    const dist = 650 + Math.random() * 350;
+    e.x = sim.ship.x + Math.sin(ang) * dist;
+    e.y = sim.ship.y - Math.cos(ang) * dist;
+    e.heading = angleTo(e, sim.ship);
+    sim.enemies.push(e);
+  }
+  if (sim.wave_state === "lull") sim.wave_state = "fighting";   // treat manual spawns as the live wave
+}
+function devToggle(btn, on) { $(btn).classList.toggle("active", on); }
+$("dev-invuln").addEventListener("click", () => { if (sim) { sim.godmode = !sim.godmode; devToggle("dev-invuln", sim.godmode); } });
+$("dev-freeze").addEventListener("click", () => { if (sim) { sim.freeze_waves = !sim.freeze_waves; devToggle("dev-freeze", sim.freeze_waves); } });
+$("dev-godguns").addEventListener("click", () => {
+  godGuns = !godGuns; devToggle("dev-godguns", godGuns);
+  cfg = applyTech(baseCfg, profile.unlocked);
+  if (godGuns) for (const w of Object.values(cfg.weapons)) { w.dmg *= 20; w.rate *= 2.5; }   // shred everything
+});
+$("dev-swarmer").addEventListener("click", () => devSpawn("swarmer", 1));
+$("dev-gunboat").addEventListener("click", () => devSpawn("gunboat", 1));
+$("dev-bomber").addEventListener("click", () => devSpawn("bomber", 1));
+$("dev-swarm").addEventListener("click", () => devSpawn("swarmer", 8));
+$("dev-killall").addEventListener("click", () => { if (devActive()) sim.enemies.forEach((e) => { e.active = false; }); });
+$("dev-next").addEventListener("click", () => {
+  if (!devActive()) return;
+  sim.enemies.forEach((e) => { e.active = false; });
+  sim.wave_state = "lull"; sim.lull_until = sim.t;   // fire the next wave next tick (unfreeze if frozen)
+  sim.freeze_waves = false; devToggle("dev-freeze", false);
+});
+$("dev-heal").addEventListener("click", () => { if (devActive()) sim.hull = cfg.waves.hull_pips; });
+$("dev-maxlvl").addEventListener("click", () => {
+  let xp = 0;
+  for (let n = 1; n < 41; n++) xp += PC.level_xp_base + PC.level_xp_step * (n - 1);   // reach level 41
+  profile.xp = Math.max(profile.xp, xp);
+  saveProfile();
+  if (screenState === "tree") renderTree(); else refreshTitle();
+});
+// panel visibility: ` (Backquote) toggles anytime; keep god-guns rebuild in sync when a sortie starts
+addEventListener("keydown", (e) => {
+  if (e.code === "Backquote") { e.preventDefault(); $("dev-panel").classList.toggle("on"); }
+});
+
+/* ── render (C3 look, LOOK-LOCKED; new fx: ignite trail, airburst, crash-turn wash) ── */
+const canvas = $("sea");
+const ctx = canvas.getContext("2d");
+const ZOOM = 0.85;
+let W = 0, H = 0, DPR = 1;
+function resize() {
+  DPR = Math.min(devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight;
+  canvas.width = W * DPR; canvas.height = H * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+addEventListener("resize", resize);
+resize();
+
+const FLECK_TILE = 1600, FLECKS = [];
+for (let i = 0; i < 110; i++)
+  FLECKS.push({ x: Math.random() * FLECK_TILE, y: Math.random() * FLECK_TILE, len: 3 + Math.random() * 9, ph: Math.random() * Math.PI * 2 });
+const wake = [];
+const WAKE_LIFE = 4.5;
+let lastWakeT = -1;
+const fx = [];
+const TAU = Math.PI * 2;
+const FLASH_LEN = { L: 35, M: 22, S: 13 };
+const RECOIL = new Array(16).fill(0);
+let deathAt = 0;
+
+function mod(a, n) { return ((a % n) + n) % n; }
+function w2s(wx, wy) { return [(wx - sim.ship.x) * ZOOM + W / 2, (wy - sim.ship.y) * ZOOM + H / 2]; }
+
+function drawSea(now, camX, camY) {
+  ctx.fillStyle = "#0A1E28"; ctx.fillRect(0, 0, W, H);
+  for (const [step, col] of [[200, "rgba(228,240,242,0.035)"], [1000, "rgba(228,240,242,0.07)"]]) {
+    ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.beginPath();
+    for (let gx = Math.floor((camX - W / 2 / ZOOM) / step) * step; ; gx += step) {
+      const px = (gx - camX) * ZOOM + W / 2; if (px > W) break; ctx.moveTo(px, 0); ctx.lineTo(px, H);
+    }
+    for (let gy = Math.floor((camY - H / 2 / ZOOM) / step) * step; ; gy += step) {
+      const py = (gy - camY) * ZOOM + H / 2; if (py > H) break; ctx.moveTo(0, py); ctx.lineTo(W, py);
+    }
+    ctx.stroke();
+  }
+  ctx.strokeStyle = "rgba(228,240,242,0.16)"; ctx.lineWidth = 1; ctx.beginPath();
+  for (const f of FLECKS) {
+    const wx = mod(f.x - camX + FLECK_TILE / 2, FLECK_TILE) - FLECK_TILE / 2 + camX;
+    const wy = mod(f.y - camY + FLECK_TILE / 2, FLECK_TILE) - FLECK_TILE / 2 + camY;
+    const px = (wx - camX) * ZOOM + W / 2, py = (wy - camY) * ZOOM + H / 2;
+    if (px < -20 || px > W + 20 || py < -20 || py > H + 20) continue;
+    const bob = Math.sin(now * 0.0006 + f.ph) * 1.5;
+    ctx.moveTo(px - f.len / 2, py + bob); ctx.lineTo(px + f.len / 2, py + bob);
+  }
+  ctx.stroke();
+}
+
+function emitWake() {
+  if (sim.t - lastWakeT < 1 / 60 || sim.run_over) return;
+  lastWakeT = sim.t;
+  const speed = Math.hypot(sim.ship.vx, sim.ship.vy);
+  const braking = input.thrust < 0 && sim.ship.along > 5;
+  if (speed < 6 && !braking) return;
+  const f = dirOf(sim.ship.heading);
+  wake.push({ x: sim.ship.x - f.x * 100, y: sim.ship.y - f.y * 100, t: sim.t,
+              w: Math.min(1, speed / cfg.move.max_speed_ahead) + (braking ? 0.7 : 0) });
+  if (wake.length > 700) wake.shift();
+}
+function drawWake() {
+  for (const p of wake) {
+    const age = (sim.t - p.t) / WAKE_LIFE;
+    if (age >= 1) continue;
+    const [px, py] = w2s(p.x, p.y);
+    ctx.fillStyle = `rgba(228,240,242,${(0.30 * p.w * (1 - age)).toFixed(3)})`;
+    ctx.beginPath(); ctx.arc(px, py, (2 + p.w * 7) * (0.5 + age * 1.6) * ZOOM, 0, TAU); ctx.fill();
+  }
+}
+
+function drawEnemies(now) {
+  for (const e of sim.enemies) {
+    if (!e.active) continue;
+    const [px, py] = w2s(e.x, e.y);
+    if (px < -60 || px > W + 60 || py < -60 || py > H + 60) continue;
+    ctx.save(); ctx.translate(px, py); ctx.scale(ZOOM, ZOOM); ctx.rotate(e.heading);
+    if (e.type === "swarmer") {
+      ctx.fillStyle = "rgba(217,79,43,0.95)";
+      ctx.beginPath(); ctx.moveTo(0, -8); ctx.lineTo(6, 6); ctx.lineTo(0, 3); ctx.lineTo(-6, 6); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#E4F0F2";
+      ctx.beginPath(); ctx.arc(0, -1, 1.4, 0, TAU); ctx.fill();
+    } else if (e.type === "gunboat") {
+      ctx.fillStyle = "#1E2E36";
+      ctx.beginPath(); ctx.moveTo(0, -16); ctx.lineTo(8, -6); ctx.lineTo(8, 12); ctx.lineTo(-8, 12); ctx.lineTo(-8, -6); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = "rgba(217,79,43,0.8)"; ctx.lineWidth = 1.2; ctx.stroke();
+      ctx.fillStyle = "#D94F2B"; ctx.fillRect(-1.5, -10, 3, 8);
+    } else {
+      ctx.fillStyle = "rgba(150,45,25,0.95)";
+      ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(16, 10); ctx.lineTo(0, 4); ctx.lineTo(-16, 10); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = "rgba(217,79,43,0.9)"; ctx.lineWidth = 1.2; ctx.stroke();
+      ctx.fillStyle = "#E8B46E";
+      ctx.beginPath(); ctx.arc(-6, 6, 1.6, 0, TAU); ctx.arc(6, 6, 1.6, 0, TAU); ctx.fill();
+    }
+    if (e.burn_left > 0) {   // INCENDIARY: flame flicker on burning drones
+      ctx.fillStyle = `rgba(232,180,110,${0.6 + 0.4 * Math.sin(now * 0.03)})`;
+      ctx.beginPath(); ctx.arc(0, 0, 4 + Math.sin(now * 0.05) * 1.5, 0, TAU); ctx.fill();
+    }
+    ctx.restore();
+    if (e.hp < e.hp_max && e.hp_max > 2) {
+      ctx.fillStyle = "rgba(228,240,242,0.7)";
+      for (let i = 0; i < e.hp; i++) ctx.fillRect(px - 10 + i * 4, py + 16, 2.6, 2.2);
+    }
+  }
+}
+
+function drawProjectiles() {
+  for (const p of sim.projectiles) {
+    const [px, py] = w2s(p.x, p.y);
+    const [tx, ty] = w2s(p.x - p.vx * 0.05, p.y - p.vy * 0.05);
+    if (p.hostile) {
+      ctx.strokeStyle = "rgba(233,103,66,0.95)"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(px, py); ctx.stroke();
+      ctx.fillStyle = "rgba(233,103,66,0.95)";
+      ctx.beginPath(); ctx.arc(px, py, 2.4 * ZOOM, 0, TAU); ctx.fill();
+    } else if (p.splash > 0) {
+      ctx.fillStyle = "rgba(228,240,242,0.95)";
+      ctx.beginPath(); ctx.arc(px, py, 2.6 * ZOOM, 0, TAU); ctx.fill();
+    } else {
+      ctx.strokeStyle = p.wid === "aa20" ? "rgba(205,186,142,0.9)" : "rgba(228,240,242,0.85)";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(px, py); ctx.stroke();
+    }
+  }
+}
+
+const HULL_SCALE = 2.4;
+const HULL_PTS = (() => {
+  const pts = [[0, -50]];
+  const quad = (p0, c, p1, n) => { for (let i = 1; i <= n; i++) { const t = i / n;
+    const ax = p0[0] + (c[0] - p0[0]) * t, ay = p0[1] + (c[1] - p0[1]) * t;
+    const bx = c[0] + (p1[0] - c[0]) * t, by = c[1] + (p1[1] - c[1]) * t;
+    pts.push([ax + (bx - ax) * t, ay + (by - ay) * t]); } };
+  quad([0, -50], [8, -38], [9.5, -24], 8); pts.push([10, 20]);
+  quad([10, 20], [10, 32], [6, 35], 6); quad([6, 35], [0, 38], [-6, 35], 6);
+  quad([-6, 35], [-10, 32], [-10, 20], 6); pts.push([-9.5, -24]);
+  quad([-9.5, -24], [-8, -38], [0, -50], 8);
+  return pts.map(([x, y]) => [x * HULL_SCALE, y * HULL_SCALE]);
+})();
+
+function drawHull(now) {
+  if (sim.run_over && (now - deathAt) > 1400) return;
+  ctx.save();
+  ctx.translate(W / 2, H / 2); ctx.scale(ZOOM, ZOOM); ctx.rotate(sim.ship.heading);
+  if (sim.run_over) ctx.globalAlpha = Math.max(0, 1 - (now - deathAt) / 1400);
+  ctx.beginPath();
+  ctx.moveTo(HULL_PTS[0][0], HULL_PTS[0][1]);
+  for (const p of HULL_PTS) ctx.lineTo(p[0], p[1]);
+  ctx.closePath();
+  ctx.fillStyle = "#3C4F57"; ctx.fill();
+  const graced = sim.t < sim.grace_until && !sim.run_over;
+  const flick = graced && Math.floor(now / 60) % 2 === 0;
+  const crash = sim.t < sim.crash_until;
+  const speed = Math.hypot(sim.ship.vx, sim.ship.vy);
+  ctx.strokeStyle = flick ? "rgba(217,79,43,0.9)" : crash ? "rgba(232,180,110,0.85)"
+    : `rgba(228,240,242,${Math.min(0.55, 0.12 + speed / cfg.move.max_speed_ahead * 0.5)})`;
+  ctx.lineWidth = flick || crash ? 2 : 1.2; ctx.stroke();
+  ctx.fillStyle = "#5A707A";
+  ctx.fillRect(-13, -31, 26, 41); ctx.fillRect(-8, -43, 16, 12);
+  ctx.fillStyle = "#4A5F68"; ctx.fillRect(-4, -18, 8, 8);
+  ctx.strokeStyle = "#93A7AE"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(0, 65, 14, 0, TAU); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-8, 65); ctx.lineTo(8, 65); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, -120); ctx.lineTo(0, -90); ctx.stroke();
+  ctx.restore();
+  for (let i = 0; i < cfg.mounts.length; i++) {
+    const mc = cfg.mounts[i], m = sim.mounts[i];
+    const mp = mountWorld(sim.ship, mc);
+    const [px, py] = w2s(mp.x, mp.y);
+    RECOIL[i] *= 0.9;
+    const rec = RECOIL[i];
+    const forced = m.mode === "forced";
+    const house = forced ? "#6E5A50" : "#647885";
+    ctx.save(); ctx.translate(px, py); ctx.scale(ZOOM, ZOOM);
+    if (sim.run_over) ctx.globalAlpha = Math.max(0, 1 - (now - deathAt) / 1400);
+    ctx.strokeStyle = "rgba(228,240,242,0.25)";
+    if (mc.size === "L") { ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(0, 0, 11.5, 0, TAU); ctx.stroke(); }
+    if (mc.size === "M") { ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(0, 0, 7.5, 0, TAU); ctx.stroke(); }
+    ctx.rotate(m.ang);
+    if (mc.size === "L") {
+      ctx.fillStyle = "#93A7AE";
+      for (const bx of [-3.2, 3.2]) {
+        ctx.fillRect(bx - 1.3, -9 - 26 + rec * 4, 2.6, 26);
+        ctx.fillRect(bx - 1.9, -9 - 26 + rec * 4, 3.8, 3);
+      }
+      ctx.fillStyle = house;
+      ctx.beginPath();
+      ctx.moveTo(-8, 12); ctx.lineTo(-8, -4); ctx.quadraticCurveTo(-8, -10, 0, -10);
+      ctx.quadraticCurveTo(8, -10, 8, -4); ctx.lineTo(8, 12); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = "rgba(10,30,40,0.55)"; ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = "#93A7AE";
+      ctx.fillRect(-10, 3, 3, 2.4); ctx.fillRect(7, 3, 3, 2.4);
+    } else if (mc.size === "M") {
+      ctx.fillStyle = "#93A7AE";
+      ctx.fillRect(-1.1, -6 - 16 + rec * 3, 2.2, 16);
+      ctx.fillRect(-1.7, -6 - 7 + rec * 3, 3.4, 7);
+      ctx.fillStyle = house;
+      ctx.beginPath();
+      ctx.moveTo(-5.5, 8); ctx.lineTo(-5.5, -2); ctx.lineTo(-3, -6.5);
+      ctx.lineTo(3, -6.5); ctx.lineTo(5.5, -2); ctx.lineTo(5.5, 8); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = "rgba(10,30,40,0.55)"; ctx.lineWidth = 1; ctx.stroke();
+    } else {
+      ctx.strokeStyle = forced ? "#B08968" : "#7E939C"; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.arc(0, 0, 5.5, 0, TAU); ctx.stroke();
+      ctx.fillStyle = "#93A7AE";
+      for (const bx of [-1.5, 1.5]) ctx.fillRect(bx - 0.55, -2 - 11 + rec * 2, 1.1, 11);
+      ctx.fillStyle = house;
+      ctx.beginPath(); ctx.arc(0, 2.2, 2.6, 0, TAU); ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+function drawFx(now) {
+  while (sim.effects.length) {
+    const e = sim.effects.shift();
+    if (e.type === "muzzle" && e.idx != null) RECOIL[e.idx] = 1;
+    if (e.type === "shipdeath") { deathAt = now; endSortie(); }
+    fx.push({ ...e, t0: now });
+  }
+  for (let i = fx.length - 1; i >= 0; i--) {
+    const e = fx[i], age = (now - e.t0) / 1000;
+    const life = e.type === "splash" ? 0.7 : e.type === "death" ? 0.5 : e.type === "shiphit" ? 0.4 :
+                 e.type === "shipdeath" ? 2.2 : e.type === "airburst" ? 0.45 :
+                 e.type === "ignite" ? 0.3 : e.type === "crashturn" ? 0.8 : 0.12;
+    if (age >= life) { fx.splice(i, 1); continue; }
+    const k = age / life;
+    if (e.type === "muzzle") {
+      const mp = w2s(e.x, e.y), d = dirOf(e.ang), len = FLASH_LEN[e.size];
+      ctx.fillStyle = `rgba(232,180,110,${0.9 * (1 - k)})`;
+      ctx.beginPath(); ctx.arc(mp[0] + d.x * len * ZOOM, mp[1] + d.y * len * ZOOM, (e.size === "L" ? 6.5 : e.size === "M" ? 3.2 : 2.2) * (1 + k) * ZOOM, 0, TAU); ctx.fill();
+    } else if (e.type === "gunflash") {
+      const mp = w2s(e.x, e.y), d = dirOf(e.ang);
+      ctx.fillStyle = `rgba(233,103,66,${0.9 * (1 - k)})`;
+      ctx.beginPath(); ctx.arc(mp[0] + d.x * 14 * ZOOM, mp[1] + d.y * 14 * ZOOM, 3 * (1 + k) * ZOOM, 0, TAU); ctx.fill();
+    } else if (e.type === "splash") {
+      const [px, py] = w2s(e.x, e.y);
+      ctx.strokeStyle = `rgba(228,240,242,${0.7 * (1 - k)})`; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(px, py, e.r * k * ZOOM, 0, TAU); ctx.stroke();
+    } else if (e.type === "airburst") {
+      const [px, py] = w2s(e.x, e.y);
+      ctx.strokeStyle = `rgba(232,180,110,${0.85 * (1 - k)})`; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.arc(px, py, e.r * (0.4 + k * 0.6) * ZOOM, 0, TAU); ctx.stroke();
+      ctx.fillStyle = `rgba(232,180,110,${0.5 * (1 - k)})`;
+      ctx.beginPath(); ctx.arc(px, py, 3 * (1 - k) * ZOOM, 0, TAU); ctx.fill();
+    } else if (e.type === "ignite") {
+      const [px, py] = w2s(e.x, e.y);
+      ctx.fillStyle = `rgba(232,180,110,${0.9 * (1 - k)})`;
+      ctx.beginPath(); ctx.arc(px, py, 5 * (1 + k) * ZOOM, 0, TAU); ctx.fill();
+    } else if (e.type === "crashturn") {
+      const [px, py] = w2s(sim.ship.x, sim.ship.y);
+      ctx.strokeStyle = `rgba(232,180,110,${0.7 * (1 - k)})`; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(px, py, 40 + 160 * k, 0, TAU); ctx.stroke();
+    } else if (e.type === "death") {
+      const [px, py] = w2s(e.x, e.y);
+      ctx.strokeStyle = `rgba(217,79,43,${0.85 * (1 - k)})`; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(px, py, 4 + 26 * k * ZOOM, 0, TAU); ctx.stroke();
+    } else if (e.type === "shiphit") {
+      const [px, py] = w2s(e.x, e.y);
+      ctx.strokeStyle = `rgba(217,79,43,${0.9 * (1 - k)})`; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(px, py, 10 + 40 * k, 0, TAU); ctx.stroke();
+    } else if (e.type === "shipdeath") {
+      const [px, py] = w2s(e.x, e.y);
+      for (let ring = 0; ring < 3; ring++) {
+        const rk = Math.max(0, k - ring * 0.12);
+        ctx.strokeStyle = `rgba(233,103,66,${0.9 * (1 - rk)})`; ctx.lineWidth = 4 - ring;
+        ctx.beginPath(); ctx.arc(px, py, 10 + 220 * rk, 0, TAU); ctx.stroke();
+      }
+      if (k < 0.15) { ctx.fillStyle = `rgba(232,180,110,${1 - k / 0.15})`; ctx.fillRect(0, 0, W, H); }
+    } else if (e.type === "hit") {
+      const [px, py] = w2s(e.x, e.y);
+      ctx.fillStyle = `rgba(228,240,242,${0.8 * (1 - k)})`;
+      ctx.beginPath(); ctx.arc(px, py, 3 * ZOOM, 0, TAU); ctx.fill();
+    }
+  }
+}
+
+function orderLabel() {
+  if (input.forceAll) return "ALL GUNS";
+  if (input.forceLarge && input.forceMedium) return "MAIN + SECONDARY";
+  if (input.forceLarge) return "MAIN BATTERY";
+  if (input.forceMedium) return "SECONDARIES";
+  return "";
+}
+function drawReticle() {
+  if (sim.run_over) return;
+  const label = orderLabel();
+  ctx.strokeStyle = label ? "rgba(217,79,43,0.95)" : "rgba(228,240,242,0.35)";
+  ctx.lineWidth = 1.4;
+  const r = label ? 14 : 9;
+  ctx.beginPath(); ctx.arc(mouseX, mouseY, r, 0, TAU); ctx.stroke();
+  ctx.beginPath();
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    ctx.moveTo(mouseX + dx * (r - 4), mouseY + dy * (r - 4));
+    ctx.lineTo(mouseX + dx * (r + 5), mouseY + dy * (r + 5));
+  }
+  ctx.stroke();
+  if (label) {
+    ctx.fillStyle = "rgba(217,79,43,0.95)";
+    ctx.font = "700 10px Arial";
+    ctx.fillText(label, mouseX + 18, mouseY - 12);
+  }
+}
+
+function drawRadar() {
+  const R = 105, cx = W - R - 26, cy = H - R - 26;
+  const range = cfg.waves.radar_range;
+  const k = R / range;
+  ctx.save();
+  ctx.fillStyle = "rgba(13,32,40,0.9)";
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.fill();
+  ctx.strokeStyle = "rgba(205,186,142,0.5)"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.stroke();
+  ctx.strokeStyle = "rgba(205,186,142,0.16)";
+  for (let d = 500; d < range; d += 500) { ctx.beginPath(); ctx.arc(cx, cy, d * k, 0, TAU); ctx.stroke(); }
+  ctx.setLineDash([3, 3]);
+  ctx.strokeStyle = "rgba(205,186,142,0.35)";
+  ctx.beginPath(); ctx.arc(cx, cy, cfg.weapons.mb16.range * k, 0, TAU); ctx.stroke();
+  ctx.setLineDash([]);
+  const vw = (W / 2 / ZOOM) * k, vh = (H / 2 / ZOOM) * k;
+  ctx.strokeStyle = "rgba(228,240,242,0.14)";
+  ctx.strokeRect(cx - vw, cy - vh, vw * 2, vh * 2);
+  const sw = (performance.now() * 0.0016) % TAU;
+  ctx.strokeStyle = "rgba(205,186,142,0.3)";
+  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.sin(sw) * R, cy - Math.cos(sw) * R); ctx.stroke();
+  if (orderLabel() && !sim.run_over) {
+    const ba = angleTo(sim.ship, { x: input.aimX, y: input.aimY });
+    const bd = dirOf(ba);
+    const mbR = cfg.weapons.mb16.range * k;
+    ctx.strokeStyle = "rgba(217,79,43,0.7)"; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + bd.x * mbR, cy + bd.y * mbR); ctx.stroke();
+    ctx.strokeStyle = "rgba(217,79,43,0.3)";
+    ctx.beginPath(); ctx.moveTo(cx + bd.x * mbR, cy + bd.y * mbR); ctx.lineTo(cx + bd.x * R, cy + bd.y * R); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx + bd.x * mbR, cy + bd.y * mbR, 2.6, 0, TAU);
+    ctx.strokeStyle = "rgba(217,79,43,0.9)"; ctx.stroke();
+  }
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.clip();
+  for (const e of sim.enemies) {
+    if (!e.active) continue;
+    const bx = cx + (e.x - sim.ship.x) * k, by = cy + (e.y - sim.ship.y) * k;
+    if (e.type === "gunboat") {
+      ctx.fillStyle = "rgba(217,79,43,1)";
+      ctx.fillRect(bx - 2.8, by - 2.8, 5.6, 5.6);
+    } else {
+      ctx.fillStyle = e.type === "bomber" ? "rgba(217,79,43,1)" : "rgba(233,103,66,1)";
+      ctx.beginPath(); ctx.arc(bx, by, e.type === "bomber" ? 3.6 : 2.4, 0, TAU); ctx.fill();
+    }
+  }
+  for (const p of sim.projectiles) {
+    if (!p.hostile) continue;
+    ctx.fillStyle = "rgba(233,103,66,0.8)";
+    ctx.fillRect(cx + (p.x - sim.ship.x) * k - 0.8, cy + (p.y - sim.ship.y) * k - 0.8, 1.6, 1.6);
+  }
+  const f = dirOf(sim.ship.heading);
+  ctx.strokeStyle = "#E4F0F2"; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(cx - f.x * 4, cy - f.y * 4); ctx.lineTo(cx + f.x * 7, cy + f.y * 7); ctx.stroke();
+  ctx.fillStyle = "#E4F0F2";
+  ctx.beginPath(); ctx.arc(cx, cy, 2, 0, TAU); ctx.fill();
+  ctx.restore();
+  ctx.fillStyle = "rgba(142,129,95,0.9)";
+  ctx.font = "700 9px Arial";
+  ctx.fillText("R A D A R", cx - 24, cy - R - 8);
+}
+
+/* ── HUD ── */
+const pipsEl = $("pips");
+function buildPips() {
+  pipsEl.innerHTML = "";
+  for (let i = 0; i < cfg.waves.hull_pips; i++) pipsEl.appendChild(document.createElement("span"));
+}
+function orderText() {
+  if (input.thrust > 0) return sim.ship.along < -1 ? "AHEAD — COMING ABOUT" : "ALL AHEAD FULL";
+  if (input.thrust < 0) return sim.ship.along > 1 ? "EMERGENCY BACK — BRAKING" : "ALL ASTERN";
+  return Math.hypot(sim.ship.vx, sim.ship.vy) < 2 ? "ALL STOP" : "ADRIFT — COASTING";
+}
+function drawGauges() {
+  const contacts = sim.enemies.filter((e) => e.active).length;
+  if (sim.run_over) $("wave-line").innerHTML = `WAVE <b>${sim.wave}</b> — SHIP LOST`;
+  else if (sim.wave_state === "fighting") $("wave-line").innerHTML = `WAVE <b>${sim.wave}</b> · CONTACTS: <b>${contacts}</b>`;
+  else if (sim.wave === 0) $("wave-line").innerHTML = `CONTACTS INBOUND — <b>${Math.max(0, sim.lull_until - sim.t).toFixed(0)}</b>`;
+  else $("wave-line").innerHTML = `WAVE ${sim.wave} CLEARED — NEXT IN <b>0:${String(Math.max(0, Math.ceil(sim.lull_until - sim.t))).padStart(2, "0")}</b>`;
+  $("kills").textContent = `DRONES DESTROYED: ${sim.kills}`;
+  $("xp-line").textContent = `XP +${sim.xp}`;
+  const spans = pipsEl.children;
+  for (let i = 0; i < spans.length; i++) spans[i].className = i < sim.hull ? "" : "gone";
+  pipsEl.className = sim.t < sim.grace_until && !sim.run_over ? "grace" : "";
+  $("order").textContent = orderText();
+  const s = sim.ship, pct = s.along / cfg.move.max_speed_ahead;
+  $("speed").textContent = Math.abs(s.along).toFixed(1);
+  $("speed-pct").textContent = `${Math.round(Math.abs(pct) * 100)}% FULL AHEAD${s.along < -0.5 ? " ASTERN" : ""}`;
+  const span = cfg.move.astern_frac + 1, zeroPct = (cfg.move.astern_frac / span) * 100;
+  $("way-bar").querySelector(".zero").style.left = zeroPct + "%";
+  const fill = $("way-fill");
+  if (pct >= 0) { fill.style.left = zeroPct + "%"; fill.style.width = (pct / span) * 100 + "%"; }
+  else { const w = (-pct / span) * 100; fill.style.left = (zeroPct - w) + "%"; fill.style.width = w + "%"; }
+  const speed = Math.hypot(s.vx, s.vy);
+  $("authority").textContent = `AUTHORITY ${Math.round(Math.max(cfg.move.turn_speed_floor, Math.min(1, speed / cfg.move.max_speed_ahead)) * 100)}%`;
+  $("rudder-txt").textContent = input.rudder === 0 ? "RUDDER AMIDSHIPS" : input.rudder > 0 ? "RUDDER TO STARBOARD" : "RUDDER TO PORT";
+  $("rudder-needle").style.left = (50 + input.rudder * 46) + "%";
+  const ol = orderLabel();
+  $("batteries").textContent = "BATTERIES: " + (ol ? ol + " ON POINT" : "AUTO");
+  $("hdg").textContent = `HDG ${String(Math.round(mod(s.heading * 180 / Math.PI, 360))).padStart(3, "0")}°`;
+}
+
+/* ── loop ── */
+let last = 0, acc = 0;
+let idleCam = { x: 0, y: 0 };
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (screenState === "game" && sim) {
+    const dtReal = Math.min((now - last) / 1000, 0.25);
+    last = now;
+    acc += dtReal;
+    while (acc >= SIM_DT) {
+      pollInput();
+      stepSim(sim, input, cfg, SIM_DT);
+      emitWake();
+      acc -= SIM_DT;
+    }
+    drawSea(now, sim.ship.x, sim.ship.y);
+    drawWake(); drawEnemies(now); drawProjectiles(); drawHull(now); drawFx(now); drawRadar(); drawReticle(); drawGauges();
+  } else {
+    last = now;
+    idleCam.x += 12 * 0.016;   // slow ambient drift behind the menus
+    drawSea(now, idleCam.x, idleCam.y);
+  }
+}
+requestAnimationFrame(frame);
+refreshTitle();
+</script>
+</body>
+</html>

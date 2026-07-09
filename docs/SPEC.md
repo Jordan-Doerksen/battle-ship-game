@@ -5,8 +5,10 @@
 > front-load design that will drift. Pairs with `DECISIONS.md` (the manifest) and `ARCHITECTURE.md`
 > (the map). Full source narrative: `docs/DESIGN-BRIEF.md`.
 >
-> **Status:** C0 built. C1+ planned, high-level only — each is locked in detail at the top of its own
-> chunk via `/spec-feature`.
+> **Status:** C0–C7 built — the founding brief is SYSTEMS-COMPLETE. The game plays end to end
+> across all three domains, carries a persistent career, flies its own wingman, and fields its
+> boss ladder under real names. Remaining founding threads are narrative-only (#1 water-mystery,
+> #4 working title). New systems start with fresh `/spec-feature` interviews.
 
 ---
 
@@ -16,12 +18,16 @@ You command a single Earth Defense Force battleship, alone against AI-piloted al
 air, sea surface, and underwater. The aliens don't personally pilot the drones — they're sheltering
 inside motherships that already crash-landed on Earth, running the swarm by remote while consuming the
 planet's water for reasons not yet revealed. You pilot the ship directly with real naval momentum and
-weight; your hull's hardpoints auto-fire at anything in range regardless of which way you're facing.
-Hardpoints are visible, purchasable positions on the hull — small mounts numerous, medium fewer, large
-fewest, mirroring a real battleship's gun arrangement. Subs are invisible until sonar range reveals
-them; depth charges are a free, inaccurate always-on backstop for whatever sonar misses. Survive waves,
-bank a persistent currency, spend it between runs on permanent hardpoint unlocks. Tone: 1950s B-movie
-schlock, played completely straight-faced.
+weight; your hull's turrets auto-fire at anything in range regardless of which way you're facing, and
+you can force any battery onto a point. The ship's hull and turret fit are FIXED — visible mounts in a
+real battleship arrangement (small numerous, medium fewer, large fewest). Progression is persistent
+LEVELS earned across runs, unlocking a TECH TREE: movement upgrades, turret-size-specific upgrades,
+bullet effects, traverse, sonar, and the AIR WING — an autonomous ASW helicopter wingman off the
+stern pad (owner change request 2026-07-08 replaced the original purchasable-hardpoint economy;
+the helicopter branch got its function in C6). Subs are invisible until passive sonar
+reveals them; depth charges are free, automatic, and deliberately inaccurate — but they arm ONLY
+on a live sonar contact (owner refinement at the C5 interview), and no gun can touch the deep.
+Tone: 1950s B-movie schlock, played completely straight-faced.
 
 ## Design pillars
 
@@ -48,10 +54,44 @@ at the moment it's built — recorded then, not now.
   fixed-timestep deterministic loop, the seeded RNG, the `GameWorld` truth object, and a hybrid render
   harness that proves the loop and determinism are alive on screen. No gameplay yet.
 
-- **C1 — Naval movement (not started).** Momentum/inertia-based piloting, turning radius, drift.
-  *Detailed design locked at the top of C1 via a dedicated interview — do not treat DECISIONS D1.6 as
-  more than a deferral.*
+- **C1 — Naval movement (built 2026-07-08).** Momentum/inertia piloting: held-key throttle with
+  brake-through-to-astern, speed-coupled turning with a standstill floor, long coast, visible lateral
+  slip. Locked by its interview spec `docs/specs/naval-movement.md`; feel proven and owner-approved in
+  `design/naval-movement.html` before the port (that mockup stays the C1 visual reference).
 
-- **C2+ — not yet scoped.** Hardpoint hull + purchase economy, weapon catalog (domain-tagged), sonar
-  detection, depth charges, wave/spawn director, meta-progression shop. Order and grouping TBD when C1
-  is done — see `DECISIONS.md` Build Timeline.
+- **C2 — Hardpoint hull & gunnery range (built 2026-07-08).** Visible 4S/4M/2L mount plan on a
+  battleship-scale hull, 3-weapon domain-tagged catalog with per-weapon policies and finite traverse,
+  hold-to-force-fire (LMB all guns / RMB main battery), drifting practice drones. Locked by
+  `docs/specs/hardpoint-hull.md` (owner LOOK-LOCK on mockup rev 3 — `design/hardpoint-hull.html`
+  stays the visual reference).
+
+- **C3 — Wave director & first enemies (built 2026-07-08).** Seeded budget-director waves with
+  lulls; swarmer/gunboat/bomber arriving beyond the edge; hull pips + grace; radar scope with
+  fire-control bearing; MMB secondary force-fire; over-the-horizon main battery with proximity
+  fuse; SHIP LOST → fresh-seed restart. The C2 practice range retired. Locked by
+  `docs/specs/wave-director.md` (`design/wave-director.html` stays the visual reference).
+
+- **C4 — Levels & tech tree (built 2026-07-08).** Persistent XP/levels (first save file), the
+  24-node tree (SEAMANSHIP/FLAK/GUNNERY/ORDNANCE + CLASSIFIED AIR WING), four marquee effects,
+  title hub + tree screen, dev test kit (debug builds). Locked by `docs/specs/tech-tree.md`
+  (`design/tech-tree.html` stays the loop/visual reference).
+
+- **C5 — Sonar, subs & depth charges (built 2026-07-09).** The third domain: sub elites torpedoing
+  from standoff with visible wakes, passive sonar (radius + contact latch, radar-gated diamond
+  blips, ripple tell when undetected), contact-gated stern depth-charge volleys (the only sub
+  killer — every gun's domain tags exclude the deep), the SONAR tech branch with the ASDIC LOCK
+  marquee. Locked by `docs/specs/sonar-subs.md` (`design/sonar-subs.html` stays the visual
+  reference).
+
+- **C6 — AIR WING (built 2026-07-09).** The helipad earns its keep: an autonomous, invulnerable
+  ASW helicopter unlocked by WHIRLYBIRD (air1) — weaving escort with a speed-coupled throttle
+  (never left astern), dipping sonar feeding the C5 contact latch, detector-first light drops,
+  door gunners (gate rev 2), fuel loop, MAD GEAR marquee. The CLASSIFIED column declassifies into
+  seven real nodes. Locked by `docs/specs/air-wing.md` (`design/air-wing.html` stays the visual
+  reference).
+
+- **C7 — Boss ladder & naming pass (built 2026-07-09).** Mothership war machines every 5th wave —
+  THE JUGGERNAUT (surface), THE CANOPY (air), THE MAW (the deep, breach-cycling) — parts + phases,
+  soft-gated cores, endless lap scaling, per-part XP + lap bounty + a 2-pip hull patch. The roster
+  speaks its reporting names: GNAT / JACKAL / VULTURE / LAMPREY. Locked by
+  `docs/specs/boss-ladder.md` (`design/boss-ladder.html` stays the visual reference).

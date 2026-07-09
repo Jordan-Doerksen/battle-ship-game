@@ -1,0 +1,62 @@
+[gd_resource type="Resource" script_class="WeaponConfig" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://config/WeaponConfig.gd" id="1"]
+[ext_resource type="Script" path="res://config/WeaponDef.gd" id="2"]
+
+[sub_resource type="Resource" id="aa20"]
+script = ExtResource("2")
+id = "aa20"
+display_name = "VIGILANT 20MM"
+size = "S"
+domains = PackedStringArray("air")
+policy = "CLOSE"
+range_u = 420.0
+rate = 12.0
+traverse = 4.0
+dmg = 1
+speed = 700.0
+spread = 0.045
+splash = 0.0
+bloom_add = 0.01
+bloom_max = 0.1
+bloom_decay = 0.06
+
+[sub_resource type="Resource" id="dp5"]
+script = ExtResource("2")
+id = "dp5"
+display_name = "SENTINEL 5-IN"
+size = "M"
+domains = PackedStringArray("air", "surface")
+policy = "CLOSE"
+range_u = 560.0
+rate = 1.2
+traverse = 2.2
+dmg = 2
+speed = 620.0
+spread = 0.02
+splash = 0.0
+bloom_add = 0.0
+bloom_max = 0.0
+bloom_decay = 0.0
+
+[sub_resource type="Resource" id="mb16"]
+script = ExtResource("2")
+id = "mb16"
+display_name = "JUDGEMENT 16-IN"
+size = "L"
+domains = PackedStringArray("surface")
+policy = "STRONG"
+range_u = 900.0
+rate = 0.33
+traverse = 0.9
+dmg = 4
+speed = 420.0
+spread = 0.012
+splash = 36.0
+bloom_add = 0.0
+bloom_max = 0.0
+bloom_decay = 0.0
+
+[resource]
+script = ExtResource("1")
+catalog = [SubResource("aa20"), SubResource("dp5"), SubResource("mb16")]
