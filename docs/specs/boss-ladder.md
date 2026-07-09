@@ -1,6 +1,9 @@
 # Spec — C7: The Boss Ladder & the Naming Pass
 
-**Status:** DRAFT — interviewed 2026-07-09, awaiting owner approval · Mockup pending (gate) · Not built
+**Status:** APPROVED 2026-07-09 (owner) · Interviewed 2026-07-09 · Mockup BUILT
+(`design/boss-ladder.html`, harness 8/8 incl. C6 quiet-run parity) — AT THE GATE, awaiting owner
+feel-approval · Not ported. Mockup-build tune, noted: THE CANOPY core 35 → 50 (at 35 the default
+batteries melted it in ~8 s — no presence for a rung machine).
 **Resolves:** open thread #2 (boss ladder & enemy roster naming — the last founding thread with
 systems weight). Fulfillment's title-ladder escalation is the reskinnable ancestor (brief §7);
 this is its B-movie replacement.
@@ -43,7 +46,7 @@ names, newsreel-straight: the age of "swarmer/gunboat/bomber/sub" placeholders e
 | | THE JUGGERNAUT (wave 5) | THE CANOPY (wave 10) | THE MAW (wave 15) |
 |---|---|---|---|
 | Domain | surface | air | sub, breaching to surface |
-| Core hp | 40 | 35 | 45 |
+| Core hp | 40 | 50 (35 at draft; raised at mockup build) | 45 |
 | Speed / brain | 30 u/s, standoff 550 orbit | 55 u/s, wide orbit 480 | 45 u/s stalk, standoff 500 |
 | Parts (hp) | fore turret (10), aft turret (10), fire director (8) | port bay (9), stbd bay (9), drone hive (10) | 3 vent cowls (8 each), exposed only while breached |
 | Attacks | led heavy shells per turret (dmg 1, period 3 s); +30% rate when the director dies (it panics) | bays lob arcing bombs at your position (splash, dmg 2, period 5 s); hive spawns 3 GNATs per period | submerged: 3-torpedo fan (C5 torpedoes) per period 9 s; breached: nothing — it's VENTING |

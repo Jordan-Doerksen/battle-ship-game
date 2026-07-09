@@ -84,8 +84,21 @@ Render: rotor/shadow/dip ring/pad rearm arc + radar bird blip. `probe_airwing` (
 it; `probe_tech`'s AIR-WING-locked check superseded (air1 buys, air2 gates). Also this chunk: the
 deaf-deep law went PHYSICAL (latent C5 gap — shells/airbursts now skip submerged hulls everywhere).
 
-**Next (C7):** the boss ladder + naming pass (open thread #2 — the last founding open thread with
-systems weight). Needs its own `/spec-feature` interview first.
+**C7 — Boss ladder & naming pass is MID-GATE (2026-07-09):** interviewed + spec approved
+(`docs/specs/boss-ladder.md`), interactive mockup BUILT (`design/boss-ladder.html`) and published
+for owner feel-approval. Every 5th wave a mothership war machine + half-budget escort: THE
+JUGGERNAUT (surface, parts = turrets + fire director, panic-fires when it dies), THE CANOPY (air —
+mb16 can't touch it; bays + drone hive), THE MAW (deep; breach-cycles between an ASW stalk with
+torpedo fans and exposed vent cowls; each cowl lost extends the breach). Parts+phases, soft-gated
+cores (25% until parts fall), per-part XP + lap-scaled bounty + 2-pip hull patch, endless lap
+scaling ×1.5 hp. Naming pass live: GNAT/JACKAL/VULTURE/LAMPREY in the wave-plate tally; PRIORITY
+TARGET plate with core bar + part pips; dev-kit ☠ spawn buttons. Harness 8/8 incl. C6 quiet-run
+parity. One tune at build: CANOPY core 35→50 (noted in spec). NOT yet approved, NOT yet ported.
+On approval: port (BossConfig/bosses.tres + Bosses.gd + Waves cadence + boss damage intake +
+render/plate/radar + probe_bosses + resolve open thread #2 in DECISIONS).
+
+**After C7:** the founding brief is fully systems-complete. Remaining open threads are narrative/
+naming only: #1 water-mystery payoff, #4 working-title trademark check.
 
 ## 3. Tree layout
 
