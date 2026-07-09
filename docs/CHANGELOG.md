@@ -4,6 +4,48 @@ Chunk log, newest first. Each chunk ships only after it passes the cross-check a
 
 ---
 
+## C8 — BUG BATCH · 2026-07-09 · Built
+
+Nine bugs from the first full-code adversarial sweep (research pass, owner-approved plan). No new
+mechanics — the ones already shipped now do what their specs say. CR-free per the fix precedents;
+every fix that could be probed is.
+
+- **dp5 flak fuses off war machines.** With PROXIMITY BURST the fuse loop scanned only
+  `world.enemies` and the airburst branch swallowed every dp5 shell — an upgraded gun that could
+  never hurt a boss. The machine is a fuse candidate now (air trigger envelope vs THE CANOPY,
+  contact vs surface machines; a submerged MAW neither triggers nor feels it — the deep stays deaf).
+- **AoE strikes resolve at the burst point, not the machine's center.** Splash/airburst passed
+  `world.boss.pos` to `Bosses.strike`, so off-center parts (turrets, bays) were unhittable by
+  blast and hit effects drew at the wrong spot. The strike point is the burst clamped to the hull
+  disc — edge bursts that pass the AoE gate still chip the core instead of dealing nothing.
+- **THE CANOPY's bay bombs are splash attacks**, as the spec table always said (`bomb_splash` 30 —
+  a new `BossDef` field in `bosses.tres`): they burst at flight end and hit the hull within the
+  blast. They were point-contact shells; the hostile path had no splash mechanic at all.
+- **Sonar extends a latch, never shortens it.** A ship-sonar pass over a bird-marked contact
+  rewrote MAD GEAR's permanent latch down to a decaying ~4 s hold, at both write sites (sub +
+  submerged MAW). `maxf` at both.
+- **Turret cadence carries the sub-tick remainder.** Cooldown-by-assignment quantized every period
+  UP to whole 60 Hz ticks — aa20 really fired 10/s against its configured 12/s. Decrement now gates
+  at zero (idle guns bank at most one shot, never a backlog burst) and reload accumulates. Balance
+  note, not drift: sustained AA DPS rises ~20% to what the config always claimed; dp5/mb16 tighten
+  the same way.
+- **Posthumous XP banks.** Shells still flying when the ship sank kept scoring kills the profile
+  never saw. XP delta-banks every frame while the run is over; the SHIP LOST card shows exactly
+  what reached the profile.
+- **Dev kit MAX LVL computes from the catalog** (63 points → level 64) instead of the stale
+  level-41 grant that left the tree unaffordable. Self-updates if the catalog grows.
+- **Menus sit over open sea only.** Enemies, the machine, shells, and combat FX from the dead run
+  no longer draw behind the title and tech-tree screens.
+- Removed the dead `WPN_DOMAINS["dc"]` entry (depth charges detonate in their own branch and never
+  reach `strike()`); `probe_bosses` reads the blast radius from config, not a const.
+- **Mockup parity:** the three boss-behavior fixes are ported into `design/boss-ladder.html` too
+  (the approved mockup carried the same bugs — C3 precedent: the fix lives in the reference).
+- **Verify:** `probe_bosses` 8 → 11 checks (burst-point part attribution, dp5 flak vs machines +
+  the deaf deep, bay-bomb splash in/out + live bay build), `probe_sonar` 8 → 9 (MAD latch survives
+  ship sonar), `probe_hardpoints` 6 → 8 (sustained cadence == rate·T ±1; no catch-up burst after a
+  10 s gap), `probe_tech` 9 → 10 (full-catalog affordability at L64). All red-green verified
+  against Godot 4.7 headless; full gate green.
+
 ## C7 — BOSS LADDER & NAMING PASS · 2026-07-09 · Built
 
 The war gets a face; the roster gets its names. The last founding system lands — open thread #2

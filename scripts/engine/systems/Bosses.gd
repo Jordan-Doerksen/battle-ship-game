@@ -9,9 +9,11 @@ extends RefCounted
 
 # which weapons may STRIKE a machine, by wid — machines respect domain tags physically (the
 # CANOPY flies above flat naval fire; the deep is deaf). Drones keep D1.9 physical hits.
+# No "dc" entry: depth charges detonate in their own Projectiles branch and never reach
+# strike() (which early-returns for sub-domain machines anyway) — a dead entry otherwise.
 const WPN_DOMAINS := {
 	"aa20": ["air"], "dp5": ["air", "surface"], "mb16": ["surface"],
-	"doorgun": ["air", "surface"], "dc": ["sub"],
+	"doorgun": ["air", "surface"],
 }
 
 static func make_boss(world: GameWorld, cfg: Configs, rung: int, lap: int) -> Boss:
@@ -176,7 +178,7 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 				p.pos = pp
 				p.vel = dir * def.bomb_speed
 				p.dmg = def.bomb_dmg
-				p.splash = 0.0
+				p.splash = def.bomb_splash   # C7 fix: bays throw SPLASH bombs — the burst lives in Projectiles
 				p.hostile = true
 				p.wid = "hostile"
 				p.life = minf(dist_ship, 800.0) / def.bomb_speed

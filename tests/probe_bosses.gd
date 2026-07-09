@@ -3,6 +3,8 @@ extends SceneTree
 # that ran against the approved mockup: determinism through boss waves, the ladder cadence + lap
 # scaling + waves-1-4 baseline, soft-gated cores, parts + phases + rewards, the domain tour, the
 # lifecycle hold, and the naming pass. Also gates the C7 owner tune: the K-gun spread pattern.
+# Checks 9-11 gate the post-build projectile-vs-machine fixes: burst-point part attribution,
+# dp5 flak fusing off a machine (never a submerged one), and the CANOPY's bay-bomb splash.
 
 const DT: float = 1.0 / 60.0
 
@@ -200,6 +202,74 @@ func _initialize() -> void:
 	fails += _check(names_ok, "names: %s; machines %s, %s, %s" \
 		% ["/".join(reps), c8.bosses.defs[0].display_name, c8.bosses.defs[1].display_name, c8.bosses.defs[2].display_name])
 
+	# 9 — burst attribution: a splash burst AT an off-center part damages THAT part (the aft
+	#     turret sits outside the 30u core disc), core + other parts untouched
+	var c9 := _quiet()
+	var w9 := GameWorld.new(17)
+	Sim.step(w9, DT, c9)
+	var b9 := _place_boss(w9, c9, 0, 1, Vector2(0, -400))
+	var pp9 := Bosses.part_pos(b9, c9.bosses.defs[0], 1)   # AFT TURRET, hull-local (0, 34)
+	_shell(w9, "mb16", pp9, 4, c9.weapons.by_id("mb16").splash, 0.0001, false)
+	Projectiles.step(w9, DT, c9)
+	var aft_hit: bool = absf(b9.parts[1]["hp"] - (b9.parts[1]["max"] - 4.0)) < 1e-4
+	var rest9: bool = b9.parts[0]["hp"] == b9.parts[0]["max"] \
+		and b9.parts[2]["hp"] == b9.parts[2]["max"] and b9.core == b9.core_max
+	fails += _check(aft_hit and rest9,
+		"burst attribution: mb16 burst at the aft turret -> that part -%.0f hp, core + others untouched" \
+		% (b9.parts[1]["max"] - b9.parts[1]["hp"]))
+
+	# 10 — dp5 flak vs the machines: the proximity fuse triggers off a surfaced/air machine and
+	#      the burst bites (soft-gated 25%); the submerged MAW neither triggers nor feels it
+	var c10 := _quiet()
+	c10.tech.airburst = true
+	var w10 := GameWorld.new(19)
+	Sim.step(w10, DT, c10)
+	var b10 := _place_boss(w10, c10, 1, 1, Vector2(0, -400))   # THE CANOPY — air domain
+	var p10 := _shell(w10, "dp5", b10.pos + Vector2(0, c10.bosses.defs[1].radius + 4.0), 2, 0.0, 5.0, false)
+	Projectiles.step(w10, DT, c10)
+	var flak_bites: bool = absf((b10.core_max - b10.core) - 2.0 * 0.25) < 1e-4 and not p10.active
+	var c10b := _quiet()
+	c10b.tech.airburst = true
+	var w10b := GameWorld.new(19)
+	Sim.step(w10b, DT, c10b)
+	var maw10 := _place_boss(w10b, c10b, 2, 1, Vector2(0, -400))   # THE MAW — spawns submerged
+	var p10b := _shell(w10b, "dp5", maw10.pos, 2, 0.0, 5.0, false)
+	Projectiles.step(w10b, DT, c10b)
+	var deep_deaf: bool = maw10.core == maw10.core_max and p10b.active \
+		and maw10.parts.all(func(p: Dictionary) -> bool: return p["hp"] == p["max"])
+	fails += _check(flak_bites and deep_deaf,
+		"dp5 flak vs machines: CANOPY core chipped %.2f by an airburst; submerged MAW ignored (shell flies on)" \
+		% (b10.core_max - b10.core))
+
+	# 11 — bay-bomb splash: a burst inside the blast radius hurts the hull, outside does not;
+	#      and the CANOPY's bays actually lob splash bombs
+	var c11 := _quiet()
+	var bomb_splash: float = c11.bosses.defs[1].bomb_splash   # THE CANOPY's blast radius, from config
+	var w11 := GameWorld.new(21)
+	Sim.step(w11, DT, c11)
+	_shell(w11, "hostile", Vector2(Hull.RADIUS + bomb_splash - 2.0, 0.0), 2, bomb_splash, 0.0001, true)
+	var hull0: int = w11.hull
+	Projectiles.step(w11, DT, c11)
+	var splashed: bool = w11.hull == hull0 - 2
+	var w11b := GameWorld.new(21)
+	Sim.step(w11b, DT, c11)
+	_shell(w11b, "hostile", Vector2(Hull.RADIUS + bomb_splash + 30.0, 0.0), 2, bomb_splash, 0.0001, true)
+	var hull0b: int = w11b.hull
+	Projectiles.step(w11b, DT, c11)
+	var missed: bool = w11b.hull == hull0b
+	var w11c := GameWorld.new(23)
+	Sim.step(w11c, DT, c11)
+	_place_boss(w11c, c11, 1, 1, Vector2(0, -300))   # in bay range — both bays fire next step
+	Sim.step(w11c, DT, c11)
+	var bombs: int = 0
+	for i in range(w11c.projectiles.items.size()):
+		var pb: Projectile = w11c.projectiles.items[i]
+		if pb.active and pb.hostile and pb.splash == bomb_splash:
+			bombs += 1
+	fails += _check(splashed and missed and bombs == 2,
+		"bay-bomb splash: hull %d -> %d inside the blast, untouched outside; %d splash bombs lobbed" \
+		% [hull0, w11.hull, bombs])
+
 	if fails == 0:
 		print("PROBE_BOSSES PASSED")
 	else:
@@ -239,6 +309,18 @@ func _place(w: GameWorld, type_id: String, pos: Vector2, hp_override: int, c: Co
 	e.hp_max = def.hp
 	e.hp = hp_override if hp_override > 0 else def.hp
 	w.enemies.append(e)
+
+# craft a stationary in-flight shell straight into the pool — checks 9-11 place bursts exactly
+func _shell(w: GameWorld, wid: String, pos: Vector2, dmg: int, splash: float, life: float, hostile: bool) -> Projectile:
+	var p: Projectile = w.projectiles.obtain()
+	p.pos = pos
+	p.vel = Vector2.ZERO
+	p.dmg = dmg
+	p.splash = splash
+	p.life = life
+	p.wid = wid
+	p.hostile = hostile
+	return p
 
 func _run(w: GameWorld, c: Configs, secs: float) -> void:
 	for i in range(int(round(secs / DT))):

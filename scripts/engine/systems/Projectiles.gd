@@ -5,7 +5,9 @@ extends RefCounted
 # D1.9). Friendly splash shells carry a PROXIMITY FUSE (C3 gate rev 2): they detonate on a close
 # flyby of a surface enemy, else burst when their flight time expires (auto: at the intercept;
 # forced: at full range along the bearing). Hostile shells test the hull capsule and go through
-# Hull.damage (grace window applies). Kill bookkeeping banks world.kills and emits effects.
+# Hull.damage (grace window applies); hostile SPLASH shells (the CANOPY's bay bombs, C7) also
+# burst at flight end and splash the hull in radius. Kill bookkeeping banks world.kills and
+# emits effects.
 
 static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 	var pool: Pool = world.projectiles
@@ -21,6 +23,14 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 				Hull.damage(world, p.dmg, cfg)
 				world.effects.append({ "type": "shiphit", "pos": p.pos })
 				dead = true
+			elif dead and p.splash > 0.0:
+				# CANOPY bay bombs are SPLASH attacks (C7 spec table, boss-ladder.md) — the bomb
+				# bursts where its flight expires (it was lobbed AT a point) and the hull takes
+				# the hit if the blast reaches the capsule: same capsule idiom as the contact
+				# test above, widened by the blast radius. Grace still applies via Hull.damage.
+				world.effects.append({ "type": "splash", "pos": p.pos, "r": p.splash })
+				if Hull.dist_to_hull(world, p.pos) <= Hull.RADIUS + p.splash:
+					Hull.damage(world, p.dmg, cfg)
 		elif p.splash > 0.0:
 			if not dead:   # proximity fuse: detonate on a close flyby of a surface enemy
 				for e in world.enemies:
@@ -38,7 +48,7 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 						damage_enemy(world, e, p.dmg, cfg)
 				if world.boss != null and Bosses.domain_of(world, cfg) == "surface" \
 						and world.boss.pos.distance_to(p.pos) <= p.splash + Bosses.def_of(world, cfg).radius:
-					Bosses.strike(world, cfg, world.boss.pos, p.dmg, ["surface"])
+					Bosses.strike(world, cfg, _boss_burst_point(world, cfg, p.pos), p.dmg, ["surface"])
 		elif p.wid == "dc":
 			# depth charge (C5): inert while sinking; at fuse depth it blasts SUBS only — the ship
 			# and surface/air enemies are untouched by the underwater detonation
@@ -61,6 +71,14 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 				if e.pos.distance_to(p.pos) <= trigger:
 					burst = true
 					break
+			if not burst and world.boss != null and Bosses.domain_of(world, cfg) != "sub":
+				# the machine is a fuse target too (C7 fix — dp5 is air+surface, and with the
+				# tech on this elif consumes every dp5 shell, so the generic strike below can
+				# never reach a boss). The submerged MAW neither triggers nor feels flak.
+				var btrigger: float = Bosses.def_of(world, cfg).radius \
+					+ (cfg.tech.airburst_trigger if Bosses.domain_of(world, cfg) == "air" else 2.0)
+				if world.boss.pos.distance_to(p.pos) <= btrigger:
+					burst = true
 			if burst:
 				world.effects.append({ "type": "airburst", "pos": p.pos, "r": cfg.tech.airburst_radius })
 				for e in world.enemies:
@@ -68,7 +86,7 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 						damage_enemy(world, e, p.dmg, cfg)
 				if world.boss != null \
 						and world.boss.pos.distance_to(p.pos) <= cfg.tech.airburst_radius + Bosses.def_of(world, cfg).radius:
-					Bosses.strike(world, cfg, world.boss.pos, p.dmg, ["air", "surface"])
+					Bosses.strike(world, cfg, _boss_burst_point(world, cfg, p.pos), p.dmg, ["air", "surface"])
 				dead = true
 		else:
 			var struck: bool = false
@@ -88,6 +106,15 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 				world.effects.append({ "type": "gunsplash", "pos": p.pos })   # the round slaps the sea (C6)
 		if dead:
 			pool.release(p)
+
+# AoE strikes on the machine resolve at the BURST point, so part-first attribution and hit
+# effects happen where the blast actually is (C7 fix — passing the boss CENTER made off-center
+# parts unhittable by splash/flak and drew effects at the wrong spot). The point is clamped to
+# the hull disc: the callers' range gates already proved the blast reaches the hull, so an edge
+# burst must still land — unclamped it would miss strike()'s point-contact checks (part r + 2 /
+# core radius + 2) and deal nothing, losing damage the old center-pass code dealt.
+static func _boss_burst_point(world: GameWorld, cfg: Configs, burst: Vector2) -> Vector2:
+	return world.boss.pos + (burst - world.boss.pos).limit_length(Bosses.def_of(world, cfg).radius)
 
 # shared with Enemies.gd's burn ticks — kills bank kills + XP (C4)
 static func damage_enemy(world: GameWorld, e: Enemy, dmg: int, cfg: Configs) -> void:

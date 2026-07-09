@@ -76,6 +76,7 @@ spread = 0.06
 bay_period = 5.0
 bomb_speed = 120.0
 bomb_dmg = 2
+bomb_splash = 30.0
 hive_period = 5.0
 hive_spawn = "swarmer"
 hive_spawn_n = 3

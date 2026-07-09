@@ -28,6 +28,7 @@ extends Resource
 @export var bay_period: float = 0.0
 @export var bomb_speed: float = 0.0
 @export var bomb_dmg: int = 0
+@export var bomb_splash: float = 0.0       # blast radius vs the hull (bay bombs are splash attacks)
 @export var hive_period: float = 0.0
 @export var hive_spawn: String = ""
 @export var hive_spawn_n: int = 0

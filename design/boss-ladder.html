@@ -392,7 +392,7 @@ const DEFAULT_CFG = {
           { pn: "STBD BAY",   hp: 9,  ox: 30,  oy: 0,  r: 11, role: "bay" },
           { pn: "DRONE HIVE", hp: 10, ox: 0,   oy: 16, r: 10, role: "hive" },
         ],
-        bay_period: 5.0, bomb_speed: 120, bomb_dmg: 2, lead: 0.5, spread: 0.06,
+        bay_period: 5.0, bomb_speed: 120, bomb_dmg: 2, bomb_splash: 30, lead: 0.5, spread: 0.06,
         hive_period: 5.0, hive_spawn: "swarmer", hive_spawn_n: 3,
         phase_rate: 0.75, hive_death_spawn: "bomber", hive_death_n: 2 },
       { id: "maw", name: "THE MAW", layer: "sub", core_hp: 45, radius: 36,
@@ -979,6 +979,17 @@ function bossStrike(sim, cfg, p, domains) {
   }
   return false;
 }
+// C8 parity fix: AoE strikes on the machine resolve at the BURST point, so part-first
+// attribution and hit effects happen where the blast actually is (passing the boss CENTER
+// made off-center parts unhittable by splash/flak and drew effects at the wrong spot). The
+// point is clamped to the hull disc: the callers' range gates already proved the blast
+// reaches the hull, so an edge burst must still land inside bossStrike's contact checks.
+function bossBurstPoint(sim, cfg, bx, by) {
+  const b = sim.boss, r = bossDef(sim, cfg).radius;
+  const dx = bx - b.x, dy = by - b.y, d = Math.hypot(dx, dy);
+  const s = d > r ? r / d : 1;
+  return { x: b.x + dx * s, y: b.y + dy * s };
+}
 const WPN_DOMAINS = { aa20: ["air"], dp5: ["air", "surface"], mb16: ["surface"],
   doorgun: ["air", "surface"], dc: ["sub"] };
 
@@ -1027,7 +1038,8 @@ function stepBoss(sim, cfg, dt) {
         const ang = angleTo(pp, aim) + (draw(sim) * 2 - 1) * def.spread;
         const dir = dirOf(ang);
         sim.projectiles.push({ x: pp.x, y: pp.y, vx: dir.x * def.bomb_speed, vy: dir.y * def.bomb_speed,
-          dmg: def.bomb_dmg, splash: 0, life: Math.min(distShip, 800) / def.bomb_speed, wid: "hostile", hostile: true });
+          dmg: def.bomb_dmg, splash: def.bomb_splash,   // C8 parity fix: bays throw SPLASH bombs — the burst lives in stepProjectiles
+          life: Math.min(distShip, 800) / def.bomb_speed, wid: "hostile", hostile: true });
         sim.effects.push({ type: "gunflash", x: pp.x, y: pp.y, ang });
       }
     }
@@ -1181,6 +1193,14 @@ function stepProjectiles(sim, cfg, dt) {
         damageShip(sim, p.dmg, cfg);
         sim.effects.push({ type: "shiphit", x: p.x, y: p.y });
         dead = true;
+      } else if (dead && p.splash > 0) {
+        // C8 parity fix: CANOPY bay bombs are SPLASH attacks — the bomb bursts where its
+        // flight expires (it was lobbed AT a point) and the hull takes the hit if the blast
+        // reaches the capsule: the contact test above widened by the blast radius. Grace
+        // still applies via damageShip.
+        sim.effects.push({ type: "splash", x: p.x, y: p.y, r: p.splash });
+        if (distToHull(sim, cfg, p.x, p.y) <= cfg.hull_capsule.radius + p.splash)
+          damageShip(sim, p.dmg, cfg);
       }
     } else if (p.splash > 0) {
       if (!dead) {
@@ -1199,8 +1219,10 @@ function stepProjectiles(sim, cfg, dt) {
           if (e.active && e.layer === "surf" && Math.hypot(e.x - p.x, e.y - p.y) <= p.splash)
             damageEnemy(sim, e, p.dmg, cfg);
         if (sim.boss && bossDomain(sim, cfg) === "surface"
-            && Math.hypot(sim.boss.x - p.x, sim.boss.y - p.y) <= p.splash + bossDef(sim, cfg).radius)
-          bossStrike(sim, cfg, { x: sim.boss.x, y: sim.boss.y, dmg: p.dmg }, ["surface"]);
+            && Math.hypot(sim.boss.x - p.x, sim.boss.y - p.y) <= p.splash + bossDef(sim, cfg).radius) {
+          const bp = bossBurstPoint(sim, cfg, p.x, p.y);   // C8 parity fix: strike at the burst point, not the boss center
+          bossStrike(sim, cfg, { x: bp.x, y: bp.y, dmg: p.dmg }, ["surface"]);
+        }
       }
     } else if (p.wid === "dc") {
       // depth charge: inert while sinking; at fuse depth it blasts SUBS only (the ship and
@@ -1223,6 +1245,14 @@ function stepProjectiles(sim, cfg, dt) {
                                           : cfg.enemies[e.type].radius + 2;
         if (Math.hypot(e.x - p.x, e.y - p.y) <= trigger) { burst = true; break; }
       }
+      if (!burst && sim.boss && bossDomain(sim, cfg) !== "sub") {
+        // C8 parity fix: the machine is a fuse target too (dp5 is air+surface, and with the
+        // tech on this branch consumes every dp5 shell, so the generic bossStrike below can
+        // never reach a boss). The submerged MAW neither triggers nor feels flak.
+        const btrigger = bossDef(sim, cfg).radius
+          + (bossDomain(sim, cfg) === "air" ? cfg.tech.airburst_trigger : 2);
+        if (Math.hypot(sim.boss.x - p.x, sim.boss.y - p.y) <= btrigger) burst = true;
+      }
       if (burst) {
         sim.effects.push({ type: "airburst", x: p.x, y: p.y, r: cfg.tech.airburst_radius });
         for (const e of sim.enemies) {
@@ -1231,8 +1261,10 @@ function stepProjectiles(sim, cfg, dt) {
             damageEnemy(sim, e, p.dmg, cfg);
           }
         }
-        if (sim.boss && Math.hypot(sim.boss.x - p.x, sim.boss.y - p.y) <= cfg.tech.airburst_radius + bossDef(sim, cfg).radius)
-          bossStrike(sim, cfg, { x: sim.boss.x, y: sim.boss.y, dmg: p.dmg }, ["air", "surface"]);
+        if (sim.boss && Math.hypot(sim.boss.x - p.x, sim.boss.y - p.y) <= cfg.tech.airburst_radius + bossDef(sim, cfg).radius) {
+          const bp = bossBurstPoint(sim, cfg, p.x, p.y);   // C8 parity fix: strike at the burst point, not the boss center
+          bossStrike(sim, cfg, { x: bp.x, y: bp.y, dmg: p.dmg }, ["air", "surface"]);
+        }
         dead = true;
       }
     } else {

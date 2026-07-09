@@ -54,6 +54,9 @@ briefing-room title screen.
 
 Within a branch, nodes unlock strictly in order. Costs: tier 1–3 = 1 pt, tier 4–5 = 2 pts,
 marquee = 3 pts (10 pts per branch, 40 total = the long game).
+*(C8 correction, 2026-07-09: the shipped catalog has grown past this C4-era math — ORDNANCE runs
+11 pts as tuned, and the C5 SONAR (9) and C6 AIR WING (13) branches landed after this spec. The
+full tree costs **63 points = level 64** today; `config/tech.tres` is the authority.)*
 
 **SEAMANSHIP** — 1 Trim Ballast (+10% max speed) · 2 Keel Shave (+15% turn rate) · 3 Engine
 Overhaul (+20% thrust accel) · 4 Hard Rudder (turn floor 0.25→0.40) · 5 Sea Legs (+2 hull pips) ·

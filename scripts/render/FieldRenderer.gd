@@ -120,6 +120,8 @@ func _draw() -> void:
 	_draw_grid()
 	_draw_flecks()
 	_draw_wake()
+	if not show_ship:   # open sea only behind the menus (C4): no dead-run enemies/boss/shells/FX
+		return
 	_draw_enemies()
 	_draw_boss()
 	_draw_projectiles()

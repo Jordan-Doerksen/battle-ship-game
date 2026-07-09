@@ -42,10 +42,13 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 		var has_aim: bool = aim != Vector2.INF
 		var desired: float = _angle_to(mpos, aim) if has_aim else world.ship_heading   # stow: home to bow
 		m.ang += clampf(angle_difference(m.ang, desired), -wpn.traverse * dt, wpn.traverse * dt)
-		m.cool -= dt
+		if m.cool > 0.0:   # gate: an idle gun parks at ~0, banking at most ONE shot — never a backlog burst
+			m.cool -= dt
 		m.bloom = maxf(0.0, m.bloom - wpn.bloom_decay * dt)   # cone tightens while the gun rests
 		if has_aim and m.cool <= 0.0 and absf(angle_difference(m.ang, desired)) <= hp_cfg.aim_tol:
-			m.cool = 1.0 / wpn.rate
+			# += (not =) carries the sub-tick remainder: a plain reset quantizes every period UP to whole
+			# ticks (a ~1e-17 float residue made aa20's 5-tick period take 6 — 10/s from a 12/s gun)
+			m.cool += 1.0 / wpn.rate
 			var shot_ang: float = m.ang + (world.rng.nextf() * 2.0 - 1.0) * (wpn.spread + m.bloom)
 			m.bloom = minf(wpn.bloom_max, m.bloom + wpn.bloom_add)
 			if wpn.id == "mb16" and cfg.tech.salvo:   # FULL SALVO (C4 marquee): both barrels, one draw

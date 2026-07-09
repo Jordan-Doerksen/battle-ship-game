@@ -13,14 +13,16 @@ static func step(world: GameWorld, _dt: float, cfg: Configs) -> void:
 		if e.pos.distance_to(world.ship_pos) <= cfg.sonar.radius:
 			if world.elapsed >= e.detected_until:
 				world.effects.append({ "type": "contact", "pos": e.pos })
-			e.detected_until = world.elapsed + cfg.sonar.contact_hold
+			# extend, never shorten: MAD GEAR's permanent (1e12) bird latches survive ship passes
+			# (docs/specs/air-wing.md — "bird latches never decay")
+			e.detected_until = maxf(e.detected_until, world.elapsed + cfg.sonar.contact_hold)
 	# C7: a submerged MAW is a (huge) contact like any other
 	var b: Boss = world.boss
 	if b != null and Bosses.domain_of(world, cfg) == "sub" \
 			and b.pos.distance_to(world.ship_pos) <= cfg.sonar.radius:
 		if world.elapsed >= b.detected_until:
 			world.effects.append({ "type": "contact", "pos": b.pos })
-		b.detected_until = world.elapsed + cfg.sonar.contact_hold
+		b.detected_until = maxf(b.detected_until, world.elapsed + cfg.sonar.contact_hold)
 
 static func detected(world: GameWorld, e: Enemy) -> bool:
 	return world.elapsed < e.detected_until

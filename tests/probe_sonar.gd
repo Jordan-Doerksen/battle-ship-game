@@ -2,8 +2,9 @@ extends SceneTree
 # C5 acceptance probe (docs/specs/sonar-subs.md §Acceptance) — mirrors the validation harness that
 # ran against the approved mockup: determinism with subs/torpedoes/DC volleys in play, deaf guns
 # (domain exclusion), detection + contact latch, the owner's DC trigger law (contact-gated), the
-# DC kill with surface/hull isolation, torpedo behavior, SONAR tree derivation, and zero-tech
-# baseline (waves 1–6 stay sub-free; the director CAN field subs once unlocked).
+# DC kill with surface/hull isolation, torpedo behavior, SONAR tree derivation, zero-tech
+# baseline (waves 1–6 stay sub-free; the director CAN field subs once unlocked), and latch
+# precedence (a MAD GEAR permanent latch survives ship-sonar passes — extend, never shorten).
 
 const DT: float = 1.0 / 60.0
 
@@ -203,6 +204,24 @@ func _initialize() -> void:
 	fails += _check(waves_seen >= 6 and not sub_early and subs_fielded == 1,
 		"baseline: %d waves sub-free before unlock; director fields %d sub when it's the only pick (cost 6/budget 6)" % [waves_seen, subs_fielded])
 
+	# 9 — latch precedence: a far-future latch (MAD GEAR's permanent 1e12 bird mark, AirWing.gd)
+	#     survives ship-sonar passes over the same contact at BOTH write sites (enemy sub + submerged
+	#     MAW) — the ship's ears may extend a latch, never shorten it ("bird latches never decay")
+	var c9 := _quiet()
+	c9.enemies.by_id("sub").speed = 0.0
+	var w9 := GameWorld.new(17)
+	Sim.step(w9, DT, c9)
+	_place(w9, "sub", Vector2(0, -200), 999999, c9)          # inside radius 350 — pinged every tick
+	var sub9: Enemy = w9.enemies[0]
+	sub9.detected_until = 1e12                                # as AirWing writes under tech.mad_gear
+	var maw9: Boss = _place_boss(w9, c9, 2, 1, Vector2(0, 200))
+	maw9.cycle_t = -1e9                                       # pinned submerged — stays domain "sub"
+	maw9.detected_until = 1e12
+	_run(w9, c9, 2.0)
+	fails += _check(sub9.detected_until >= 1e12 and maw9.detected_until >= 1e12,
+		"latch precedence: 1e12 MAD latches survive 2s of ship sonar (sub %.0f, MAW %.0f)" \
+		% [sub9.detected_until, maw9.detected_until])
+
 	if fails == 0:
 		print("PROBE_SONAR PASSED")
 	else:
@@ -222,6 +241,21 @@ func _sub_world(seed_val: int, c: Configs) -> GameWorld:
 	_place(w, "sub", Vector2(0, -300), 0, c)
 	_place(w, "sub", Vector2(-500, 200), 0, c)
 	return w
+
+func _place_boss(w: GameWorld, c: Configs, rung: int, lap: int, pos: Vector2) -> Boss:
+	var def: BossDef = c.bosses.defs[rung]
+	var mult: float = pow(c.bosses.lap_hp_mult, lap - 1)
+	var b := Boss.new()
+	b.rung = rung
+	b.lap = lap
+	b.pos = pos
+	b.core = def.core_hp * mult
+	b.core_max = def.core_hp * mult
+	for pd in def.parts:
+		b.parts.append({ "hp": pd["hp"] * mult, "max": pd["hp"] * mult, "dead": false, "cool": 0.0 })
+	b.submerged = def.id == "maw"
+	w.boss = b
+	return b
 
 func _place(w: GameWorld, type_id: String, pos: Vector2, hp_override: int, c: Configs) -> void:
 	var def: EnemyDef = c.enemies.by_id(type_id)

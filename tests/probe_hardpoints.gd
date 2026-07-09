@@ -178,6 +178,52 @@ func _initialize() -> void:
 	fails += _check(hot > aa.bloom_max * 0.8 and cold < 0.005,
 		"bloom: %.3f under sustained fire (max %.2f), %.3f after 4s rest" % [hot, aa.bloom_max, cold])
 
+	# 7 — cadence (C1 fix): sustained aa20 fire averages the CONFIGURED rate — the old whole-tick
+	#     reset (+ a ~1e-17 float residue) stretched the 5-tick period to 6, firing 10/s from a 12/s gun
+	var c7 := _quiet()
+	c7.enemies.by_id("swarmer").speed = 0.0
+	var w7 := GameWorld.new(31)
+	Sim.step(w7, DT, c7)
+	_place(w7, "swarmer", Vector2(0, -200), 999999, c7)
+	_run(w7, c7, 2.0)   # warm up: slew, first shot, settle into steady cadence
+	var s7: int = c7.hardpoints.mount_size.find("S")
+	var rate7: float = c7.weapons.by_id("aa20").rate
+	var secs7: float = 10.0
+	var shots7: int = 0
+	for i in range(int(round(secs7 / DT))):
+		Sim.step(w7, DT, c7)
+		for e in w7.effects:
+			if e["type"] == "muzzle" and e["idx"] == s7:
+				shots7 += 1
+		w7.effects.clear()
+	fails += _check(absf(shots7 - rate7 * secs7) <= 1.0,
+		"cadence: %d aa20 shots from one mount in %.0fs (configured %.1f/s -> expect %.0f +/- 1)"
+		% [shots7, secs7, rate7, rate7 * secs7])
+
+	# 8 — no catch-up (C1 fix): a gun idle for 10s must NOT machine-gun a banked backlog when a
+	#     target finally appears — one immediate shot at most, then normal cadence from there
+	var c8 := _quiet()
+	c8.enemies.by_id("swarmer").speed = 0.0
+	var w8 := GameWorld.new(32)
+	Sim.step(w8, DT, c8)
+	_run(w8, c8, 10.0)   # long no-target gap: cool must clamp near zero, not bank ~120 shots
+	_place(w8, "swarmer", Vector2(0, -200), 999999, c8)
+	var s8: int = c8.hardpoints.mount_size.find("S")
+	var period8: int = int(floor(1.0 / (c8.weapons.by_id("aa20").rate * DT)))   # aa20: 5 ticks
+	var shot_ticks: Array = []
+	for i in range(120):
+		Sim.step(w8, DT, c8)
+		for e in w8.effects:
+			if e["type"] == "muzzle" and e["idx"] == s8:
+				shot_ticks.append(i)
+		w8.effects.clear()
+	var min_gap: int = 999999
+	for i in range(1, shot_ticks.size()):
+		min_gap = mini(min_gap, shot_ticks[i] - shot_ticks[i - 1])
+	fails += _check(shot_ticks.size() >= 2 and min_gap >= period8,
+		"no catch-up: after a 10s idle gap, %d shots in 2s, min gap %d ticks (period %d)"
+		% [shot_ticks.size(), min_gap, period8])
+
 	if fails == 0:
 		print("PROBE_HARDPOINTS PASSED")
 	else:

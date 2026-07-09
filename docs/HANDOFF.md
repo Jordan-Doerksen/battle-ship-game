@@ -100,9 +100,25 @@ K-GUN SPREAD** — stations around the beams + stern (`sonar.dc_ring`), scatter 
 blind auto racks needed a blanket, not a point. `probe_bosses` (8 checks) gates it;
 `probe_waves`'s budget scenario isolates the ladder (`bosses.every_n = 0`).
 
-**The founding brief is SYSTEMS-COMPLETE.** Remaining open threads are narrative/naming only:
-#1 water-mystery payoff, #4 working-title trademark check. New systems (a win mode? new hulls?
-D1.12 says one hull until revisited) start with fresh `/spec-feature` interviews.
+**C8 — Bug batch is BUILT (2026-07-09):** nine fixes from the first adversarial full-code sweep
+(29-agent research pass), all red-green probe-gated — dp5 flak now fuses off war machines, AoE
+strikes resolve at the burst point (off-center parts were blast-proof), bay bombs got their spec'd
+splash (`BossDef.bomb_splash`), sonar latches extend-never-shorten (MAD GEAR survives ship sonar),
+turret cadence matches config exactly (aa20 was 10/s vs configured 12/s — a known ~20% AA tighten),
+posthumous XP banks, dev-kit MAX LVL covers the 63-point tree, menus draw over open sea only. The
+three boss fixes are parity-ported into `design/boss-ladder.html`. Probes: bosses 11 / sonar 9 /
+hardpoints 8 / tech 10.
+
+**The founding brief is SYSTEMS-COMPLETE, and the polish arc C9–C12 is owner-approved
+(2026-07-09 interview — the directive is recorded verbatim in the DECISIONS Change Log):**
+C9 THE LIVING SEA (render-only sea/splash pass; new mockup revision supersedes the C2 LOOK-LOCK)
+→ C10 TACTICAL ZOOM (~2× out; camera goes to config; formal CR) → C11 LONG-RANGE FIRE CONTROL
+(burst-at-cursor + fall-of-shot feedback; formal CR; the deaf-deep law is explicitly untouched)
+→ C12 READABILITY & FEEL (scope legibility, pause, onboarding, minimal procedural SFX on the
+existing effect events). Each chunk still runs interview → spec → mockup → port. Remaining open
+threads are narrative/naming only: #1 water-mystery payoff, #4 working-title trademark check.
+New systems beyond the arc (a win mode? new hulls? D1.12 says one hull until revisited) start
+with fresh `/spec-feature` interviews.
 
 ## 3. Tree layout
 

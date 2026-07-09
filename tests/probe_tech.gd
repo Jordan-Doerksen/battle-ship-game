@@ -177,6 +177,25 @@ func _initialize() -> void:
 	fails += _check(order_ok and broke_ok and chain_ok and marquee_ok and air_ok,
 		"spend rules: in-branch order, point gating, marquee chain, AIR WING live behind air1")
 
+	# 5b — full-catalog affordability: Σ costs (63 pts) fits EXACTLY at level 64 (dev_max_level's target)
+	var total_cost: int = 0
+	var all_ids: Array = []
+	for n in base.tech.catalog:
+		total_cost += n.cost
+		all_ids.append(n.id)
+	var last_node: TechDef = base.tech.catalog[base.tech.catalog.size() - 1]
+	var prof_full := Profile.new()
+	prof_full.unlocked = all_ids.duplicate()
+	prof_full.unlocked.erase(last_node.id)
+	prof_full.xp = _xp_for_level(pc5, total_cost)       # one level short: the final node must refuse
+	var short_ok: bool = not Tech.can_buy(prof_full, last_node.id, base.tech, pc5)
+	prof_full.xp = _xp_for_level(pc5, total_cost + 1)   # level 64: the last node buys
+	var reach_ok: bool = Tech.can_buy(prof_full, last_node.id, base.tech, pc5)
+	prof_full.unlocked = all_ids
+	var exact_ok: bool = Tech.points_available(prof_full, base.tech, pc5) == 0
+	fails += _check(total_cost == 63 and short_ok and reach_ok and exact_ok,
+		"full catalog: %d pts; L%d buys the last node, L%d cannot; owning ALL leaves exactly 0 points" % [total_cost, total_cost + 1, total_cost])
+
 	# 6 — profile roundtrip (probe-only path)
 	var probe_path := "user://profile_probe.cfg"
 	var p1 := Profile.new()

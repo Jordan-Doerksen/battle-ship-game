@@ -227,13 +227,58 @@ treated as locked:
   touring the three domains, parts + phases, soft-gated cores, endless lap scaling, per-part XP +
   lap bounty + hull patch, the reporting-name pass + PRIORITY TARGET plate. Resolves open thread
   #2. The founding brief is systems-complete. Spec: `docs/specs/boss-ladder.md`.
-- **C8+ — not yet scoped.** All remaining founding threads are narrative/naming only (#1
-  water-mystery, #4 working title). New systems start with fresh `/spec-feature` interviews, per
-  this repo's `CLAUDE.md`.
+- **C8 — Bug batch.** BUILT 2026-07-09 (see Change Log): nine fixes from the adversarial sweep,
+  probe-gated, no design changes.
+- **C9–C12 — the polish arc (owner-approved 2026-07-09, see Change Log for the directive):**
+  C9 THE LIVING SEA (render-only; new mockup supersedes the C2 LOOK-LOCK) → C10 TACTICAL ZOOM
+  (~2× out, camera config; formal CR) → C11 LONG-RANGE FIRE CONTROL (burst-at-cursor +
+  fall-of-shot feedback; formal CR; deaf-deep law untouched) → C12 READABILITY & FEEL (scope
+  legibility, pause, onboarding, minimal SFX). Each chunk still gets its own spec interview +
+  mockup gate before port. Remaining founding threads are narrative/naming only (#1
+  water-mystery, #4 working title).
 
 ---
 
 ## Change Log
+- **2026-07-09 — Owner direction (research-pass interview): the polish arc C8–C12 is approved.**
+  Recorded verbatim from the interview, specifics deferred to per-chunk spec/mockup gates per the
+  C4 CR template: **C8** bug batch (built — see below). **C9** THE LIVING SEA — render-only sea
+  pass (swell, heave/roll, hull shadows, shell splash columns, upgraded wakes; cosmetic-only RNG;
+  reduced-motion setting); supersedes the C2 LOOK-LOCK **only through a new approved mockup
+  revision** — the mockup gate stays in force (owner chose full gate over Godot-direct iteration).
+  **C10** TACTICAL ZOOM — owner chose **~2× out** (wheel zoom to ~0.4, cursor-anchored, smoothed)
+  over strategic/overview depth: existing art survives via screen-px stroke compensation + a
+  minimum-apparent-size floor for the smallest hostiles; NO icon/blip LOD stage; camera gets its
+  own `CameraConfig.gd`/`camera.tres` (the .tscn-hardcoded 0.85 becomes config). This is a formal
+  CR when built: the camera was deliberately fixed at C1. **C11** LONG-RANGE FIRE CONTROL — owner
+  chose **burst-at-cursor-point**: forced mb16 bursts AT the cursor's world position when within
+  gun range (bearing-mode full-range flight beyond it; proximity fuse and the radar fire-control
+  line stay) + fall-of-shot feedback (own shells/bursts on the scope), flight-time readout,
+  ranging/straddle feedback. Supersedes the C3 gate-rev-2 *rationale* ("the cursor can only
+  express a screen's worth of distance" — C10 removes that premise), NOT its bearing mechanism,
+  which survives beyond-range. Formal CR when built. **The deaf-deep law is explicitly NOT
+  touched: long-range fire never hurts subs.** **C12** READABILITY & FEEL — torpedo-blip
+  distinction, DC arm-ring + rack cooldown on the scope, pause, lost-card misclick guard,
+  onboarding hints, wounded-enemy tells, and a **minimal SFX pass** (owner: procedural SFX wired
+  to the existing 22 sim effect events incl. the currently-dropped `klaxon`/`waveclear`; no music).
+- **2026-07-09 — C8 Bug Batch built: nine fixes from the first adversarial full-code sweep; no
+  design changes, shipped systems now match their specs.** dp5 flak fuses off war machines (the
+  fuse loop never scanned `world.boss`; submerged machines stay deaf); splash/airburst strikes
+  resolve at the burst point clamped to the hull disc, not the machine's center (off-center parts
+  were blast-proof); THE CANOPY's bay bombs got their spec'd splash (`BossDef.bomb_splash` = 30 in
+  `bosses.tres` — new field, hostile splash-at-expiry mechanic in `Projectiles.gd`); sonar latch
+  writes are `maxf` — extend, never shorten (ship passes were clobbering MAD GEAR's permanent bird
+  marks, violating the C6 spec); turret cooldown carries the sub-tick remainder (aa20 fired 10/s
+  vs configured 12/s from whole-tick quantization; sustained rates now match config exactly —
+  a known ~20% AA DPS tighten, intent not drift; idle guns bank at most one shot); posthumous
+  kill XP delta-banks while `run_over` (was silently dropped; lost card matches the profile);
+  dev-kit MAX LVL computes from the catalog (63 pts → L64, was stale at 40); menus draw over open
+  sea only (combat layers gate on `show_ship`); dead `WPN_DOMAINS["dc"]` entry removed. Probes:
+  bosses 11, sonar 9, hardpoints 8, tech 10 — all red-green against the pre-fix code. **Mockup
+  divergence found and healed:** the approved `design/boss-ladder.html` carried the same three
+  boss bugs (a mockup-spec gap — spec wins); the fixes are ported into the mockup per the C3
+  parity precedent. Spec correction: `docs/specs/tech-tree.md`'s "40 total" predates
+  SONAR/AIR WING — the shipped catalog is 63 (dated note added in place).
 - **2026-07-09 — C7 Boss Ladder & Naming Pass built; open thread #2 resolved; the founding brief
   is systems-complete.** The approved C7 spec + mockup ported: `BossConfig`/`bosses.tres`
   (generated from `spec_defaults()`) + `Boss` entity + `Bosses.gd` (after Enemies in the fixed

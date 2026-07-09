@@ -16,6 +16,8 @@ var state: String = "title"       # title | tree | game
 var _accum: float = 0.0
 var _step: float = 1.0 / 60.0
 var _banked: bool = false
+var _banked_xp: int = 0           # this run's XP already in the profile (posthumous kills bank the delta)
+var _level_before_bank: int = 1   # career level when this run's banking began (for the LEVEL UP line)
 @onready var _field: FieldRenderer = $Field
 @onready var _cam: Camera2D = $Cam
 @onready var _gauges: HelmGauges = $HUD/Gauges
@@ -74,13 +76,23 @@ func start_sortie() -> void:
 	_gauges.bind(world, cfgs)
 	show_screen("game")
 
-func _bank_run() -> void:   # the sortie's XP becomes career XP (the sim only ever wrote xp_run)
-	_banked = true
-	var before: int = base_cfgs.progress.level_info(profile.xp)["level"]
-	profile.xp += world.xp_run
+func _bank_run() -> void:   # the sortie's XP becomes career XP (the sim only ever wrote xp_run).
+	# Projectiles keep stepping after run_over BY DESIGN (shells already flying land), and those
+	# posthumous kills still add xp_run — so bank the DELTA every frame, never a one-shot snapshot,
+	# and keep the lost card equal to what actually reached the profile ("XP fully kept on death").
+	# start_sortie resets _banked, and the first bank re-zeroes _banked_xp, so a restart can never
+	# re-bank the previous run's total.
+	if _banked and world.xp_run <= _banked_xp:
+		return
+	if not _banked:
+		_banked = true
+		_banked_xp = 0
+		_level_before_bank = base_cfgs.progress.level_info(profile.xp)["level"]
+	profile.xp += world.xp_run - _banked_xp
+	_banked_xp = world.xp_run
 	profile.save()
 	var after: int = base_cfgs.progress.level_info(profile.xp)["level"]
-	_gauges.lost_report = { "xp": world.xp_run, "leveled_to": after if after > before else 0 }
+	_gauges.lost_report = { "xp": _banked_xp, "leveled_to": after if after > _level_before_bank else 0 }
 
 func _apply_god_guns() -> void:
 	for w in cfgs.weapons.catalog:
@@ -95,10 +107,13 @@ func toggle_god_guns() -> void:   # DEV kit: rebuild the derived configs so the 
 	_field.bind(world, field_cfg, cfgs)
 	_gauges.bind(world, cfgs)
 
-func dev_max_level() -> void:     # DEV kit: enough XP for the whole tree (level 41)
+func dev_max_level() -> void:     # DEV kit: enough XP for the whole tree, computed from the catalog
+	var points: int = 0            # Σ node costs (63 today); 1 point per level past 1 ⇒ level = cost + 1
+	for n in base_cfgs.tech.catalog:
+		points += n.cost
 	var xp: int = 0
-	for n in range(1, 41):
-		xp += base_cfgs.progress.xp_for_next(n)
+	for lvl in range(1, points + 1):
+		xp += base_cfgs.progress.xp_for_next(lvl)
 	profile.xp = maxi(profile.xp, xp)
 	profile.save()
 
@@ -121,8 +136,7 @@ func _process(delta: float) -> void:
 		_devkit.visible = not _devkit.visible
 		_devkit.queue_redraw()
 	if world.run_over:
-		if not _banked:
-			_bank_run()
+		_bank_run()   # every frame: shells still in the air keep landing, so keep banking the delta
 		if Input.is_action_just_pressed("new_sortie") or Input.is_action_just_pressed("force_fire_all"):
 			start_sortie()
 			return
