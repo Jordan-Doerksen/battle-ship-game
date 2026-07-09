@@ -1,6 +1,8 @@
 # Spec — C6: AIR WING (the Helicopter)
 
-**Status:** DRAFT — interviewed 2026-07-09, awaiting owner approval · Mockup pending (gate) · Not built
+**Status:** APPROVED 2026-07-09 (owner) · Interviewed 2026-07-09 · Mockup BUILT (`design/air-wing.html`,
+harness 8/8 incl. zero-tech byte-parity vs the shipped C5 sim) — AT THE GATE, awaiting owner
+feel-approval · Not ported
 **Resolves:** open thread #3 (helipad function — DECISIONS "Not Yet Decided" list). The helipad has
 been part of the hull's visual identity since C1; the AIR WING tech column has sat CLASSIFIED since
 C4. This chunk gives both their function.
@@ -92,14 +94,15 @@ bombs off a whirlybird.
 | Tunable | Start | Meaning |
 |---|---|---|
 | `speed` | `160` | helo flight speed, u/s (faster than the ship, slower than shells) |
-| `picket_dist` | `450` | patrol station distance ahead of the ship's course |
-| `orbit_radius` | `180` | circle radius at the patrol station |
+| `turn` | `2.6` | steering cap, rad/s (added at mockup build — per the tunables-in-config rule) |
+| `picket_dist` | `360` | patrol station distance ahead of the ship's course (450 at draft; pulled in at mockup build so the orbit sweeps into the viewport — an always-off-screen wingman is a radar rumor, not a crewmate) |
+| `orbit_radius` | `150` | circle radius at the patrol station (180 at draft, same reason) |
 | `dip_radius` | `240` | passive detection radius around the bird |
 | `drop_range` | `70` | must be nearly overhead a DETECTED sub to drop |
 | `dc_count` | `2` | light charges per drop |
 | `dc_scatter` | `40` | drop scatter (tighter than the ship's racks) |
 | `dc_dmg` | `1` | per blast — softens, never finishes an hp-6 sub alone fast |
-| `dc_cooldown` | `6.0` | seconds between drops |
+| `dc_cooldown` | `9.0` | seconds between drops (6.0 at draft; slowed at mockup build — at 6.0 the bird soloed an hp-6 sub in ~15 s, crossing into the declined HUNTER-KILLER fantasy; at 9.0 it grinds ~27 s alone while the stern racks finish in ~8) |
 | `patrol_secs` | `45.0` | airborne endurance |
 | `turnaround_secs` | `10.0` | pad rearm time |
 | `investigate_hold` | `6.0` | how long a torpedo launch point stays worth visiting |

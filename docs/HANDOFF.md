@@ -70,8 +70,19 @@ marquee), `xp_sub` 80, radar sonar ring + sonar-gated diamond blips, ripple tell
 fx, six-column tree, dev-kit `+SUB`. `probe_sonar` (8 checks incl. zero-tech baseline) gates it
 in `verify.sh`.
 
-**Next (C6+):** the helicopter/AIR WING function (open thread #3 — the tree is waiting for it) or
-the boss ladder + naming pass (open thread #2). Each needs its own `/spec-feature` interview first.
+**C6 — AIR WING (helicopter) is MID-GATE (2026-07-09):** interviewed + spec approved
+(`docs/specs/air-wing.md`), interactive mockup BUILT (`design/air-wing.html` — autonomous ASW
+wingman: air1 WHIRLYBIRD unlocks the bird + de-redacts the column, contact-led picket, dipping
+sonar writing the C5 latch, light contact-centered drops on a 9s cadence [detector-first: it
+softens, the stern racks finish], ~45s/10s fuel loop, MAD GEAR marquee; scratchpad harness 8/8
+incl. zero-tech byte-parity vs the shipped C5 sim) and published for owner feel-approval. NOT yet
+approved, NOT yet ported. Three tunables were adjusted at mockup build and noted in the spec table
+(dc_cooldown 6→9, picket_dist 450→360, orbit_radius 180→150). On approval: record it, then port
+(AirWingConfig + AirWing.gd after DepthCharges + helo render/radar + real air1–5 nodes in
+tech.tres + probe_airwing + resolve open thread #3 in DECISIONS).
+
+**After C6:** the boss ladder + naming pass (open thread #2). Needs its own `/spec-feature`
+interview first.
 
 ## 3. Tree layout
 
