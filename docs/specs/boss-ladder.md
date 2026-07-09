@@ -1,9 +1,10 @@
 # Spec — C7: The Boss Ladder & the Naming Pass
 
-**Status:** APPROVED 2026-07-09 (owner) · Interviewed 2026-07-09 · Mockup BUILT
-(`design/boss-ladder.html`, harness 8/8 incl. C6 quiet-run parity) — AT THE GATE, awaiting owner
-feel-approval · Not ported. Mockup-build tune, noted: THE CANOPY core 35 → 50 (at 35 the default
-batteries melted it in ~8 s — no presence for a rung machine).
+**Status:** BUILT 2026-07-09 · Spec + mockup APPROVED 2026-07-09 (owner — `design/boss-ladder.html`
+stays the visual reference) · Gated by `tests/probe_bosses.gd` in `verify.sh`. Mockup-build tune:
+THE CANOPY core 35 → 50 (at 35 the default batteries melted it in ~8 s). Owner tune at the port:
+the stern racks throw a K-GUN SPREAD around the beams and stern (see `docs/specs/sonar-subs.md`
+`dc_ring` and the Change Log).
 **Resolves:** open thread #2 (boss ladder & enemy roster naming — the last founding thread with
 systems weight). Fulfillment's title-ladder escalation is the reskinnable ancestor (brief §7);
 this is its B-movie replacement.

@@ -4,6 +4,37 @@ Chunk log, newest first. Each chunk ships only after it passes the cross-check a
 
 ---
 
+## C7 — BOSS LADDER & NAMING PASS · 2026-07-09 · Built
+
+The war gets a face; the roster gets its names. The last founding system lands — open thread #2
+resolves, and the design brief is SYSTEMS-COMPLETE. Full pipeline: interview (10 decisions) →
+approved spec → mockup (two real balance findings) → approval → Godot port with one owner tune.
+
+- **The ladder:** every 5th wave a mothership WAR MACHINE arrives with a half-budget escort; the
+  wave holds until machine AND escort die. Three rungs tour the domains, then it laps forever at
+  ×1.5 hp: THE JUGGERNAUT (wave 5, surface — turret parts + a fire director it panic-fires
+  without), THE CANOPY (wave 10, air — the main battery passes under it; bomb bays + a GNAT hive),
+  THE MAW (wave 15, the deep — 20 s stalking with torpedo fans, 8 s breached with vent cowls
+  exposed; every cowl killed extends the breach. It can't seal).
+- **The grammar:** hull-relative destructible parts (60 XP each, banked live), phase changes on
+  every loss, soft-gated cores (×0.25 until the parts fall). Core kill: 250 XP × lap + a 2-pip
+  hull patch — the survival loop's first breather (D1.8 refined: a reward event, not a second
+  pool). Machines plug into every system: sonar and the bird hear a stalking MAW, the racks arm on
+  it, turrets compete its parts with drones under the same policies, and strikes respect domain
+  tags physically (a C7 machine rule).
+- **The names:** GNAT / JACKAL / VULTURE / LAMPREY (`EnemyDef.rep`, display-only — mechanical ids,
+  configs, and probes untouched). The wave plate reads like a newsreel tally; machines get a
+  PRIORITY TARGET plate (THE-name + lap, core bar, part pips that strike through) and oversized
+  radar blips (sonar-gated while the MAW is under). Dev kit: three machine spawn buttons.
+- **Owner tune at the gate (C5 behavior change):** the stern racks now throw a K-GUN SPREAD —
+  throw stations evenly around the beams and stern (`sonar.dc_ring` 85), scatter jittering each
+  station — because blind auto racks piling charges on one stern point were too hard to connect.
+  Applied to Godot + all three mockup sims + the C5 spec.
+- **Verify:** `probe_bosses.gd` — 8 checks (determinism through boss waves, cadence + ladder +
+  lap scaling + boss-free early waves, soft gate, parts + phases + rewards, the domain tour,
+  bounty/patch/cap, the K-gun spread geometry, names) — added to `verify.sh`; `probe_waves`
+  isolates the C3 director from the ladder. `ScreenshotC7` harness.
+
 ## C6 — AIR WING · 2026-07-09 · Built
 
 The pad was never set dressing. Open thread #3 resolves: an autonomous ASW helicopter flies off

@@ -28,11 +28,17 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 						and e.pos.distance_to(p.pos) <= cfg.enemies.by_id(e.type_id).radius + 4.0:
 						dead = true
 						break
+				if not dead and world.boss != null and Bosses.domain_of(world, cfg) == "surface" \
+						and world.boss.pos.distance_to(p.pos) <= Bosses.def_of(world, cfg).radius + 4.0:
+					dead = true   # C7: the fuse triggers off a surfaced machine too
 			if dead:
 				world.effects.append({ "type": "splash", "pos": p.pos, "r": p.splash })
 				for e in world.enemies:
 					if e.active and e.layer == "surf" and e.pos.distance_to(p.pos) <= p.splash:
 						damage_enemy(world, e, p.dmg, cfg)
+				if world.boss != null and Bosses.domain_of(world, cfg) == "surface" \
+						and world.boss.pos.distance_to(p.pos) <= p.splash + Bosses.def_of(world, cfg).radius:
+					Bosses.strike(world, cfg, world.boss.pos, p.dmg, ["surface"])
 		elif p.wid == "dc":
 			# depth charge (C5): inert while sinking; at fuse depth it blasts SUBS only — the ship
 			# and surface/air enemies are untouched by the underwater detonation
@@ -41,6 +47,9 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 				for e in world.enemies:
 					if e.active and e.layer == "sub" and e.pos.distance_to(p.pos) <= cfg.sonar.dc_blast:
 						damage_enemy(world, e, p.dmg, cfg)
+				if world.boss != null and Bosses.domain_of(world, cfg) == "sub" \
+						and world.boss.pos.distance_to(p.pos) <= cfg.sonar.dc_blast + Bosses.def_of(world, cfg).radius:
+					Bosses.damage(world, cfg, -1, p.dmg)   # the deep answers to the racks alone (C7)
 		elif p.wid == "dp5" and cfg.tech.airburst:
 			# PROXIMITY BURST (C4 marquee): 5-in shells become flak vs air — near-miss detonation, AoE
 			var burst: bool = false
@@ -57,6 +66,9 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 				for e in world.enemies:
 					if e.active and e.layer != "sub" and e.pos.distance_to(p.pos) <= cfg.tech.airburst_radius + cfg.enemies.by_id(e.type_id).radius:
 						damage_enemy(world, e, p.dmg, cfg)
+				if world.boss != null \
+						and world.boss.pos.distance_to(p.pos) <= cfg.tech.airburst_radius + Bosses.def_of(world, cfg).radius:
+					Bosses.strike(world, cfg, world.boss.pos, p.dmg, ["air", "surface"])
 				dead = true
 		else:
 			var struck: bool = false
@@ -69,6 +81,9 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 					struck = true
 					dead = true
 					break
+			if not struck and Bosses.strike(world, cfg, p.pos, p.dmg, Bosses.WPN_DOMAINS.get(p.wid, ["air", "surface"])):
+				struck = true
+				dead = true
 			if not struck and p.life <= 0.0 and p.wid == "doorgun":
 				world.effects.append({ "type": "gunsplash", "pos": p.pos })   # the round slaps the sea (C6)
 		if dead:

@@ -33,6 +33,7 @@ func _initialize() -> void:
 
 	# 2+3 — budget honored / unlocks / lifecycle over six waves
 	var c2 := Configs.defaults()
+	c2.bosses.every_n = 0   # isolate the C3 director — the C7 ladder has its own probe
 	c2.waves.lull_secs = 1.0
 	c2.waves.first_wave_delay = 0.5
 	c2.waves.hull_pips = 100000

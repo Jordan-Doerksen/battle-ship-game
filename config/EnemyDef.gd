@@ -1,10 +1,12 @@
 class_name EnemyDef
 extends Resource
-# One enemy type in the roster (docs/specs/{wave-director,sonar-subs}.md). Lives as a sub-resource
-# inside config/enemies.tres — see EnemyConfig.gd. Ids are mechanical placeholders until the B-movie
-# naming pass (DECISIONS open thread #2). Standoff-shooter fields stay 0 on divers.
+# One enemy type in the roster (docs/specs/{wave-director,sonar-subs,boss-ladder}.md). Lives as a
+# sub-resource inside config/enemies.tres — see EnemyConfig.gd. Ids stay MECHANICAL (determinism,
+# config paths, probes); `rep` carries the C7 reporting name the HUD speaks. Standoff-shooter
+# fields stay 0 on divers.
 
 @export var id: String = ""
+@export var rep: String = ""               # EDF reporting name (C7 naming pass) — display only
 @export var layer: String = "air"          # air | surf | sub — D1.9 domain for targeting
 @export var hp: int = 1
 @export var speed: float = 100.0           # u/s

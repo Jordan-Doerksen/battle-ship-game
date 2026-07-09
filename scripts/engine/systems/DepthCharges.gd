@@ -18,16 +18,26 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 				and e.pos.distance_to(world.ship_pos) <= cfg.sonar.dc_range:
 			armed = true
 			break
+	if not armed and world.boss != null and Bosses.domain_of(world, cfg) == "sub" \
+			and world.elapsed < world.boss.detected_until \
+			and world.boss.pos.distance_to(world.ship_pos) <= cfg.sonar.dc_range:
+		armed = true   # C7: a detected stalking MAW arms the racks too
 	if not armed:
 		return
 	world.dc_cool = cfg.sonar.dc_cooldown
 	var fwd := Vector2(sin(world.ship_heading), -cos(world.ship_heading))
 	var stern: Vector2 = world.ship_pos - fwd * STERN_OFFSET
+	# owner tune (C7 gate): a K-GUN SPREAD — throw stations evenly around the beams and stern
+	# (port beam → stern → starboard beam), scatter jittering each station. The racks auto-fire
+	# blind, so the pattern must blanket the aft arc, not pile on one point.
 	for i in range(cfg.sonar.dc_count):
+		var arc: float = PI / 2.0 + PI * (float(i) + 0.5) / float(cfg.sonar.dc_count)   # ship-local, 0 = bow
+		var station: Vector2 = world.ship_pos \
+			+ Vector2(sin(arc), -cos(arc)).rotated(world.ship_heading) * cfg.sonar.dc_ring
 		var ox: float = (world.rng.nextf() * 2.0 - 1.0) * cfg.sonar.dc_scatter
 		var oy: float = (world.rng.nextf() * 2.0 - 1.0) * cfg.sonar.dc_scatter
 		var p: Projectile = world.projectiles.obtain()
-		p.pos = stern + Vector2(ox, oy)
+		p.pos = station + Vector2(ox, oy)
 		p.vel = world.ship_vel * 0.3   # charges carry a little way with the ship, then sink
 		p.dmg = cfg.sonar.dc_dmg
 		p.splash = 0.0

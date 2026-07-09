@@ -19,6 +19,7 @@ var _rng := RandomNumberGenerator.new()      # NON-sim randomness for spawn bear
 const ROWS := [
 	["INVULN", "FREEZE", "GODGUNS"],
 	["+SWARMER", "+GUNBOAT", "+BOMBER", "+SUB", "SWARM x8"],
+	["JUGGERNAUT", "CANOPY", "MAW"],
 	["KILL ALL", "NEXT WAVE", "HEAL", "MAX LVL"],
 ]
 
@@ -84,6 +85,25 @@ func _spawn(type_id: String, n: int) -> void:
 	if w.wave_state == "lull":
 		w.wave_state = "fighting"
 
+func _spawn_boss(rung: int) -> void:   # DEV: hand-built machine, non-sim RNG bearing (no world draws)
+	var w: GameWorld = _main.world
+	var cfg: Configs = _main.cfgs
+	var def: BossDef = cfg.bosses.defs[rung]
+	var b := Boss.new()
+	b.rung = rung
+	b.lap = 1
+	var ang: float = _rng.randf() * TAU
+	b.pos = w.ship_pos + Vector2(sin(ang), -cos(ang)) * 900.0
+	b.core = def.core_hp
+	b.core_max = def.core_hp
+	for pd in def.parts:
+		b.parts.append({ "hp": pd["hp"], "max": pd["hp"], "dead": false, "cool": 0.0 })
+	b.submerged = def.id == "maw"
+	w.boss = b
+	w.effects.append({ "type": "klaxon", "name": def.display_name })
+	if w.wave_state == "lull":
+		w.wave_state = "fighting"
+
 func _gui_input(event: InputEvent) -> void:
 	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
 		return
@@ -102,9 +122,13 @@ func _gui_input(event: InputEvent) -> void:
 			"+BOMBER": _spawn("bomber", 1)
 			"+SUB": _spawn("sub", 1)
 			"SWARM x8": _spawn("swarmer", 8)
+			"JUGGERNAUT": _spawn_boss(0)
+			"CANOPY": _spawn_boss(1)
+			"MAW": _spawn_boss(2)
 			"KILL ALL":
 				for e in w.enemies:
 					e.active = false
+				w.boss = null
 			"NEXT WAVE":
 				for e in w.enemies:
 					e.active = false

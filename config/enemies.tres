@@ -6,6 +6,7 @@
 [sub_resource type="Resource" id="swarmer"]
 script = ExtResource("2")
 id = "swarmer"
+rep = "GNAT"
 layer = "air"
 hp = 2
 speed = 115.0
@@ -25,6 +26,7 @@ spread = 0.0
 [sub_resource type="Resource" id="gunboat"]
 script = ExtResource("2")
 id = "gunboat"
+rep = "JACKAL"
 layer = "surf"
 hp = 5
 speed = 65.0
@@ -44,6 +46,7 @@ spread = 0.05
 [sub_resource type="Resource" id="bomber"]
 script = ExtResource("2")
 id = "bomber"
+rep = "VULTURE"
 layer = "air"
 hp = 8
 speed = 45.0
@@ -63,6 +66,7 @@ spread = 0.0
 [sub_resource type="Resource" id="sub"]
 script = ExtResource("2")
 id = "sub"
+rep = "LAMPREY"
 layer = "sub"
 hp = 6
 speed = 35.0

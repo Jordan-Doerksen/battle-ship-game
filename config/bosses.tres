@@ -1,0 +1,132 @@
+[gd_resource type="Resource" script_class="BossConfig" format=3]
+
+[ext_resource type="Script" path="res://config/BossDef.gd" id="1_kwy3u"]
+[ext_resource type="Script" path="res://config/BossConfig.gd" id="2_h5k01"]
+
+[sub_resource type="Resource" id="Resource_kwk6w"]
+script = ExtResource("1_kwy3u")
+id = "juggernaut"
+display_name = "THE JUGGERNAUT"
+parts = Array[Dictionary]([{
+"hp": 10.0,
+"ox": 0.0,
+"oy": -34.0,
+"pn": "FORE TURRET",
+"r": 12.0,
+"role": "gun"
+}, {
+"hp": 10.0,
+"ox": 0.0,
+"oy": 34.0,
+"pn": "AFT TURRET",
+"r": 12.0,
+"role": "gun"
+}, {
+"hp": 8.0,
+"ox": 0.0,
+"oy": 0.0,
+"pn": "FIRE DIRECTOR",
+"r": 9.0,
+"role": "director"
+}])
+fire_period = 3.0
+shell_speed = 170.0
+shell_dmg = 1
+lead = 0.7
+spread = 0.04
+panic_rate = 1.3
+phase_speed = 10.0
+phase_spawn = "swarmer"
+phase_spawn_n = 2
+
+[sub_resource type="Resource" id="Resource_7pcch"]
+script = ExtResource("1_kwy3u")
+id = "canopy"
+display_name = "THE CANOPY"
+layer = "air"
+core_hp = 50.0
+radius = 34.0
+speed = 55.0
+turn = 0.5
+standoff = 480.0
+parts = Array[Dictionary]([{
+"hp": 9.0,
+"ox": -30.0,
+"oy": 0.0,
+"pn": "PORT BAY",
+"r": 11.0,
+"role": "bay"
+}, {
+"hp": 9.0,
+"ox": 30.0,
+"oy": 0.0,
+"pn": "STBD BAY",
+"r": 11.0,
+"role": "bay"
+}, {
+"hp": 10.0,
+"ox": 0.0,
+"oy": 16.0,
+"pn": "DRONE HIVE",
+"r": 10.0,
+"role": "hive"
+}])
+lead = 0.5
+spread = 0.06
+bay_period = 5.0
+bomb_speed = 120.0
+bomb_dmg = 2
+hive_period = 5.0
+hive_spawn = "swarmer"
+hive_spawn_n = 3
+phase_rate = 0.75
+hive_death_spawn = "bomber"
+hive_death_n = 2
+
+[sub_resource type="Resource" id="Resource_0jnfj"]
+script = ExtResource("1_kwy3u")
+id = "maw"
+display_name = "THE MAW"
+layer = "sub"
+core_hp = 45.0
+radius = 36.0
+speed = 45.0
+turn = 0.5
+standoff = 500.0
+parts = Array[Dictionary]([{
+"hp": 8.0,
+"ox": -18.0,
+"oy": -22.0,
+"pn": "VENT COWL A",
+"r": 9.0,
+"role": "vent"
+}, {
+"hp": 8.0,
+"ox": 18.0,
+"oy": -22.0,
+"pn": "VENT COWL B",
+"r": 9.0,
+"role": "vent"
+}, {
+"hp": 8.0,
+"ox": 0.0,
+"oy": 28.0,
+"pn": "VENT COWL C",
+"r": 9.0,
+"role": "vent"
+}])
+fire_period = 9.0
+lead = 0.5
+spread = 0.04
+torp_fan = 3
+fan_arc = 0.5
+torp_speed = 130.0
+torp_dmg = 2
+torp_run = 900.0
+dive_secs = 20.0
+breach_secs = 8.0
+breach_ext = 2.0
+
+[resource]
+script = ExtResource("2_h5k01")
+defs = Array[ExtResource("1_kwy3u")]([SubResource("Resource_kwk6w"), SubResource("Resource_7pcch"), SubResource("Resource_0jnfj")])

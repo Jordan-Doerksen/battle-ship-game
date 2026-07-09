@@ -85,7 +85,8 @@ else in the game: you don't shoot at it, you *listen* for it, then drive your st
 | `ripple_range` | `260` | undetected-sub cosmetic tell distance |
 | `dc_range` | `220` | contact distance that arms the racks |
 | `dc_count` | `4` | charges per volley |
-| `dc_scatter` | `90` | max scatter offset around the stern arc |
+| `dc_ring` | `85` | throw-station ring radius (added 2026-07-09, owner tune at the C7 gate: the volley became a K-GUN SPREAD — stations evenly around the beams and stern, scatter jittering each station — because the auto-firing racks were "too hard" when piled on one stern point) |
+| `dc_scatter` | `90` | jitter around each throw station (was: scatter around the single stern point) |
 | `dc_fuse` | `1.5` | sink time before detonation |
 | `dc_blast` | `55` | underwater blast radius |
 | `dc_dmg` | `3` | damage per blast (hp-6 sub ≈ two good volleys) |

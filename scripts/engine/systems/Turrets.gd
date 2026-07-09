@@ -29,14 +29,13 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 			aim = world.input.aim_world
 			m.mode = "forced"
 		else:
-			var tgt: Enemy = _pick_target(world, wpn, mpos)
-			if tgt != null:
+			var tgt: Dictionary = _pick_target(world, cfg, wpn, mpos)
+			if not tgt.is_empty():
 				# lead the target: aim at the intercept, not the current position — without this,
 				# anything moving crosswise (an orbiting gunboat) outruns every shell forever
-				var tdef: EnemyDef = cfg.enemies.by_id(tgt.type_id)
-				var flight: float = tgt.pos.distance_to(mpos) / wpn.speed
-				var tvel: Vector2 = Vector2(sin(tgt.heading), -cos(tgt.heading)) * (tdef.speed if tdef != null else 0.0)
-				aim = tgt.pos + tvel * flight
+				var flight: float = Vector2(tgt["pos"]).distance_to(mpos) / wpn.speed
+				var tvel: Vector2 = Vector2(sin(tgt["heading"]), -cos(tgt["heading"])) * float(tgt["spd"])
+				aim = Vector2(tgt["pos"]) + tvel * flight
 				m.mode = "auto"
 			else:
 				m.mode = "stow"
@@ -79,8 +78,10 @@ static func mount_world(world: GameWorld, local: Vector2) -> Vector2:
 static func _angle_to(from: Vector2, to: Vector2) -> float:
 	return atan2(to.x - from.x, -(to.y - from.y))   # heading space: 0 = north, positive clockwise
 
-static func _pick_target(world: GameWorld, wpn: WeaponDef, mpos: Vector2) -> Enemy:
-	var best: Enemy = null
+# Returns a pseudo-target { pos, heading, spd, hp_max } or {} — drones and the C7 machine's
+# exposed parts/core all compete under the same policy.
+static func _pick_target(world: GameWorld, cfg: Configs, wpn: WeaponDef, mpos: Vector2) -> Dictionary:
+	var best: Dictionary = {}
 	var best_key: float = INF
 	for e in world.enemies:
 		if not e.active:
@@ -96,5 +97,27 @@ static func _pick_target(world: GameWorld, wpn: WeaponDef, mpos: Vector2) -> Ene
 		var key: float = (-e.hp_max * 1e6 + dist) if wpn.policy == "STRONG" else dist
 		if key < best_key:
 			best_key = key
-			best = e
+			var tdef: EnemyDef = cfg.enemies.by_id(e.type_id)
+			best = { "pos": e.pos, "heading": e.heading, "spd": tdef.speed if tdef != null else 0.0, "hp_max": float(e.hp_max) }
+	if world.boss != null:
+		var bdom: String = Bosses.domain_of(world, cfg)
+		if bdom != "sub" and wpn.domains.has(bdom):
+			var b: Boss = world.boss
+			var bdef: BossDef = Bosses.def_of(world, cfg)
+			var bspd: float = bdef.speed + b.speed_bonus
+			var cand: Array = []
+			if Bosses.parts_exposed(world, cfg):
+				for i in range(bdef.parts.size()):
+					if b.parts[i]["dead"]:
+						continue
+					cand.append({ "pos": Bosses.part_pos(b, bdef, i), "heading": b.heading, "spd": bspd, "hp_max": float(b.parts[i]["max"]) })
+			cand.append({ "pos": b.pos, "heading": b.heading, "spd": bspd, "hp_max": b.core_max })
+			for t in cand:
+				var dist: float = Vector2(t["pos"]).distance_to(mpos)
+				if dist > wpn.range_u:
+					continue
+				var key: float = (-t["hp_max"] * 1e6 + dist) if wpn.policy == "STRONG" else dist
+				if key < best_key:
+					best_key = key
+					best = t
 	return best

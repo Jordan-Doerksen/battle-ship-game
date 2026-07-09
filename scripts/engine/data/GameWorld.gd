@@ -45,6 +45,7 @@ var helo_phase: float = 0.0              # escort-weave phase (gate rev 1)
 var helo_gun_cool: float = 0.0           # door-gun cadence (gate rev 2)
 var helo_mark: Vector2 = Vector2.ZERO    # last torpedo launch point (valid while elapsed < helo_mark_until)
 var helo_mark_until: float = -1.0
+var boss: Boss = null                    # C7: the single active war machine (Bosses.gd owns it)
 var godmode: bool = false                # DEV test kit only (debug builds); guards Hull.damage
 var freeze_waves: bool = false           # DEV test kit only (debug builds); pauses the director
 

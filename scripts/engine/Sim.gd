@@ -12,6 +12,7 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 		Movement.step(world, dt, cfg)          # C1 — naval momentum/turning, always system #1
 		Waves.step(world, dt, cfg)             # C3 — the seeded budget director
 		Enemies.step(world, dt, cfg)           # C3/C5 — enemy movement + gunboat/sub fire
+		Bosses.step(world, dt, cfg)            # C7 — the war machine (parts, phases, attacks)
 		Sonar.step(world, dt, cfg)             # C5 — passive detection + contact latch
 		DepthCharges.step(world, dt, cfg)      # C5 — contact-gated stern volleys
 		AirWing.step(world, dt, cfg)           # C6 — the ASW wingman (inert without tech.helo)

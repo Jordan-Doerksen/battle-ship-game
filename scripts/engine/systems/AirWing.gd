@@ -46,8 +46,14 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 			world.effects.append({ "type": "helodown", "pos": pt })
 	else:
 		var tgt: Enemy = _nearest_contact(world)
-		if tgt != null:
-			pt = tgt.pos
+		var tgt_pos: Vector2 = tgt.pos if tgt != null else Vector2.INF
+		var tgt_d: float = world.helo_pos.distance_to(tgt.pos) if tgt != null else INF
+		if world.boss != null and Bosses.domain_of(world, cfg) == "sub" \
+				and world.elapsed < world.boss.detected_until \
+				and world.boss.pos.distance_to(world.helo_pos) < tgt_d:
+			tgt_pos = world.boss.pos   # C7: a detected stalking MAW outranks drone contacts by distance
+		if tgt_pos != Vector2.INF:
+			pt = tgt_pos
 		elif world.elapsed < world.helo_mark_until:
 			pt = world.helo_mark
 		else:
@@ -83,19 +89,33 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 			if world.elapsed >= e.detected_until:
 				world.effects.append({ "type": "contact", "pos": e.pos })
 			e.detected_until = 1e12 if cfg.tech.mad_gear else world.elapsed + cfg.sonar.contact_hold
-	# the light rack: nearly overhead a DETECTED sub, a tight pattern falls on the CONTACT
+	if world.boss != null and Bosses.domain_of(world, cfg) == "sub" \
+			and world.boss.pos.distance_to(world.helo_pos) <= aw.dip_radius:
+		if world.elapsed >= world.boss.detected_until:
+			world.effects.append({ "type": "contact", "pos": world.boss.pos })
+		world.boss.detected_until = 1e12 if cfg.tech.mad_gear else world.elapsed + cfg.sonar.contact_hold
+	# the light rack: nearly overhead a DETECTED sub (or a stalking MAW, C7), a tight pattern
+	# falls on the CONTACT
 	if world.helo_state == "air" and world.helo_drop_cool <= 0.0:
+		var drop_at: Vector2 = Vector2.INF
 		for e in world.enemies:
 			if not e.active or e.layer != "sub" or not Sonar.detected(world, e):
 				continue
 			if e.pos.distance_to(world.helo_pos) > aw.drop_range:
 				continue
+			drop_at = e.pos
+			break
+		if drop_at == Vector2.INF and world.boss != null and Bosses.domain_of(world, cfg) == "sub" \
+				and world.elapsed < world.boss.detected_until \
+				and world.boss.pos.distance_to(world.helo_pos) <= aw.drop_range + Bosses.def_of(world, cfg).radius:
+			drop_at = world.boss.pos
+		if drop_at != Vector2.INF:
 			world.helo_drop_cool = aw.dc_cooldown
 			for i in range(aw.dc_count):
 				var ox: float = (world.rng.nextf() * 2.0 - 1.0) * aw.dc_scatter
 				var oy: float = (world.rng.nextf() * 2.0 - 1.0) * aw.dc_scatter
 				var p: Projectile = world.projectiles.obtain()
-				p.pos = e.pos + Vector2(ox, oy)
+				p.pos = drop_at + Vector2(ox, oy)
 				p.vel = Vector2.ZERO
 				p.dmg = aw.dc_dmg
 				p.splash = 0.0
@@ -103,7 +123,6 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 				p.wid = "dc"
 				p.life = cfg.sonar.dc_fuse
 			world.effects.append({ "type": "helodrop", "pos": world.helo_pos })
-			break
 	# gate rev 2: DOOR GUNNERS — weak, wild, glorious. Nearest air/surface target near the bird;
 	# every round rolls spread AND a short reach, so bursts stitch the water before max range.
 	if aw.gunners > 0 and world.helo_state == "air" and world.helo_gun_cool <= 0.0:

@@ -5,9 +5,10 @@
 > front-load design that will drift. Pairs with `DECISIONS.md` (the manifest) and `ARCHITECTURE.md`
 > (the map). Full source narrative: `docs/DESIGN-BRIEF.md`.
 >
-> **Status:** C0–C6 built — the game plays end to end across all three domains (air / surface /
-> sub), carries a persistent career (levels + tech tree), and flies its own wingman. C7+ planned,
-> high-level only — each is locked in detail at the top of its own chunk via `/spec-feature`.
+> **Status:** C0–C7 built — the founding brief is SYSTEMS-COMPLETE. The game plays end to end
+> across all three domains, carries a persistent career, flies its own wingman, and fields its
+> boss ladder under real names. Remaining founding threads are narrative-only (#1 water-mystery,
+> #4 working title). New systems start with fresh `/spec-feature` interviews.
 
 ---
 
@@ -89,5 +90,8 @@ at the moment it's built — recorded then, not now.
   seven real nodes. Locked by `docs/specs/air-wing.md` (`design/air-wing.html` stays the visual
   reference).
 
-- **C7+ — not yet scoped.** Boss ladder + enemy naming (open thread #2). See `DECISIONS.md` Build
-  Timeline.
+- **C7 — Boss ladder & naming pass (built 2026-07-09).** Mothership war machines every 5th wave —
+  THE JUGGERNAUT (surface), THE CANOPY (air), THE MAW (the deep, breach-cycling) — parts + phases,
+  soft-gated cores, endless lap scaling, per-part XP + lap bounty + a 2-pip hull patch. The roster
+  speaks its reporting names: GNAT / JACKAL / VULTURE / LAMPREY. Locked by
+  `docs/specs/boss-ladder.md` (`design/boss-ladder.html` stays the visual reference).

@@ -361,7 +361,7 @@ const DEFAULT_CFG = {
   hull_capsule: { half_len: 85, radius: 26 },
   sonar: {   // == config/sonar.tres (C5 spec table)
     radius: 350, contact_hold: 2.5, ripple_range: 260,
-    dc_range: 220, dc_count: 4, dc_scatter: 90, dc_fuse: 1.5, dc_blast: 55, dc_dmg: 3, dc_cooldown: 4.0,
+    dc_range: 220, dc_count: 4, dc_ring: 85, dc_scatter: 90, dc_fuse: 1.5, dc_blast: 55, dc_dmg: 3, dc_cooldown: 4.0,
   },
   airwing: {   // == config/airwing.tres (C6 spec table); blast/fuse reuse sonar.dc_* — one truth
     speed: 160, turn: 2.6, speed_margin: 80,        // top speed rises with the ship's — never left astern
@@ -741,10 +741,17 @@ function stepDepthCharges(sim, cfg, dt) {
   sim.dc_cool = cfg.sonar.dc_cooldown;
   const f = dirOf(sim.ship.heading);
   const stern = { x: sim.ship.x - f.x * 80, y: sim.ship.y - f.y * 80 };
+  // owner tune (C7 gate): a K-GUN SPREAD — throw stations evenly around the beams and stern,
+  // scatter jittering each station. The racks auto-fire blind; the pattern blankets the aft arc.
+  const hc = Math.cos(sim.ship.heading), hs = Math.sin(sim.ship.heading);
   for (let i = 0; i < cfg.sonar.dc_count; i++) {
+    const arc = Math.PI / 2 + Math.PI * (i + 0.5) / cfg.sonar.dc_count;   // ship-local, 0 = bow
+    const lx = Math.sin(arc), ly = -Math.cos(arc);
+    const sx = sim.ship.x + (lx * hc - ly * hs) * cfg.sonar.dc_ring;
+    const sy = sim.ship.y + (lx * hs + ly * hc) * cfg.sonar.dc_ring;
     const ox = (draw(sim) * 2 - 1) * cfg.sonar.dc_scatter;
     const oy = (draw(sim) * 2 - 1) * cfg.sonar.dc_scatter;
-    sim.projectiles.push({ x: stern.x + ox, y: stern.y + oy,
+    sim.projectiles.push({ x: sx + ox, y: sy + oy,
       vx: sim.ship.vx * 0.3, vy: sim.ship.vy * 0.3,
       dmg: cfg.sonar.dc_dmg, splash: 0, life: cfg.sonar.dc_fuse, wid: "dc", hostile: false });
   }

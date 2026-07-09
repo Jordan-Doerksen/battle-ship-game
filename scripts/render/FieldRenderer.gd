@@ -121,6 +121,7 @@ func _draw() -> void:
 	_draw_flecks()
 	_draw_wake()
 	_draw_enemies()
+	_draw_boss()
 	_draw_projectiles()
 	_draw_hull()
 	_draw_mounts()
@@ -348,6 +349,93 @@ func _draw_mounts() -> void:
 			draw_circle(Vector2(0, 2.2), 2.6, house)                                    # pedestal + tub
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
+# C7: the war machines — three multi-part silhouettes per the approved mockup. Parts render at
+# hull-relative offsets and char out when dead; the MAW shows only a monstrous ripple field while
+# submerged (silhouette sonar-gated, D1.10), then a venting hull while breached.
+func _draw_boss() -> void:
+	var b: Boss = _world.boss
+	if b == null:
+		return
+	var def: BossDef = _cfgs.bosses.defs[b.rung]
+	var now: float = Time.get_ticks_msec() * 1.0
+	if def.id == "maw" and b.submerged:
+		var wob: float = sin(now * 0.002) * 6.0
+		draw_arc(b.pos, 40.0 + wob, 0.0, TAU, 40, Color(FOAM.r, FOAM.g, FOAM.b, 0.10), 2.0, true)
+		draw_arc(b.pos, 62.0 - wob, 0.0, TAU, 48, Color(FOAM.r, FOAM.g, FOAM.b, 0.06), 2.0, true)
+		draw_arc(b.pos, 84.0 + wob * 0.6, 0.0, TAU, 48, Color(FOAM.r, FOAM.g, FOAM.b, 0.06), 2.0, true)
+		if _world.elapsed < b.detected_until:
+			draw_set_transform(b.pos, b.heading, Vector2(0.42, 1.0))
+			draw_circle(Vector2.ZERO, 52.0, Color(0.071, 0.125, 0.165, 0.8))
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		return
+	if def.id == "canopy":   # airborne: the shadow slides off the airframe
+		draw_set_transform(b.pos + Vector2(16, 22), 0.0, Vector2(1.0, 0.53))
+		draw_circle(Vector2.ZERO, 34.0, Color(0.016, 0.047, 0.063, 0.35))
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	draw_set_transform(b.pos, b.heading, Vector2.ONE)
+	if def.id == "juggernaut":
+		var hull := PackedVector2Array([
+			Vector2(0, -56), Vector2(16, -34), Vector2(18, 30), Vector2(10, 52),
+			Vector2(-10, 52), Vector2(-18, 30), Vector2(-16, -34),
+		])
+		draw_colored_polygon(hull, Color(0.075, 0.122, 0.153))
+		var hc := PackedVector2Array(hull); hc.append(hull[0])
+		draw_polyline(hc, Color(RED.r, RED.g, RED.b, 0.85), 1.6, true)
+		draw_rect(Rect2(-10, -18, 20, 34), Color(0.133, 0.2, 0.243))   # citadel block
+	elif def.id == "canopy":
+		var wing := PackedVector2Array([
+			Vector2(0, -44), Vector2(40, 6), Vector2(26, 30), Vector2(-26, 30), Vector2(-40, 6),
+		])
+		draw_colored_polygon(wing, Color(0.471, 0.125, 0.071, 0.92))
+		var wc := PackedVector2Array(wing); wc.append(wing[0])
+		draw_polyline(wc, Color(RED.r, RED.g, RED.b, 0.9), 1.8, true)
+		for ex in [-18.0, 0.0, 18.0]:
+			draw_circle(Vector2(ex, 24), 2.6, Color(FLASH.r, FLASH.g, FLASH.b, 0.5 + 0.4 * sin(now * 0.01 + ex)))
+	else:   # the MAW, breached: a monster venting on the surface
+		draw_set_transform(b.pos, b.heading, Vector2(0.464, 1.0))
+		draw_circle(Vector2.ZERO, 56.0, Color(0.086, 0.149, 0.184))
+		draw_set_transform(b.pos, b.heading, Vector2.ONE)
+		_draw_ellipse_outline(26.0, 56.0, Color(RED.r, RED.g, RED.b, 0.9), 2.0)
+		for fy in [-38.0, -10.0, 20.0]:   # dorsal ridge fins
+			draw_colored_polygon(PackedVector2Array([Vector2(-4, fy), Vector2(0, fy - 8), Vector2(4, fy)]),
+				Color(RED.r, RED.g, RED.b, 0.5))
+		draw_set_transform(b.pos, 0.0, Vector2.ONE)
+		draw_arc(Vector2.ZERO, 66.0 + sin(now * 0.004) * 4.0, 0.0, TAU, 48,
+			Color(FOAM.r, FOAM.g, FOAM.b, 0.25), 1.5, true)   # world-aligned churn ring
+		draw_set_transform(b.pos, b.heading, Vector2.ONE)
+	# parts
+	for i in range(def.parts.size()):
+		var pd: Dictionary = def.parts[i]
+		var part: Dictionary = b.parts[i]
+		var off := Vector2(pd["ox"], pd["oy"])
+		if part["dead"]:
+			draw_circle(off, pd["r"] * 0.85, Color(0.039, 0.063, 0.078, 0.9))
+			draw_line(off + Vector2(-pd["r"] * 0.6, -pd["r"] * 0.6), off + Vector2(pd["r"] * 0.6, pd["r"] * 0.6),
+				Color(BRASS_DIM_R, BRASS_DIM_G, BRASS_DIM_B, 0.4), 1.0)
+			draw_line(off + Vector2(pd["r"] * 0.6, -pd["r"] * 0.6), off + Vector2(-pd["r"] * 0.6, pd["r"] * 0.6),
+				Color(BRASS_DIM_R, BRASS_DIM_G, BRASS_DIM_B, 0.4), 1.0)
+			var sm: float = fmod(now * 0.001 + i, 1.0)   # smoke wisp
+			draw_circle(off + Vector2(sm * 6.0, -sm * 14.0), 3.0 + sm * 5.0, Color(0.157, 0.196, 0.22, 0.5 * (1.0 - sm)))
+		else:
+			var hurt: float = part["hp"] / part["max"]
+			draw_circle(off, pd["r"], Color(0.588, 0.176, 0.098, 0.95) if def.id == "canopy" else Color(0.173, 0.251, 0.282))
+			draw_arc(off, pd["r"], 0.0, TAU, 20, Color(RED.r, RED.g, RED.b, 0.4 + 0.5 * (1.0 - hurt)), 1.5, true)
+			match String(pd["role"]):
+				"gun":
+					draw_rect(Rect2(off.x - 1.6, off.y - pd["r"] - 10.0, 3.2, 12.0), STEEL)
+				"director":
+					draw_rect(Rect2(off.x - 1.0, off.y - 6.0, 2.0, 12.0), STEEL)
+					draw_rect(Rect2(off.x - 6.0, off.y - 1.0, 12.0, 2.0), STEEL)
+				"hive":
+					draw_circle(off, pd["r"] * 0.45, Color(FLASH.r, FLASH.g, FLASH.b, 0.4 + 0.3 * sin(now * 0.008)))
+				"vent":
+					draw_circle(off, pd["r"] * 0.4 + sin(now * 0.006 + i) * 1.2, Color(FOAM.r, FOAM.g, FOAM.b, 0.35))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+const BRASS_DIM_R := 0.557
+const BRASS_DIM_G := 0.506
+const BRASS_DIM_B := 0.373
+
 # C6: the AIR WING bird — shadow + dip ring while airborne, fuselage/boom/rotor at the helo
 # heading, idle rotor + rearm arc on the pad. Reads sim state one-way; rotor spin is cosmetic.
 func _draw_helo() -> void:
@@ -389,6 +477,7 @@ const FX_LIFE := {
 	"airburst": 0.45, "death": 0.5, "splash": 0.7, "crashturn": 0.8, "shipdeath": 2.2,
 	"dcvolley": 0.3, "dcblast": 0.9, "contact": 1.2,
 	"helodrop": 0.35, "helodown": 0.5, "gunsplash": 0.25,
+	"partdown": 0.6, "bossdown": 2.0, "breach": 1.0, "dive": 0.8, "klaxon": 0.0,
 	"waveclear": 0.0,
 }
 
@@ -433,6 +522,19 @@ func _draw_fx() -> void:
 				draw_arc(e["pos"], 10.0 + 14.0 * k, 0.0, TAU, 24, Color(0.804, 0.729, 0.557, 0.5 * (1.0 - k)), 1.2, true)
 			"gunsplash":  # C6: a door-gun round stitches the water
 				draw_circle(e["pos"], 1.5 + 3.0 * k, Color(FOAM.r, FOAM.g, FOAM.b, 0.5 * (1.0 - k)))
+			"partdown":   # C7: a machine part dies hard
+				draw_arc(e["pos"], 6.0 + 34.0 * k, 0.0, TAU, 32, Color(FLASH.r, FLASH.g, FLASH.b, 0.9 * (1.0 - k)), 2.5, true)
+				draw_circle(e["pos"], 5.0 * (1.0 - k), Color(FLASH.r, FLASH.g, FLASH.b, 0.5 * (1.0 - k)))
+			"bossdown":   # C7: the machine goes down — a shipdeath-scale event
+				for ring in range(4):
+					var rk: float = maxf(0.0, k - ring * 0.1)
+					draw_arc(e["pos"], 12.0 + 320.0 * rk, 0.0, TAU, 48,
+						Color(RED.r, RED.g, RED.b, 0.9 * (1.0 - rk)), 5.0 - ring, true)
+			"breach":     # C7: THE MAW erupts through the surface
+				draw_arc(e["pos"], 20.0 + 110.0 * k, 0.0, TAU, 48, Color(FOAM.r, FOAM.g, FOAM.b, 0.8 * (1.0 - k)), 3.0, true)
+				draw_circle(e["pos"], 60.0 * k, Color(FOAM.r, FOAM.g, FOAM.b, 0.25 * (1.0 - k)))
+			"dive":       # C7: it seals and slides under
+				draw_arc(e["pos"], 90.0 * (1.0 - k) + 10.0, 0.0, TAU, 40, Color(FOAM.r, FOAM.g, FOAM.b, 0.5 * (1.0 - k)), 2.0, true)
 			"contact":    # C5: sonar acquisition ping — expanding diamond over the water
 				var cr: float = 10.0 + 30.0 * k
 				var dia := PackedVector2Array([

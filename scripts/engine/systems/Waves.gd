@@ -26,7 +26,7 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 			if e.active:
 				any_active = true
 				break
-		if not any_active:
+		if not any_active and world.boss == null:   # a boss wave holds until the machine dies (C7)
 			world.enemies.clear()
 			world.xp_run += cfg.progress.xp_wave_bonus * world.wave   # wave-clear bonus (C4)
 			world.effects.append({ "type": "waveclear", "wave": world.wave })
@@ -36,6 +36,15 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 static func _spawn_wave(world: GameWorld, cfg: Configs) -> void:
 	var wc: WaveConfig = cfg.waves
 	var budget: int = wc.base_budget + wc.budget_per_wave * (world.wave - 1)
+	# C7 ladder: every Nth wave fields a war machine + a reduced escort
+	var boss_wave: bool = cfg.bosses.every_n > 0 and world.wave % cfg.bosses.every_n == 0
+	if boss_wave:
+		var k: int = world.wave / cfg.bosses.every_n - 1
+		var rung: int = k % cfg.bosses.defs.size()
+		var lap: int = k / cfg.bosses.defs.size() + 1
+		world.boss = Bosses.make_boss(world, cfg, rung, lap)
+		world.effects.append({ "type": "klaxon", "name": cfg.bosses.defs[rung].display_name })
+		budget = int(floor(budget * cfg.bosses.escort_frac))   # the machine has outriders
 	var clusters: int = wc.cluster_min + int(floor(world.rng.nextf() * float(wc.cluster_max - wc.cluster_min + 1)))
 	var bearings: Array[float] = []
 	for i in range(clusters):

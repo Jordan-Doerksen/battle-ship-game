@@ -1,5 +1,5 @@
 # Decisions Manifest — Earth Defense Force (working title)
-**Started:** 2026-07-08  ·  **Last Updated:** 2026-07-09  ·  **Status:** C6 AIR WING BUILT — the bird flies; open thread #3 resolved (C0–C5 also built)
+**Started:** 2026-07-08  ·  **Last Updated:** 2026-07-09  ·  **Status:** C7 BOSS LADDER & NAMING BUILT — the founding brief is systems-complete (C0–C6 also built)
 
 > The single source of truth, written *for the next agent* — not a doc anyone maintains by hand.
 > Every future agent consults this before an architectural/behavioral change. Never silently rewrite
@@ -172,8 +172,11 @@ treated as locked:
 
 1. **Water-mystery payoff** — why the aliens want Earth's water. Narrative/mission framing question;
    doesn't block systems work.
-2. **Boss ladder & enemy roster naming** — needs a B-movie-appropriate replacement for fulfillment's
-   corporate title-ladder (mothership hierarchy, drone type names). Not yet designed.
+2. ~~**Boss ladder & enemy roster naming**~~ — **RESOLVED 2026-07-09** by the C7 interview + spec
+   (`docs/specs/boss-ladder.md`): mothership WAR MACHINES every 5th wave (THE JUGGERNAUT / THE
+   CANOPY / THE MAW — a domain tour), parts + phases with soft-gated cores, endless lap scaling,
+   per-part XP + lap bounty + hull patch; the roster carries EDF reporting names
+   (GNAT/JACKAL/VULTURE/LAMPREY, display-only — mechanical ids untouched). Built in C7.
 3. ~~**Helipad function**~~ — **RESOLVED 2026-07-09** by the C6 interview + spec
    (`docs/specs/air-wing.md`): the pad flies THE AIR WING — an autonomous, invulnerable ASW
    wingman (detector-first: its dipping sonar feeds the C5 contact latch, its light rack softens,
@@ -219,12 +222,39 @@ treated as locked:
   ASW helicopter off the stern pad — escort weave, dipping sonar on the C5 latch, detector-first
   light drops, fuel loop, MAD GEAR marquee, the AIR WING column declassified (7 real nodes).
   Resolves open thread #3. Spec: `docs/specs/air-wing.md`.
-- **C7+ — not yet scoped.** Boss ladder + naming (open thread #2) — needs its own `/spec-feature`
-  interview before implementation, per this repo's `CLAUDE.md`.
+- **C7 — Boss ladder & naming pass (built 2026-07-09).** Interviewed, spec'd, mockup-gated
+  (`design/boss-ladder.html`, owner-approved), and ported: mothership war machines every 5th wave
+  touring the three domains, parts + phases, soft-gated cores, endless lap scaling, per-part XP +
+  lap bounty + hull patch, the reporting-name pass + PRIORITY TARGET plate. Resolves open thread
+  #2. The founding brief is systems-complete. Spec: `docs/specs/boss-ladder.md`.
+- **C8+ — not yet scoped.** All remaining founding threads are narrative/naming only (#1
+  water-mystery, #4 working title). New systems start with fresh `/spec-feature` interviews, per
+  this repo's `CLAUDE.md`.
 
 ---
 
 ## Change Log
+- **2026-07-09 — C7 Boss Ladder & Naming Pass built; open thread #2 resolved; the founding brief
+  is systems-complete.** The approved C7 spec + mockup ported: `BossConfig`/`bosses.tres`
+  (generated from `spec_defaults()`) + `Boss` entity + `Bosses.gd` (after Enemies in the fixed
+  order) — one machine at a time, gunboat-pattern brain, hull-relative destructible parts, phase
+  changes on part loss (speed/minions/rate; the MAW's breach extends), soft-gated core (×0.25
+  while any part lives), machine-specific attacks (JUGGERNAUT led shells + panic director, CANOPY
+  bombs + hive, MAW torpedo fans on a 20s/8s dive–breach cycle). `Waves.gd` fields a machine +
+  `escort_frac` budget every `every_n`-th wave and holds wave-clear until machine AND escort die.
+  Machines integrate with EVERYTHING: sonar/bird hear a submerged MAW (D1.10 gating), the racks
+  arm on it, turret targeting competes machine parts/core with drones under the same policies
+  (pseudo-target refactor in `_pick_target`), and strikes respect domain tags physically for
+  machines (the CANOPY flies above flat naval fire — a C7 machine rule; drones keep D1.9 physical
+  hits). Rewards: `xp_part` on the spot, `xp_core`×lap, +`hull_patch` pips capped (D1.8 REFINED —
+  a reward event, not a second health pool). Naming pass: `EnemyDef.rep`
+  (GNAT/JACKAL/VULTURE/LAMPREY) live in the wave-plate newsreel tally; PRIORITY TARGET plate with
+  core bar + strike-through part pips; oversized radar blips. **Owner tune at this gate (C5
+  behavior change, all sims + spec updated): the stern racks now throw a K-GUN SPREAD** — stations
+  evenly around the beams and stern (`sonar.dc_ring` 85), scatter jittering each station — because
+  the auto-firing racks were too hard to connect when piled on one stern point. `probe_bosses`
+  (8 checks incl. the spread geometry) added to the gate; `probe_waves` isolates the C3 director
+  from the ladder (`bosses.every_n = 0` in its budget scenario).
 - **2026-07-09 — C6 AIR WING built; open thread #3 resolved; the CLASSIFIED column declassifies.**
   The approved C6 spec + mockup (two owner gate revisions) ported to Godot: `AirWing.gd` after
   DepthCharges in the fixed order (inert without `tech.helo` — zero-tech probe-gated),

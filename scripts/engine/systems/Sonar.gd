@@ -14,6 +14,13 @@ static func step(world: GameWorld, _dt: float, cfg: Configs) -> void:
 			if world.elapsed >= e.detected_until:
 				world.effects.append({ "type": "contact", "pos": e.pos })
 			e.detected_until = world.elapsed + cfg.sonar.contact_hold
+	# C7: a submerged MAW is a (huge) contact like any other
+	var b: Boss = world.boss
+	if b != null and Bosses.domain_of(world, cfg) == "sub" \
+			and b.pos.distance_to(world.ship_pos) <= cfg.sonar.radius:
+		if world.elapsed >= b.detected_until:
+			world.effects.append({ "type": "contact", "pos": b.pos })
+		b.detected_until = world.elapsed + cfg.sonar.contact_hold
 
 static func detected(world: GameWorld, e: Enemy) -> bool:
 	return world.elapsed < e.detected_until

@@ -84,21 +84,25 @@ Render: rotor/shadow/dip ring/pad rearm arc + radar bird blip. `probe_airwing` (
 it; `probe_tech`'s AIR-WING-locked check superseded (air1 buys, air2 gates). Also this chunk: the
 deaf-deep law went PHYSICAL (latent C5 gap — shells/airbursts now skip submerged hulls everywhere).
 
-**C7 — Boss ladder & naming pass is MID-GATE (2026-07-09):** interviewed + spec approved
-(`docs/specs/boss-ladder.md`), interactive mockup BUILT (`design/boss-ladder.html`) and published
-for owner feel-approval. Every 5th wave a mothership war machine + half-budget escort: THE
-JUGGERNAUT (surface, parts = turrets + fire director, panic-fires when it dies), THE CANOPY (air —
-mb16 can't touch it; bays + drone hive), THE MAW (deep; breach-cycles between an ASW stalk with
-torpedo fans and exposed vent cowls; each cowl lost extends the breach). Parts+phases, soft-gated
-cores (25% until parts fall), per-part XP + lap-scaled bounty + 2-pip hull patch, endless lap
-scaling ×1.5 hp. Naming pass live: GNAT/JACKAL/VULTURE/LAMPREY in the wave-plate tally; PRIORITY
-TARGET plate with core bar + part pips; dev-kit ☠ spawn buttons. Harness 8/8 incl. C6 quiet-run
-parity. One tune at build: CANOPY core 35→50 (noted in spec). NOT yet approved, NOT yet ported.
-On approval: port (BossConfig/bosses.tres + Bosses.gd + Waves cadence + boss damage intake +
-render/plate/radar + probe_bosses + resolve open thread #2 in DECISIONS).
+**C7 — Boss ladder & naming pass is BUILT (2026-07-09):** interview → approved spec → approved
+mockup (`design/boss-ladder.html` stays the visual reference) → Godot port. Every 5th wave a
+mothership war machine + `escort_frac` budget escort: THE JUGGERNAUT (surface; turret/director
+parts, panic-fires when the director dies), THE CANOPY (air — mb16 can't touch it; bays + drone
+hive), THE MAW (deep; 20s/8s dive–breach cycle, torpedo fans while down, cowls exposed while up,
+every cowl lost extends the breach). `Bosses.gd` after Enemies; parts + phases; soft-gated cores
+(×0.25 until parts fall); machines integrate with sonar/racks/bird/turrets/projectiles (turret
+`_pick_target` refactored to pseudo-targets; machine strikes respect domain tags physically).
+Rewards: per-part XP + lap-scaled bounty + 2-pip hull patch (D1.8 refined, not superseded).
+Naming pass: `EnemyDef.rep` GNAT/JACKAL/VULTURE/LAMPREY in the wave-plate newsreel tally,
+PRIORITY TARGET plate (core bar + strike-through part pips), oversized radar blips, dev-kit
+machine spawn buttons. **Owner tune at this gate (C5 behavior change): the stern racks throw a
+K-GUN SPREAD** — stations around the beams + stern (`sonar.dc_ring`), scatter as jitter — the
+blind auto racks needed a blanket, not a point. `probe_bosses` (8 checks) gates it;
+`probe_waves`'s budget scenario isolates the ladder (`bosses.every_n = 0`).
 
-**After C7:** the founding brief is fully systems-complete. Remaining open threads are narrative/
-naming only: #1 water-mystery payoff, #4 working-title trademark check.
+**The founding brief is SYSTEMS-COMPLETE.** Remaining open threads are narrative/naming only:
+#1 water-mystery payoff, #4 working-title trademark check. New systems (a win mode? new hulls?
+D1.12 says one hull until revisited) start with fresh `/spec-feature` interviews.
 
 ## 3. Tree layout
 
@@ -108,12 +112,12 @@ scripts/
                   InputState pre-step, effects plumbing post-step, sortie restarts;
                   Profile.gd — the save file; Tech.gd — config derivation + spend rules)
   engine/         the deterministic sim
-    Sim.gd        step root — fixed order: Movement, Waves, Enemies, Sonar, DepthCharges,
-                  AirWing, Turrets, Projectiles
+    Sim.gd        step root — fixed order: Movement, Waves, Enemies, Bosses, Sonar,
+                  DepthCharges, AirWing, Turrets, Projectiles
     data/         GameWorld truth object, InputState, Configs bundle
-    entities/     plain data classes (Enemy, Projectile, Mount)
+    entities/     plain data classes (Enemy, Projectile, Mount, Boss)
     systems/      static funcs that mutate GameWorld (Movement C1; Turrets/Projectiles C2;
-                  Waves/Enemies/Hull C3; Sonar/DepthCharges C5; AirWing C6)
+                  Waves/Enemies/Hull C3; Sonar/DepthCharges C5; AirWing C6; Bosses C7)
     util/         Rng, Pool — determinism primitives (Pool feeds projectiles)
   render/         one-way sim → view (FieldRenderer: sea/wake/hull/turrets/enemies/fx; patina.gdshader)
   ui/             screens + HUD (HelmGauges — gauges/pips/wave plate/radar/reticle/lost card;

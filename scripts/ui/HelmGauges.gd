@@ -46,11 +46,14 @@ func _order_label() -> String:
 		return "SECONDARIES"
 	return ""
 
+var _boss_seen_ms: int = -1   # render-side: when the current machine first appeared (plate flash)
+
 func _draw() -> void:
 	if _world == null:
 		return
 	_draw_gauge_plate()
 	_draw_wave_plate()
+	_draw_boss_plate()
 	_draw_radar()
 	if _world.run_over:
 		_draw_lost_card()
@@ -153,11 +156,20 @@ func _draw_wave_plate() -> void:
 	if _world.run_over:
 		line = "WAVE %d — SHIP LOST" % _world.wave
 	elif _world.wave_state == "fighting":
-		var contacts := 0
+		# C7 naming pass: the plate reads like a newsreel — reporting names, tallied
+		var tally := {}
 		for e in _world.enemies:
 			if e.active:
-				contacts += 1
-		line = "WAVE %d · CONTACTS: %d" % [_world.wave, contacts]
+				var def: EnemyDef = _cfgs.enemies.by_id(e.type_id)
+				var nm: String = def.rep if (def != null and def.rep != "") else e.type_id
+				tally[nm] = int(tally.get(nm, 0)) + 1
+		var bits: Array[String] = []
+		if _world.boss != null:
+			bits.append("☠ " + Bosses.def_of(_world, _cfgs).display_name)
+		for nm in tally:
+			bits.append("%s ×%d" % [nm, tally[nm]])
+		line = "WAVE %d · %s" % [_world.wave, " · ".join(bits)] if not bits.is_empty() \
+			else "WAVE %d · CONTACTS: 0" % _world.wave
 	elif _world.wave == 0:
 		line = "CONTACTS INBOUND — %d" % maxi(0, ceili(_world.lull_until - _world.elapsed))
 	else:
@@ -167,6 +179,57 @@ func _draw_wave_plate() -> void:
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 12, BRASS)
 	draw_string(_mono, Vector2(x, origin.y + 90.0), "XP +%d" % _world.xp_run,
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 12, BRASS)
+
+# ── PRIORITY TARGET plate (C7): top center — THE-name, core bar, part pips that strike through ──
+func _draw_boss_plate() -> void:
+	if _world.boss == null:
+		_boss_seen_ms = -1
+		return
+	if _boss_seen_ms < 0:
+		_boss_seen_ms = Time.get_ticks_msec()
+	var def: BossDef = Bosses.def_of(_world, _cfgs)
+	var b: Boss = _world.boss
+	var pw := 440.0
+	var ph := 76.0
+	var origin := Vector2((size.x - pw) * 0.5, 12.0)
+	var pts := PackedVector2Array([
+		origin + Vector2(12, 0), origin + Vector2(pw, 0), origin + Vector2(pw, ph - 12),
+		origin + Vector2(pw - 12, ph), origin + Vector2(0, ph), origin + Vector2(0, 12),
+	])
+	draw_colored_polygon(pts, Color(0.078, 0.039, 0.031, 0.88))
+	var closed := PackedVector2Array(pts); closed.append(pts[0])
+	draw_polyline(closed, RED, 1.2, true)
+	var cx := origin.x + pw * 0.5
+	_centered_spaced(cx, origin.y + 14.0, "PRIORITY TARGET", 8, Color(RED.r, RED.g, RED.b, 0.9), 3.5)
+	# the name flashes for its first beats in theater (the klaxon moment)
+	var fresh: bool = Time.get_ticks_msec() - _boss_seen_ms < 2400
+	var flick: bool = fresh and (Time.get_ticks_msec() / 250) % 2 == 0
+	var nm: String = def.display_name + ("  ·  LAP %d" % b.lap if b.lap > 1 else "")
+	draw_string(_mono, Vector2(cx - _mono.get_string_size(nm, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x * 0.5, origin.y + 34.0),
+		nm, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, RED if flick else FOAM)
+	var bar := Rect2(origin.x + 18.0, origin.y + 42.0, pw - 36.0, 8.0)
+	draw_rect(bar, Color(FOAM.r, FOAM.g, FOAM.b, 0.06))
+	draw_rect(bar, Color(RED.r, RED.g, RED.b, 0.6), false, 1.0)
+	draw_rect(Rect2(bar.position, Vector2(bar.size.x * clampf(b.core / b.core_max, 0.0, 1.0), bar.size.y)), RED)
+	# part pips
+	var total_w := 0.0
+	var widths: Array[float] = []
+	for pd in def.parts:
+		var w: float = _sans.get_string_size(pd["pn"], HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x + 14.0
+		widths.append(w)
+		total_w += w + 6.0
+	var px := cx - (total_w - 6.0) * 0.5
+	for i in range(def.parts.size()):
+		var dead: bool = b.parts[i]["dead"]
+		var r := Rect2(px, origin.y + 56.0, widths[i], 13.0)
+		draw_rect(r, Color(BRASS_DIM.r, BRASS_DIM.g, BRASS_DIM.b, 0.3 if dead else 0.5), false, 1.0)
+		var col := Color(BRASS_DIM.r, BRASS_DIM.g, BRASS_DIM.b, 0.55) if dead else BRASS
+		draw_string(_sans, Vector2(r.position.x + 7.0, r.position.y + 10.0), def.parts[i]["pn"],
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 8, col)
+		if dead:   # struck through
+			draw_line(Vector2(r.position.x + 4.0, r.get_center().y), Vector2(r.end.x - 4.0, r.get_center().y),
+				Color(RED.r, RED.g, RED.b, 0.7), 1.0)
+		px += widths[i] + 6.0
 
 # ── radar scope (bottom-right; C3 gate revisions 1–2 + C5 sonar). Air/surface contacts are free;
 #    sub blips are sonar-gated diamonds (D1.10) inside the soft sonar ring — your only ears. ──
@@ -229,6 +292,20 @@ func _draw_radar() -> void:
 		var off: Vector2 = (p.pos - _world.ship_pos) * k
 		if off.length() <= RADAR_R:
 			draw_rect(Rect2(c.x + off.x - 0.8, c.y + off.y - 0.8, 1.6, 1.6), Color(ORANGE.r, ORANGE.g, ORANGE.b, 0.8))
+	# C7: the machine on the scope — oversized blip, sonar-gated while it stalks under
+	if _world.boss != null:
+		var boff: Vector2 = (_world.boss.pos - _world.ship_pos) * k
+		if boff.length() <= RADAR_R:
+			var bb := c + boff
+			var under: bool = Bosses.domain_of(_world, _cfgs) == "sub"
+			if not under:
+				draw_rect(Rect2(bb.x - 5, bb.y - 5, 10, 10), RED, false, 2.0)
+				draw_rect(Rect2(bb.x - 2.5, bb.y - 2.5, 5, 5), Color(RED.r, RED.g, RED.b, 0.5))
+			elif _world.elapsed < _world.boss.detected_until:
+				var dia := PackedVector2Array([
+					bb + Vector2(0, -7), bb + Vector2(7, 0), bb + Vector2(0, 7), bb + Vector2(-7, 0), bb + Vector2(0, -7),
+				])
+				draw_polyline(dia, Color(FOAM.r, FOAM.g, FOAM.b, 0.95), 1.6, true)
 	# C6: the bird on the scope — a friendly cross + its dip ring while airborne
 	if _cfgs.tech.helo and _world.helo_state != "pad":
 		var hoff: Vector2 = (_world.helo_pos - _world.ship_pos) * k
