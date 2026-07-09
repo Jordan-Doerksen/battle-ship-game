@@ -10,7 +10,9 @@ writes back). Unlike fulfillment, turret/hardpoint art renders **on the hull its
 the hull's visible turret layout is the ship's identity. Built so far: C0 heartbeat, C1 naval
 movement, C2 hardpoint hull (LOOK-LOCKED), C3 wave director (waves, enemies, hull pips, radar,
 run loop), C4 levels & tech tree (persistent career, config-derivation upgrades, marquee effects,
-title/tree screens — `docs/specs/tech-tree.md`). It plays, and it remembers you between runs.
+title/tree screens — `docs/specs/tech-tree.md`), C5 sonar/subs/depth charges (the third D1.9
+domain: torpedoes, passive detection, contact-gated ASW — `docs/specs/sonar-subs.md`). It plays
+across all three domains, and it remembers you between runs.
 
 ## Core Flow
 ```text
@@ -22,10 +24,12 @@ Input (keys / mouse→world-space)  →  InputState   (Main writes it pre-step; 
 Sim.step(world, dt, cfgs: Configs)          ← fixed 60 Hz, ONLY randomness = world.rng
    ├─ Movement.step (C1)                       (systems are static funcs that mutate `world`;
    ├─ Waves.step (C3)                           the whole block freezes when the run is over)
-   ├─ Enemies.step (C3)                        pursuit/orbit + gunboat fire; Hull.gd takes damage
+   ├─ Enemies.step (C3/C5)                     pursuit/orbit + gunboat shells / sub torpedoes
+   ├─ Sonar.step (C5)                          passive detection radius + contact latch (D1.10)
+   ├─ DepthCharges.step (C5)                   contact-gated stern volleys (D1.11 as refined)
    ├─ Turrets.step (C2)                        policy targeting + lead, traverse, bloom, force-fire
-   └─ Projectiles.step (C2/C3)                 pooled shells both ways, splash + proximity fuse
-   …future: Sonar + DepthCharges (C4?), hardpoint economy, boss ladder
+   └─ Projectiles.step (C2/C3/C5)              pooled shells/torpedoes/charges, splash + fuses
+   …future: boss ladder, AIR WING/helicopter
         ↓
 GameWorld  ← the single mutable source of truth (+ effects queue: sim appends, Main plumbs to render)
         ↓  (one-way read, changes nothing)
@@ -44,7 +48,7 @@ hardcoded (DECISIONS Non-Negotiable Constraints).
 | app | root scene, loop plumbing, state machine, meta layer | `scripts/app/Main.gd` + `scenes/Main.tscn` | — | `Profile` (save file), `Tech` (config derivation + spend rules); owns no gameplay |
 | engine (sim) | the deterministic step root | `scripts/engine/Sim.gd` | `config/sim.tres` (clock only) | fixed-step; calls systems in a locked order (Movement first) |
 | engine/data | the world truth object + input snapshot + config bundle | `scripts/engine/data/` | `config/*.tres` (one small file per system — see DECISIONS Non-Negotiable Constraints) | `GameWorld`, `InputState`, `Configs` |
-| engine/systems | sim systems — static funcs that mutate `GameWorld` | `scripts/engine/systems/` | each reads its own config | `Movement` (C1); `Turrets`/`Projectiles` (C2: `hardpoint`/`weapons.tres`); `Waves`/`Enemies`/`Hull` (C3: `waves`/`enemies.tres`) |
+| engine/systems | sim systems — static funcs that mutate `GameWorld` | `scripts/engine/systems/` | each reads its own config | `Movement` (C1); `Turrets`/`Projectiles` (C2: `hardpoint`/`weapons.tres`); `Waves`/`Enemies`/`Hull` (C3: `waves`/`enemies.tres`); `Sonar`/`DepthCharges` (C5: `sonar.tres`) |
 | engine/entities | plain pooled data classes | `scripts/engine/entities/` | — | `Enemy`, `Projectile` (pooled), `Mount` — data only, no engine coupling |
 | engine/util | determinism primitives | `scripts/engine/util/` | — | `Rng`, `Pool` (feeds projectiles) |
 | render | draw the world (hybrid), read-only | `scripts/render/FieldRenderer.gd` | `config/field.tres` (sea/wake cosmetics) | one-way sim → view; turret art ON the hull per D1.5, LOOK-LOCKED to mockup rev 3; `patina.gdshader` |

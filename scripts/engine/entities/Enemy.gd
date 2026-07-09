@@ -5,12 +5,13 @@ extends RefCounted
 # mechanical placeholders until the naming pass (DECISIONS open thread #2).
 
 var type_id: String = "swarmer"
-var layer: String = "air"      # air | surf
+var layer: String = "air"      # air | surf | sub
 var active: bool = false
 var pos: Vector2 = Vector2.ZERO
 var heading: float = 0.0       # radians, heading space (0 = north)
 var hp: int = 1
 var hp_max: int = 1
-var cool: float = 0.0          # gunboat fire cooldown
+var cool: float = 0.0          # standoff-shooter fire cooldown (gunboat/sub)
 var burn_left: int = 0         # INCENDIARY LOAD ticks remaining (C4 marquee)
 var next_burn: float = 0.0     # sim time of the next burn tick
+var detected_until: float = -1.0   # sonar contact latch end (C5, subs only; Sonar.gd writes it)

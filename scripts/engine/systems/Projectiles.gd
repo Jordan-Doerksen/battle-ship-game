@@ -33,6 +33,14 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 				for e in world.enemies:
 					if e.active and e.layer == "surf" and e.pos.distance_to(p.pos) <= p.splash:
 						damage_enemy(world, e, p.dmg, cfg)
+		elif p.wid == "dc":
+			# depth charge (C5): inert while sinking; at fuse depth it blasts SUBS only — the ship
+			# and surface/air enemies are untouched by the underwater detonation
+			if dead:
+				world.effects.append({ "type": "dcblast", "pos": p.pos, "r": cfg.sonar.dc_blast })
+				for e in world.enemies:
+					if e.active and e.layer == "sub" and e.pos.distance_to(p.pos) <= cfg.sonar.dc_blast:
+						damage_enemy(world, e, p.dmg, cfg)
 		elif p.wid == "dp5" and cfg.tech.airburst:
 			# PROXIMITY BURST (C4 marquee): 5-in shells become flak vs air — near-miss detonation, AoE
 			var burst: bool = false

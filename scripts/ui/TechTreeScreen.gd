@@ -1,7 +1,8 @@
 class_name TechTreeScreen
 extends Control
-# The tech tree plotting board (C4, mockup-matched): header with level/points/XP/respec/back, five
-# branch columns of nodes, strict in-branch order, variable costs, AIR WING redacted + CLASSIFIED.
+# The tech tree plotting board (C4, mockup-matched; C5 adds the SONAR column): header with
+# level/points/XP/respec/back, six branch columns of nodes, strict in-branch order, variable
+# costs, AIR WING redacted + CLASSIFIED.
 # Custom-drawn with hit-tested rects; purchases go through Tech.can_buy and save immediately.
 
 signal back_requested
@@ -13,10 +14,10 @@ const BRASS_DIM := Color(0.557, 0.506, 0.373)
 const PLATE_BG := Color(0.051, 0.125, 0.157, 0.88)
 const PLATE_EDGE := Color(0.804, 0.729, 0.557, 0.5)
 
-const BRANCHES := ["SEAMANSHIP", "FLAK", "GUNNERY", "ORDNANCE", "AIR WING"]
+const BRANCHES := ["SEAMANSHIP", "FLAK", "GUNNERY", "ORDNANCE", "SONAR", "AIR WING"]
 const SUBTITLES := {
 	"SEAMANSHIP": "movement & hull", "FLAK": "small mounts", "GUNNERY": "medium mounts",
-	"ORDNANCE": "main battery", "AIR WING": "helicopter operations",
+	"ORDNANCE": "main battery", "SONAR": "hydrophones & racks", "AIR WING": "helicopter operations",
 }
 
 var _profile: Profile
@@ -51,7 +52,7 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.016, 0.055, 0.075, 0.55))
 	_node_hits.clear()
 	var margin := 30.0
-	var wmax: float = minf(size.x - margin * 2.0, 1220.0)
+	var wmax: float = minf(size.x - margin * 2.0, 1360.0)   # six columns (C5)
 	var left: float = (size.x - wmax) * 0.5
 	# ── header ──
 	var head := Rect2(left, 24.0, wmax, 54.0)
@@ -78,7 +79,7 @@ func _draw() -> void:
 	draw_rect(_btn_back, RED)
 	_label(_btn_back.position.x + 20.0, _btn_back.get_center().y + 4.0, "TITLE", 11, FOAM, 2.5)
 	# ── branch columns ──
-	var col_w: float = (wmax - 4.0 * 12.0) / 5.0
+	var col_w: float = (wmax - 5.0 * 12.0) / 6.0
 	for b in range(BRANCHES.size()):
 		var br: String = BRANCHES[b]
 		var cx: float = left + b * (col_w + 12.0)

@@ -85,7 +85,8 @@ static func _pick_target(world: GameWorld, wpn: WeaponDef, mpos: Vector2) -> Ene
 	for e in world.enemies:
 		if not e.active:
 			continue
-		var domain: String = "air" if e.layer == "air" else "surface"
+		# D1.9 three-way domain map — no gun carries "sub", so the deep is deaf to gunfire (C5)
+		var domain: String = "air" if e.layer == "air" else ("sub" if e.layer == "sub" else "surface")
 		if not wpn.domains.has(domain):
 			continue
 		var dist: float = e.pos.distance_to(mpos)

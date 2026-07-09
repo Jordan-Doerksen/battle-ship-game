@@ -168,8 +168,8 @@ func _draw_wave_plate() -> void:
 	draw_string(_mono, Vector2(x, origin.y + 90.0), "XP +%d" % _world.xp_run,
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 12, BRASS)
 
-# ── radar scope (bottom-right; C3 gate revisions 1–2). Sub blips get sonar-gated in a later chunk
-#    (D1.10); air/surface contacts are free. ──
+# ── radar scope (bottom-right; C3 gate revisions 1–2 + C5 sonar). Air/surface contacts are free;
+#    sub blips are sonar-gated diamonds (D1.10) inside the soft sonar ring — your only ears. ──
 func _draw_radar() -> void:
 	var c := Vector2(size.x - RADAR_R - 26.0, size.y - RADAR_R - 26.0)
 	var rng_u: float = _cfgs.waves.radar_range
@@ -183,6 +183,9 @@ func _draw_radar() -> void:
 	var mb := _cfgs.weapons.by_id("mb16")
 	if mb != null:   # main-battery reach, dashed
 		_dashed_arc(c, mb.range_u * k, Color(BRASS.r, BRASS.g, BRASS.b, 0.35))
+	# C5: the sonar radius — a soft filled ring, the only part of the scope that hears the deep
+	draw_circle(c, _cfgs.sonar.radius * k, Color(FOAM.r, FOAM.g, FOAM.b, 0.045))
+	draw_arc(c, _cfgs.sonar.radius * k, 0.0, TAU, 48, Color(FOAM.r, FOAM.g, FOAM.b, 0.28), 1.0, true)
 	# viewport extent
 	var view: Vector2 = get_viewport_rect().size
 	var cam := get_viewport().get_camera_2d()
@@ -209,7 +212,13 @@ func _draw_radar() -> void:
 		if off.length() > RADAR_R:
 			continue
 		var b := c + off
-		if e.type_id == "gunboat":
+		if e.layer == "sub":   # detected subs only, as a foam diamond (D1.10 radar gating)
+			if not Sonar.detected(_world, e):
+				continue
+			draw_colored_polygon(PackedVector2Array([
+				b + Vector2(0, -4), b + Vector2(4, 0), b + Vector2(0, 4), b + Vector2(-4, 0),
+			]), Color(FOAM.r, FOAM.g, FOAM.b, 0.95))
+		elif e.type_id == "gunboat":
 			draw_rect(Rect2(b.x - 2.8, b.y - 2.8, 5.6, 5.6), RED)
 		else:
 			draw_circle(b, 3.6 if e.type_id == "bomber" else 2.4, RED if e.type_id == "bomber" else ORANGE)

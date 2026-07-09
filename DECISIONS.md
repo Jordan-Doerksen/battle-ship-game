@@ -1,5 +1,5 @@
 # Decisions Manifest — Earth Defense Force (working title)
-**Started:** 2026-07-08  ·  **Last Updated:** 2026-07-08  ·  **Status:** C4 Levels & Tech Tree BUILT — it's a career (C0–C3 also 2026-07-08)
+**Started:** 2026-07-08  ·  **Last Updated:** 2026-07-09  ·  **Status:** C5 Sonar, Subs & Depth Charges BUILT — all three D1.9 domains live (C0–C4 built 2026-07-08)
 
 > The single source of truth, written *for the next agent* — not a doc anyone maintains by hand.
 > Every future agent consults this before an architectural/behavioral change. Never silently rewrite
@@ -139,6 +139,11 @@ undecided and out of scope for MVP.
 economy as hardpoints, is a **passive detection radius only** — no active "ping" ability for MVP.
 Direct extension of fulfillment's `RadarView.gd` minimap, gated by detection radius.
 **Date Locked:** 2026-07-08 · **Affects:** future Sonar system + `RadarView` extension.
+**Built 2026-07-09 (C5, as specced):** `Sonar.gd` (passive radius + contact-hold latch on
+`Enemy.detected_until`), radar-gated diamond blips + soft sonar ring on the scope, and the SONAR
+tech branch — "the same economy" now means the tech tree per the C4 Change Request. An undetected
+sub near the ship shows a render-only ripple tell (cosmetic, not a detection channel). See
+`docs/specs/sonar-subs.md`.
 
 ### Decision 1.11: Depth charges are a free, always-on failsafe.
 **Chosen Answer:** Depth charges are a **non-purchased, always-on** ship system (parallel to
@@ -146,6 +151,12 @@ fulfillment's fixed "prow" gun that's never drafted/upgraded) that auto-fires at
 close range, with deliberately bad accuracy. Creates the intended tension: invest in sonar to fight subs
 at range with real guns, or rely on the inaccurate backstop.
 **Date Locked:** 2026-07-08 · **Affects:** future depth-charge system.
+**Superseded in part 2026-07-08 (owner, C5 interview; built 2026-07-09):** charges arm **only on a
+live sonar CONTACT** — the "backstop for whatever sonar misses" clause and the "fight subs at range
+with real guns" framing are dead (no gun can hurt a sub; depth charges are the ONLY sub killer, and
+without a contact they never roll). Free / always-on / automatic / deliberately inaccurate all
+stand. No contact, no ASW — the SONAR tree branch is load-bearing by design. See
+`docs/specs/sonar-subs.md` and the Change Log.
 
 ### Decision 1.12: Scope lock — one hull only.
 **Chosen Answer:** **One hull shape**, no hull-class variety, until the rest of the game is built out.
@@ -196,13 +207,34 @@ treated as locked:
 - **C4 — Levels & tech tree (built 2026-07-08).** The Change Request made real: persistent XP/levels
   (first save file, `user://profile.cfg`), the 24-node tree + CLASSIFIED AIR WING, four marquee
   effects, title hub + tree screen, dev test kit (debug builds only). Spec: `docs/specs/tech-tree.md`.
-- **C5+ — not yet scoped.** Sonar + subs + depth charges (completes the three domains), the
-  helicopter/AIR WING function (open thread #3), boss ladder + naming (open thread #2) — each needs
-  its own `/spec-feature` interview before implementation, per this repo's `CLAUDE.md`.
+- **C5 — Sonar, subs & depth charges (built 2026-07-09).** Interviewed, spec'd, mockup-gated
+  (`design/sonar-subs.html`, owner-approved), and ported: the third D1.9 domain — sub elites with
+  wake-drawing torpedoes, passive sonar detection + contact latch (D1.10), contact-gated stern
+  depth-charge volleys (D1.11 as refined), the SONAR tech branch + ASDIC LOCK marquee, radar sonar
+  ring + diamond blips, ripple tell. Spec: `docs/specs/sonar-subs.md`.
+- **C6+ — not yet scoped.** The helicopter/AIR WING function (open thread #3), boss ladder + naming
+  (open thread #2) — each needs its own `/spec-feature` interview before implementation, per this
+  repo's `CLAUDE.md`.
 
 ---
 
 ## Change Log
+- **2026-07-09 — C5 Sonar, Subs & Depth Charges built; D1.11 refined by owner supersession; D1.9's
+  third domain live.** The approved C5 spec + mockup ported to Godot: `sub` in the roster
+  (elite — cost 6, unlock 7, standoff torpedo shooter; `EnemyDef.torp_run` marks torpedo fire),
+  `Sonar.gd` + `DepthCharges.gd` in `Sim.step`'s fixed order (after Enemies, before Turrets),
+  `SonarConfig`/`sonar.tres` (per-system config rule), torpedo + `"dc"` projectile branches
+  (charges sink on a fuse, then blast SUBS ONLY — ship and surface/air untouched), the SONAR tech
+  branch (son1–son5, ASDIC LOCK marquee) in `tech.tres`, `xp_sub` 80, the three-way domain map in
+  `Turrets._pick_target` (no gun carries "sub" — the deep is deaf to gunfire by construction),
+  render/HUD per the approved mockup (detected silhouette + foam ring, ripple tell, torpedo wakes,
+  DC sink/blast fx, radar sonar ring + sonar-gated diamond blips, contact ping, six-column tree,
+  dev-kit +SUB). **D1.11 superseded in part at the owner interview:** charges arm ONLY on a sonar
+  contact (noted inline at D1.11); D1.10 implemented as specced (noted inline). Two mockup bugs
+  caught by the validation harness before approval: the domain map returned "surface" for subs
+  (guns shot them), and the standoff brain gated on `type == "gunboat"` (subs sat inert) — both
+  fixed in the mockup, ported correctly. `probe_sonar` (8 checks incl. zero-tech baseline: waves
+  1–6 stay sub-free, and the director provably fields subs once unlocked) added to the gate.
 - **2026-07-08 — C4 Levels & Tech Tree built; the Change Request is real.** Persistent career:
   `Profile` (the FIRST save file, `user://profile.cfg` — strictly app-layer, the sim never reads
   it), `Tech.apply` deriving each sortie's `Configs` from duplicated `.tres` values + unlocked

@@ -59,16 +59,18 @@ report, four marquee sim features behind default-off flags, muzzle-origin shells
 fix), and the DEV TEST KIT (debug builds only, ` to toggle). `probe_tech` (9 checks) gates it in
 `verify.sh`; `design/tech-tree.html` stays the visual/loop reference.
 
-**C5 — Sonar, subs & depth charges is MID-GATE (2026-07-08):** spec approved
-(`docs/specs/sonar-subs.md`), interactive mockup BUILT (`design/sonar-subs.html` — subs with
-torpedo wakes, passive sonar detection/latch, contact-gated DC volleys, SONAR tree branch, dev-kit
-`+SUB`; scratchpad harness 7/7 on the spec's acceptance checks) and published for owner
-feel-approval. NOT yet approved, NOT yet ported. On approval: record it in the spec, then port
-(SonarConfig + sub roster + Sonar/DepthCharges systems + render/radar + probe_sonar + D1.11
-refinement in the DECISIONS Change Log — the owner superseded the blind-backstop clause at
-interview: charges arm only on a sonar contact).
+**C5 — Sonar, subs & depth charges is BUILT (2026-07-09):** interview → approved spec → approved
+mockup (`design/sonar-subs.html` stays the visual reference) → Godot port. The third D1.9 domain:
+`sub` roster elite (cost 6, unlock wave 7) torpedoing from standoff with wake-drawing torpedoes;
+`Sonar.gd` passive detection + contact latch (`Enemy.detected_until`, D1.10); `DepthCharges.gd`
+contact-gated stern volleys — the owner superseded D1.11's blind-backstop clause at interview
+(no contact, no ASW; charges stay free/auto/inaccurate), and NO gun can hurt a sub (domain
+exclusion, probe-gated). `SonarConfig`/`sonar.tres`, SONAR tech branch (son1–son5, ASDIC LOCK
+marquee), `xp_sub` 80, radar sonar ring + sonar-gated diamond blips, ripple tell, DC sink/blast
+fx, six-column tree, dev-kit `+SUB`. `probe_sonar` (8 checks incl. zero-tech baseline) gates it
+in `verify.sh`.
 
-**After C5:** the helicopter/AIR WING function (open thread #3 — the tree is waiting for it) or
+**Next (C6+):** the helicopter/AIR WING function (open thread #3 — the tree is waiting for it) or
 the boss ladder + naming pass (open thread #2). Each needs its own `/spec-feature` interview first.
 
 ## 3. Tree layout
@@ -79,11 +81,12 @@ scripts/
                   InputState pre-step, effects plumbing post-step, sortie restarts;
                   Profile.gd — the save file; Tech.gd — config derivation + spend rules)
   engine/         the deterministic sim
-    Sim.gd        step root — fixed order: Movement, Waves, Enemies, Turrets, Projectiles
+    Sim.gd        step root — fixed order: Movement, Waves, Enemies, Sonar, DepthCharges,
+                  Turrets, Projectiles
     data/         GameWorld truth object, InputState, Configs bundle
     entities/     plain data classes (Enemy, Projectile, Mount)
     systems/      static funcs that mutate GameWorld (Movement C1; Turrets/Projectiles C2;
-                  Waves/Enemies/Hull C3)
+                  Waves/Enemies/Hull C3; Sonar/DepthCharges C5)
     util/         Rng, Pool — determinism primitives (Pool feeds projectiles)
   render/         one-way sim → view (FieldRenderer: sea/wake/hull/turrets/enemies/fx; patina.gdshader)
   ui/             screens + HUD (HelmGauges — gauges/pips/wave plate/radar/reticle/lost card;

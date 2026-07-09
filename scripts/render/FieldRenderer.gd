@@ -166,9 +166,15 @@ func _draw_wake() -> void:
 
 # enemy identity (approved mockup): hostile = signal-red family. Swarmer = small darting delta,
 # gunboat = low dark hull with red edge + deck gun, bomber = broad heavy delta with engine dots.
+# Subs (C5): DETECTED = dark ellipse silhouette + conning dot + pulsing foam ring; UNDETECTED near
+# the ship = a barely-there ripple tell (D1.10 — render-only read of sonar state); else nothing.
 func _draw_enemies() -> void:
+	var now: float = Time.get_ticks_msec() * 1.0
 	for e in _world.enemies:
 		if not e.active:
+			continue
+		if e.layer == "sub":
+			_draw_sub(e, now)
 			continue
 		draw_set_transform(e.pos, e.heading, Vector2.ONE)
 		if e.type_id == "swarmer":
@@ -198,13 +204,51 @@ func _draw_enemies() -> void:
 				draw_rect(Rect2(-10 + i * 4, 16, 2.6, 2.2), Color(FOAM.r, FOAM.g, FOAM.b, 0.7))
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
+func _draw_sub(e: Enemy, now: float) -> void:
+	if Sonar.detected(_world, e):
+		# silhouette: dark 7×20 ellipse under red-tinted water, conning-tower dot
+		draw_set_transform(e.pos, e.heading, Vector2(0.35, 1.0))
+		draw_circle(Vector2.ZERO, 20.0, Color(0.094, 0.165, 0.212, 0.85))
+		draw_set_transform(e.pos, e.heading, Vector2.ONE)
+		_draw_ellipse_outline(7.0, 20.0, Color(RED.r, RED.g, RED.b, 0.55), 1.2)
+		draw_circle(Vector2(0, -4), 2.4, Color(FOAM.r, FOAM.g, FOAM.b, 0.5))
+		draw_set_transform(e.pos, 0.0, Vector2.ONE)
+		draw_arc(Vector2.ZERO, 24.0 + sin(now * 0.004) * 2.0, 0.0, TAU, 32,
+			Color(FOAM.r, FOAM.g, FOAM.b, 0.25), 1.0, true)   # foam ring over the contact
+	elif e.pos.distance_to(_world.ship_pos) <= _cfgs.sonar.ripple_range:
+		# the water moves wrong: two faint counter-wobbling rings, no shape underneath
+		var wob: float = sin(now * 0.003 + e.pos.x) * 3.0
+		draw_set_transform(e.pos, 0.0, Vector2.ONE)
+		draw_arc(Vector2.ZERO, 14.0 + wob, 0.0, TAU, 28, Color(FOAM.r, FOAM.g, FOAM.b, 0.07), 1.5, true)
+		draw_arc(Vector2.ZERO, 24.0 - wob, 0.0, TAU, 32, Color(FOAM.r, FOAM.g, FOAM.b, 0.045), 1.5, true)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+func _draw_ellipse_outline(rx: float, ry: float, col: Color, width: float) -> void:
+	var pts := PackedVector2Array()
+	for i in range(33):
+		var a: float = TAU * i / 32.0
+		pts.append(Vector2(cos(a) * rx, sin(a) * ry))
+	draw_polyline(pts, col, width, true)
+
 func _draw_projectiles() -> void:
 	for i in range(_world.projectiles.items.size()):
 		var p: Projectile = _world.projectiles.items[i]
 		if not p.active:
 			continue
 		var tail: Vector2 = p.pos - p.vel * (0.05 if p.hostile else 0.03)
-		if p.hostile:
+		if p.wid == "torpedo":   # C5: dark runner drawing a foam wake line astern of itself
+			var u: Vector2 = p.vel.normalized()
+			for wk in range(1, 10):
+				draw_circle(p.pos - u * (wk * 14.0), 1.6 + wk * 0.35,
+					Color(FOAM.r, FOAM.g, FOAM.b, 0.5 - wk * 0.05))
+			draw_circle(p.pos, 3.0, Color(0.094, 0.165, 0.212, 0.95))
+			draw_arc(p.pos, 3.0, 0.0, TAU, 16, Color(0.914, 0.404, 0.259, 0.8), 1.0, true)
+		elif p.wid == "dc":      # C5: charge shrinking + spreading ring as it sinks on its fuse
+			var sink: float = 1.0 - p.life / maxf(_cfgs.sonar.dc_fuse, 0.001)
+			draw_circle(p.pos, 3.5 - sink * 2.0, Color(FOAM.r, FOAM.g, FOAM.b, 0.7 - sink * 0.5))
+			draw_arc(p.pos, 5.0 + sink * 6.0, 0.0, TAU, 20,
+				Color(FOAM.r, FOAM.g, FOAM.b, 0.3 - sink * 0.2), 1.0, true)
+		elif p.hostile:
 			draw_line(tail, p.pos, Color(0.914, 0.404, 0.259, 0.95), 2.0)
 			draw_circle(p.pos, 2.4, Color(0.914, 0.404, 0.259, 0.95))
 		elif p.splash > 0.0:
@@ -304,6 +348,7 @@ func _draw_mounts() -> void:
 const FX_LIFE := {
 	"muzzle": 0.12, "gunflash": 0.12, "hit": 0.12, "ignite": 0.3, "shiphit": 0.4,
 	"airburst": 0.45, "death": 0.5, "splash": 0.7, "crashturn": 0.8, "shipdeath": 2.2,
+	"dcvolley": 0.3, "dcblast": 0.9, "contact": 1.2,
 	"waveclear": 0.0,
 }
 
@@ -337,6 +382,18 @@ func _draw_fx() -> void:
 				draw_circle(e["pos"], 5.0 * (1.0 + k), Color(FLASH.r, FLASH.g, FLASH.b, 0.9 * (1.0 - k)))
 			"crashturn":  # CRASH TURN (C4): amber wash off the hull
 				draw_arc(_world.ship_pos, 40.0 + 160.0 * k, 0.0, TAU, 48, Color(FLASH.r, FLASH.g, FLASH.b, 0.7 * (1.0 - k)), 3.0, true)
+			"dcblast":    # C5: underwater bulge — pale dome swelling, dark ring chasing it
+				draw_circle(e["pos"], e["r"] * (0.3 + k * 0.7), Color(FOAM.r, FOAM.g, FOAM.b, 0.35 * (1.0 - k)))
+				draw_arc(e["pos"], maxf(0.5, e["r"] * k), 0.0, TAU, 40, Color(0.094, 0.165, 0.212, 0.8 * (1.0 - k)), 3.0, true)
+			"dcvolley":   # C5: the racks roll — a foam pulse off the stern
+				draw_arc(e["pos"], 12.0 + 30.0 * k, 0.0, TAU, 32, Color(FOAM.r, FOAM.g, FOAM.b, 0.6 * (1.0 - k)), 1.5, true)
+			"contact":    # C5: sonar acquisition ping — expanding diamond over the water
+				var cr: float = 10.0 + 30.0 * k
+				var dia := PackedVector2Array([
+					e["pos"] + Vector2(0, -cr), e["pos"] + Vector2(cr, 0),
+					e["pos"] + Vector2(0, cr), e["pos"] + Vector2(-cr, 0), e["pos"] + Vector2(0, -cr),
+				])
+				draw_polyline(dia, Color(FOAM.r, FOAM.g, FOAM.b, 0.8 * (1.0 - k)), 1.5, true)
 			"death":
 				draw_arc(e["pos"], 4.0 + 26.0 * k, 0.0, TAU, 32, Color(RED.r, RED.g, RED.b, 0.85 * (1.0 - k)), 2.0, true)
 			"shiphit":

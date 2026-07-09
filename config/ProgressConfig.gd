@@ -6,6 +6,7 @@ extends Resource
 @export var xp_swarmer: int = 10        # per kill, by enemy type
 @export var xp_gunboat: int = 30
 @export var xp_bomber: int = 50
+@export var xp_sub: int = 80            # elite (C5)
 @export var xp_wave_bonus: int = 25     # × wave number, banked on each clear
 @export var level_xp_base: int = 150    # XP for level 1 → 2
 @export var level_xp_step: int = 100    # added per subsequent level (linear ramp)
@@ -15,6 +16,7 @@ func xp_for_kill(type_id: String) -> int:
 		"swarmer": return xp_swarmer
 		"gunboat": return xp_gunboat
 		"bomber": return xp_bomber
+		"sub": return xp_sub
 	return 0
 
 func xp_for_next(level: int) -> int:

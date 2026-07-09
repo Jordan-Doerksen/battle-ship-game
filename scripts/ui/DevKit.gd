@@ -18,7 +18,7 @@ var _rng := RandomNumberGenerator.new()      # NON-sim randomness for spawn bear
 
 const ROWS := [
 	["INVULN", "FREEZE", "GODGUNS"],
-	["+SWARMER", "+GUNBOAT", "+BOMBER", "SWARM x8"],
+	["+SWARMER", "+GUNBOAT", "+BOMBER", "+SUB", "SWARM x8"],
 	["KILL ALL", "NEXT WAVE", "HEAL", "MAX LVL"],
 ]
 
@@ -100,6 +100,7 @@ func _gui_input(event: InputEvent) -> void:
 			"+SWARMER": _spawn("swarmer", 1)
 			"+GUNBOAT": _spawn("gunboat", 1)
 			"+BOMBER": _spawn("bomber", 1)
+			"+SUB": _spawn("sub", 1)
 			"SWARM x8": _spawn("swarmer", 8)
 			"KILL ALL":
 				for e in w.enemies:

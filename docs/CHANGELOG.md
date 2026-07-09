@@ -4,6 +4,35 @@ Chunk log, newest first. Each chunk ships only after it passes the cross-check a
 
 ---
 
+## C5 — SONAR, SUBMARINES & DEPTH CHARGES · 2026-07-09 · Built
+
+Something is under the water. The third D1.9 domain lands, completing the founding air/surface/sub
+fantasy. Full pipeline: interview (8 decisions, incl. the owner's D1.11 supersession — depth
+charges arm ONLY on a sonar contact) → approved spec → interactive mockup (7/7 validation harness;
+two real bugs caught pre-approval: subs tagged "surface" so guns shot them, and the standoff brain
+ignoring subs) → owner approval ("totally cool") → Godot port verified side-by-side.
+
+- **Sub (roster elite):** cost 6, unlocks wave 7; hp 6, speed 35, gunboat-pattern standoff brain
+  at 600 u. Its "shell" is a TORPEDO: slow (130 u/s), straight-running ~900 u, 2 pips on a hull
+  hit, dodgeable off its wake line and outrunnable at full ahead. No gunflash — the deep is silent.
+- **Sonar (`Sonar.gd` + `SonarConfig`/`sonar.tres`):** passive radius 350, contact latch 2.5 s on
+  `Enemy.detected_until` (pure arithmetic, zero draws), `contact` ping on first acquisition.
+  Detected subs: dark silhouette + foam ring in the world, diamond blips on the scope inside a
+  soft sonar ring (D1.10). Undetected subs near the ship: a render-only ripple tell. Nothing else.
+- **Depth charges (`DepthCharges.gd`):** free, automatic, deliberately inaccurate — and armed only
+  by a DETECTED sub inside 220 u. Volleys of 4 scatter around the stern (seeded draws, volley
+  order), sink 1.5 s, then blast SUBS ONLY (55 u, 3 dmg) — the ship and surface/air enemies never
+  feel them. Guns can't touch subs at all: the domain map is probe-gated deaf.
+- **Tech:** the SONAR branch (sixth column) — Hydrophones/Trained Ears/Deep Pattern/Quick Racks +
+  ASDIC LOCK (marquee: −50% scatter, +30% blast). `tech.tres` regenerated (34 nodes). Sub kill:
+  80 XP.
+- **UI/render:** torpedo foam-wake runner, DC sink + underwater-blast fx, contact diamond ping,
+  radar sonar ring + gated diamonds, six-column tree board, dev-kit `+SUB`.
+- **Verify:** `probe_sonar.gd` — 8 checks (determinism with subs/torpedoes/DC, deaf guns,
+  detection+latch, the DC trigger law, DC kill + isolation, torpedo behavior, SONAR derivation,
+  zero-tech baseline: waves 1–6 sub-free AND the director provably fields subs once unlocked) —
+  added to `verify.sh`. `ScreenshotC5` harness captures volley/blast/torpedo/tree frames.
+
 ## C4 — LEVELS & TECH TREE · 2026-07-08 · Built
 
 The war gets a career, implementing the owner's Change Request (fixed hulls/turrets; persistent

@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="EnemyConfig" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="EnemyConfig" load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://config/EnemyConfig.gd" id="1"]
 [ext_resource type="Script" path="res://config/EnemyDef.gd" id="2"]
@@ -60,6 +60,26 @@ shell_dmg = 0
 lead = 0.0
 spread = 0.0
 
+[sub_resource type="Resource" id="sub"]
+script = ExtResource("2")
+id = "sub"
+layer = "sub"
+hp = 6
+speed = 35.0
+turn = 0.5
+dmg = 0
+radius = 16.0
+cost = 6
+unlock = 7
+standoff = 600.0
+fire_range = 800.0
+fire_period = 8.0
+shell_speed = 130.0
+shell_dmg = 2
+lead = 0.5
+spread = 0.03
+torp_run = 900.0
+
 [resource]
 script = ExtResource("1")
-roster = [SubResource("swarmer"), SubResource("gunboat"), SubResource("bomber")]
+roster = [SubResource("swarmer"), SubResource("gunboat"), SubResource("bomber"), SubResource("sub")]

@@ -5,9 +5,9 @@
 > front-load design that will drift. Pairs with `DECISIONS.md` (the manifest) and `ARCHITECTURE.md`
 > (the map). Full source narrative: `docs/DESIGN-BRIEF.md`.
 >
-> **Status:** C0–C4 built — the game plays end to end and carries a persistent career (levels +
-> tech tree). C5+ planned, high-level only — each is locked in detail at the top of its own chunk
-> via `/spec-feature`.
+> **Status:** C0–C5 built — the game plays end to end across all three domains (air / surface /
+> sub) and carries a persistent career (levels + tech tree). C6+ planned, high-level only — each
+> is locked in detail at the top of its own chunk via `/spec-feature`.
 
 ---
 
@@ -21,10 +21,11 @@ weight; your hull's turrets auto-fire at anything in range regardless of which w
 you can force any battery onto a point. The ship's hull and turret fit are FIXED — visible mounts in a
 real battleship arrangement (small numerous, medium fewer, large fewest). Progression is persistent
 LEVELS earned across runs, unlocking a TECH TREE: movement upgrades, turret-size-specific upgrades,
-bullet effects, traverse, and a helicopter branch (owner change request 2026-07-08 — replaced the
-original purchasable-hardpoint economy). Subs are invisible until sonar range reveals them; depth
-charges are a free, inaccurate always-on backstop for whatever sonar misses. Tone: 1950s B-movie
-schlock, played completely straight-faced.
+bullet effects, traverse, sonar, and a helicopter branch (owner change request 2026-07-08 —
+replaced the original purchasable-hardpoint economy). Subs are invisible until passive sonar
+reveals them; depth charges are free, automatic, and deliberately inaccurate — but they arm ONLY
+on a live sonar contact (owner refinement at the C5 interview), and no gun can touch the deep.
+Tone: 1950s B-movie schlock, played completely straight-faced.
 
 ## Design pillars
 
@@ -73,6 +74,12 @@ at the moment it's built — recorded then, not now.
   title hub + tree screen, dev test kit (debug builds). Locked by `docs/specs/tech-tree.md`
   (`design/tech-tree.html` stays the loop/visual reference).
 
-- **C5+ — not yet scoped.** Sonar + subs + depth charges (completes the three domains), the
-  helicopter/AIR WING function (open thread #3), boss ladder + enemy naming (open thread #2).
-  Order TBD — see `DECISIONS.md` Build Timeline.
+- **C5 — Sonar, subs & depth charges (built 2026-07-09).** The third domain: sub elites torpedoing
+  from standoff with visible wakes, passive sonar (radius + contact latch, radar-gated diamond
+  blips, ripple tell when undetected), contact-gated stern depth-charge volleys (the only sub
+  killer — every gun's domain tags exclude the deep), the SONAR tech branch with the ASDIC LOCK
+  marquee. Locked by `docs/specs/sonar-subs.md` (`design/sonar-subs.html` stays the visual
+  reference).
+
+- **C6+ — not yet scoped.** The helicopter/AIR WING function (open thread #3), boss ladder + enemy
+  naming (open thread #2). Order TBD — see `DECISIONS.md` Build Timeline.

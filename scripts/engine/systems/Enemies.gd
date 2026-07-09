@@ -1,9 +1,11 @@
 class_name Enemies
 extends RefCounted
-# C3 enemy behavior (docs/specs/wave-director.md) — system #3 in Sim.step's fixed order, slot order.
-# Divers (swarmer/bomber) pursue the ship under a per-type turn cap and damage the hull capsule on
-# contact, dying in the dive. Gunboats approach to standoff, then orbit tangentially and fire led,
-# dodgeable shells on their period — the only enemy draw is their per-shot spread.
+# C3/C5 enemy behavior (docs/specs/{wave-director,sonar-subs}.md) — system #3 in Sim.step's fixed
+# order, slot order. Divers (swarmer/bomber) pursue the ship under a per-type turn cap and damage
+# the hull capsule on contact, dying in the dive. Standoff shooters (gunboat on the surface, sub in
+# the deep) approach to standoff, then orbit tangentially and fire led, dodgeable projectiles on
+# their period — the only enemy draw is their per-shot spread. A sub's "shell" is a TORPEDO
+# (wid "torpedo"): slow, straight-running for torp_run units, no gunflash — the deep stays silent.
 
 static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 	for e in world.enemies:
@@ -21,7 +23,7 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 				continue
 		var dist_ship: float = e.pos.distance_to(world.ship_pos)
 		var desired: float
-		if def.standoff > 0.0:   # gunboat: approach, then orbit
+		if def.standoff > 0.0:   # standoff shooter: approach, then orbit
 			desired = _angle_to(e.pos, world.ship_pos) + (0.0 if dist_ship > def.standoff else PI / 2.0)
 		else:
 			desired = _angle_to(e.pos, world.ship_pos)
@@ -34,15 +36,17 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 				var flight: float = dist_ship / def.shell_speed
 				var aim: Vector2 = world.ship_pos + world.ship_vel * flight * def.lead
 				var ang: float = _angle_to(e.pos, aim) + (world.rng.nextf() * 2.0 - 1.0) * def.spread
+				var torp: bool = def.torp_run > 0.0   # C5: a sub launches wake-drawing torpedoes
 				var p: Projectile = world.projectiles.obtain()
-				p.pos = e.pos + Vector2(sin(ang), -cos(ang)) * 14.0   # deck-gun muzzle, not hull center
+				p.pos = e.pos + Vector2(sin(ang), -cos(ang)) * 14.0   # muzzle/tube, not hull center
 				p.vel = Vector2(sin(ang), -cos(ang)) * def.shell_speed
 				p.dmg = def.shell_dmg
 				p.splash = 0.0
 				p.hostile = true
-				p.wid = "hostile"
-				p.life = (def.fire_range * 1.4) / def.shell_speed
-				world.effects.append({ "type": "gunflash", "pos": e.pos, "ang": ang })
+				p.wid = "torpedo" if torp else "hostile"
+				p.life = (def.torp_run if torp else def.fire_range * 1.4) / def.shell_speed
+				if not torp:   # no gunflash from under the water
+					world.effects.append({ "type": "gunflash", "pos": e.pos, "ang": ang })
 		elif Hull.dist_to_hull(world, e.pos) <= def.radius + Hull.RADIUS:
 			e.active = false   # the dive lands: hull pays, the drone is spent
 			Hull.damage(world, def.dmg, cfg)

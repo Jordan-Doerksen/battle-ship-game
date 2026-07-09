@@ -61,6 +61,7 @@ godot_step "probe_movement (C1 naval-movement spec acceptance)"  -s res://tests/
 godot_step "probe_hardpoints (C2 turret suite, vs C3 enemies)"    -s res://tests/probe_hardpoints.gd
 godot_step "probe_waves (C3 wave-director spec acceptance)"       -s res://tests/probe_waves.gd
 godot_step "probe_tech (C4 levels & tech-tree spec acceptance)"   -s res://tests/probe_tech.gd
+godot_step "probe_sonar (C5 sonar/subs/depth-charge spec acceptance)" -s res://tests/probe_sonar.gd
 
 if [ "$FAIL" -eq 0 ]; then
   echo -e "\nALL VERIFY STEPS PASSED"

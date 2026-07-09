@@ -4,7 +4,6 @@
 [ext_resource type="Script" path="res://config/TechConfig.gd" id="2_n0pvy"]
 
 [sub_resource type="Resource" id="Resource_k3wib"]
-resource_name = "sea1"
 script = ExtResource("1_gcto0")
 id = "sea1"
 branch = "SEAMANSHIP"
@@ -16,7 +15,6 @@ mods = Array[Dictionary]([{
 }])
 
 [sub_resource type="Resource" id="Resource_tg8uf"]
-resource_name = "sea2"
 script = ExtResource("1_gcto0")
 id = "sea2"
 branch = "SEAMANSHIP"
@@ -28,7 +26,6 @@ mods = Array[Dictionary]([{
 }])
 
 [sub_resource type="Resource" id="Resource_tuatf"]
-resource_name = "sea3"
 script = ExtResource("1_gcto0")
 id = "sea3"
 branch = "SEAMANSHIP"
@@ -40,7 +37,6 @@ mods = Array[Dictionary]([{
 }])
 
 [sub_resource type="Resource" id="Resource_mhskq"]
-resource_name = "sea4"
 script = ExtResource("1_gcto0")
 id = "sea4"
 branch = "SEAMANSHIP"
@@ -53,7 +49,6 @@ mods = Array[Dictionary]([{
 }])
 
 [sub_resource type="Resource" id="Resource_vdybs"]
-resource_name = "sea5"
 script = ExtResource("1_gcto0")
 id = "sea5"
 branch = "SEAMANSHIP"
@@ -66,7 +61,6 @@ mods = Array[Dictionary]([{
 }])
 
 [sub_resource type="Resource" id="Resource_in0hg"]
-resource_name = "sea6"
 script = ExtResource("1_gcto0")
 id = "sea6"
 branch = "SEAMANSHIP"
@@ -80,7 +74,6 @@ mods = Array[Dictionary]([{
 }])
 
 [sub_resource type="Resource" id="Resource_8361b"]
-resource_name = "flk1"
 script = ExtResource("1_gcto0")
 id = "flk1"
 branch = "FLAK"
@@ -92,7 +85,6 @@ mods = Array[Dictionary]([{
 }])
 
 [sub_resource type="Resource" id="Resource_uyo7l"]
-resource_name = "flk2"
 script = ExtResource("1_gcto0")
 id = "flk2"
 branch = "FLAK"
@@ -104,7 +96,6 @@ mods = Array[Dictionary]([{
 }])
 
 [sub_resource type="Resource" id="Resource_fowl1"]
-resource_name = "flk3"
 script = ExtResource("1_gcto0")
 id = "flk3"
 branch = "FLAK"
@@ -116,7 +107,6 @@ mods = Array[Dictionary]([{
 }])
 
 [sub_resource type="Resource" id="Resource_xy7h2"]
-resource_name = "flk4"
 script = ExtResource("1_gcto0")
 id = "flk4"
 branch = "FLAK"
@@ -129,7 +119,6 @@ mods = Array[Dictionary]([{
 }])
 
 [sub_resource type="Resource" id="Resource_vnhlp"]
-resource_name = "flk5"
 script = ExtResource("1_gcto0")
 id = "flk5"
 branch = "FLAK"
@@ -142,7 +131,6 @@ mods = Array[Dictionary]([{
 }])
 
 [sub_resource type="Resource" id="Resource_7nwas"]
-resource_name = "flk6"
 script = ExtResource("1_gcto0")
 id = "flk6"
 branch = "FLAK"
@@ -156,7 +144,6 @@ mods = Array[Dictionary]([{
 }])
 
 [sub_resource type="Resource" id="Resource_qvjyu"]
-resource_name = "gun1"
 script = ExtResource("1_gcto0")
 id = "gun1"
 branch = "GUNNERY"
@@ -168,7 +155,6 @@ mods = Array[Dictionary]([{
 }])
 
 [sub_resource type="Resource" id="Resource_kedte"]
-resource_name = "gun2"
 script = ExtResource("1_gcto0")
 id = "gun2"
 branch = "GUNNERY"
@@ -180,7 +166,6 @@ mods = Array[Dictionary]([{
 }])
 
 [sub_resource type="Resource" id="Resource_mjofs"]
-resource_name = "gun3"
 script = ExtResource("1_gcto0")
 id = "gun3"
 branch = "GUNNERY"
@@ -192,7 +177,6 @@ mods = Array[Dictionary]([{
 }])
 
 [sub_resource type="Resource" id="Resource_suowr"]
-resource_name = "gun4"
 script = ExtResource("1_gcto0")
 id = "gun4"
 branch = "GUNNERY"
@@ -208,7 +192,6 @@ mods = Array[Dictionary]([{
 }])
 
 [sub_resource type="Resource" id="Resource_hpbgi"]
-resource_name = "gun5"
 script = ExtResource("1_gcto0")
 id = "gun5"
 branch = "GUNNERY"
@@ -221,7 +204,6 @@ mods = Array[Dictionary]([{
 }])
 
 [sub_resource type="Resource" id="Resource_fm37p"]
-resource_name = "gun6"
 script = ExtResource("1_gcto0")
 id = "gun6"
 branch = "GUNNERY"
@@ -235,7 +217,6 @@ mods = Array[Dictionary]([{
 }])
 
 [sub_resource type="Resource" id="Resource_aj21l"]
-resource_name = "ord1"
 script = ExtResource("1_gcto0")
 id = "ord1"
 branch = "ORDNANCE"
@@ -247,7 +228,6 @@ mods = Array[Dictionary]([{
 }])
 
 [sub_resource type="Resource" id="Resource_tbkku"]
-resource_name = "ord2"
 script = ExtResource("1_gcto0")
 id = "ord2"
 branch = "ORDNANCE"
@@ -259,7 +239,6 @@ mods = Array[Dictionary]([{
 }])
 
 [sub_resource type="Resource" id="Resource_ua7wp"]
-resource_name = "ord3"
 script = ExtResource("1_gcto0")
 id = "ord3"
 branch = "ORDNANCE"
@@ -272,7 +251,6 @@ mods = Array[Dictionary]([{
 }])
 
 [sub_resource type="Resource" id="Resource_sexst"]
-resource_name = "ord4"
 script = ExtResource("1_gcto0")
 id = "ord4"
 branch = "ORDNANCE"
@@ -285,7 +263,6 @@ mods = Array[Dictionary]([{
 }])
 
 [sub_resource type="Resource" id="Resource_6lsth"]
-resource_name = "ord5"
 script = ExtResource("1_gcto0")
 id = "ord5"
 branch = "ORDNANCE"
@@ -298,7 +275,6 @@ mods = Array[Dictionary]([{
 }])
 
 [sub_resource type="Resource" id="Resource_xpps6"]
-resource_name = "ord6"
 script = ExtResource("1_gcto0")
 id = "ord6"
 branch = "ORDNANCE"
@@ -312,7 +288,68 @@ mods = Array[Dictionary]([{
 }])
 
 [sub_resource type="Resource" id="Resource_aka05"]
-resource_name = "air1"
+script = ExtResource("1_gcto0")
+id = "son1"
+branch = "SONAR"
+display_name = "Hydrophones"
+desc = "+25% sonar radius"
+mods = Array[Dictionary]([{
+"mul": 1.25,
+"p": "sonar.radius"
+}])
+
+[sub_resource type="Resource" id="Resource_7j78k"]
+script = ExtResource("1_gcto0")
+id = "son2"
+branch = "SONAR"
+display_name = "Trained Ears"
+desc = "+2.0s contact hold"
+mods = Array[Dictionary]([{
+"add": 2.0,
+"p": "sonar.contact_hold"
+}])
+
+[sub_resource type="Resource" id="Resource_fefhr"]
+script = ExtResource("1_gcto0")
+id = "son3"
+branch = "SONAR"
+display_name = "Deep Pattern"
+desc = "+2 charges per volley"
+cost = 2
+mods = Array[Dictionary]([{
+"add": 2,
+"p": "sonar.dc_count"
+}])
+
+[sub_resource type="Resource" id="Resource_e3wcl"]
+script = ExtResource("1_gcto0")
+id = "son4"
+branch = "SONAR"
+display_name = "Quick Racks"
+desc = "−30% volley cooldown"
+cost = 2
+mods = Array[Dictionary]([{
+"mul": 0.7,
+"p": "sonar.dc_cooldown"
+}])
+
+[sub_resource type="Resource" id="Resource_j4e2c"]
+script = ExtResource("1_gcto0")
+id = "son5"
+branch = "SONAR"
+display_name = "ASDIC LOCK"
+desc = "−50% scatter, +30% blast — the pattern falls tight"
+cost = 3
+marquee = true
+mods = Array[Dictionary]([{
+"mul": 0.5,
+"p": "sonar.dc_scatter"
+}, {
+"mul": 1.3,
+"p": "sonar.dc_blast"
+}])
+
+[sub_resource type="Resource" id="Resource_57pep"]
 script = ExtResource("1_gcto0")
 id = "air1"
 branch = "AIR WING"
@@ -321,8 +358,7 @@ desc = "PENDING BUREAU AUTHORIZATION"
 cost = 0
 locked = true
 
-[sub_resource type="Resource" id="Resource_7j78k"]
-resource_name = "air2"
+[sub_resource type="Resource" id="Resource_pgufl"]
 script = ExtResource("1_gcto0")
 id = "air2"
 branch = "AIR WING"
@@ -331,8 +367,7 @@ desc = "████ ████████ ████"
 cost = 0
 locked = true
 
-[sub_resource type="Resource" id="Resource_fefhr"]
-resource_name = "air3"
+[sub_resource type="Resource" id="Resource_ooh54"]
 script = ExtResource("1_gcto0")
 id = "air3"
 branch = "AIR WING"
@@ -341,8 +376,7 @@ desc = "REDACTED — EXECUTIVE ORDER"
 cost = 0
 locked = true
 
-[sub_resource type="Resource" id="Resource_e3wcl"]
-resource_name = "air4"
+[sub_resource type="Resource" id="Resource_0rpu0"]
 script = ExtResource("1_gcto0")
 id = "air4"
 branch = "AIR WING"
@@ -351,8 +385,7 @@ desc = "████████"
 cost = 0
 locked = true
 
-[sub_resource type="Resource" id="Resource_j4e2c"]
-resource_name = "air5"
+[sub_resource type="Resource" id="Resource_ulvqt"]
 script = ExtResource("1_gcto0")
 id = "air5"
 branch = "AIR WING"
@@ -363,4 +396,4 @@ locked = true
 
 [resource]
 script = ExtResource("2_n0pvy")
-catalog = Array[ExtResource("1_gcto0")]([SubResource("Resource_k3wib"), SubResource("Resource_tg8uf"), SubResource("Resource_tuatf"), SubResource("Resource_mhskq"), SubResource("Resource_vdybs"), SubResource("Resource_in0hg"), SubResource("Resource_8361b"), SubResource("Resource_uyo7l"), SubResource("Resource_fowl1"), SubResource("Resource_xy7h2"), SubResource("Resource_vnhlp"), SubResource("Resource_7nwas"), SubResource("Resource_qvjyu"), SubResource("Resource_kedte"), SubResource("Resource_mjofs"), SubResource("Resource_suowr"), SubResource("Resource_hpbgi"), SubResource("Resource_fm37p"), SubResource("Resource_aj21l"), SubResource("Resource_tbkku"), SubResource("Resource_ua7wp"), SubResource("Resource_sexst"), SubResource("Resource_6lsth"), SubResource("Resource_xpps6"), SubResource("Resource_aka05"), SubResource("Resource_7j78k"), SubResource("Resource_fefhr"), SubResource("Resource_e3wcl"), SubResource("Resource_j4e2c")])
+catalog = Array[ExtResource("1_gcto0")]([SubResource("Resource_k3wib"), SubResource("Resource_tg8uf"), SubResource("Resource_tuatf"), SubResource("Resource_mhskq"), SubResource("Resource_vdybs"), SubResource("Resource_in0hg"), SubResource("Resource_8361b"), SubResource("Resource_uyo7l"), SubResource("Resource_fowl1"), SubResource("Resource_xy7h2"), SubResource("Resource_vnhlp"), SubResource("Resource_7nwas"), SubResource("Resource_qvjyu"), SubResource("Resource_kedte"), SubResource("Resource_mjofs"), SubResource("Resource_suowr"), SubResource("Resource_hpbgi"), SubResource("Resource_fm37p"), SubResource("Resource_aj21l"), SubResource("Resource_tbkku"), SubResource("Resource_ua7wp"), SubResource("Resource_sexst"), SubResource("Resource_6lsth"), SubResource("Resource_xpps6"), SubResource("Resource_aka05"), SubResource("Resource_7j78k"), SubResource("Resource_fefhr"), SubResource("Resource_e3wcl"), SubResource("Resource_j4e2c"), SubResource("Resource_57pep"), SubResource("Resource_pgufl"), SubResource("Resource_ooh54"), SubResource("Resource_0rpu0"), SubResource("Resource_ulvqt")])

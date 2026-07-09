@@ -1,8 +1,8 @@
 class_name EnemyConfig
 extends Resource
-# The C3 enemy roster (docs/specs/wave-director.md): swarmer / gunboat / bomber, air + surface only
-# (subs wait for the sonar chunk). Instance lives at config/enemies.tres. Per the config-split rule
-# this holds enemy stats ONLY; the director's knobs are WaveConfig.
+# The enemy roster (docs/specs/{wave-director,sonar-subs}.md): swarmer / gunboat / bomber / sub —
+# all three D1.9 domains. Instance lives at config/enemies.tres. Per the config-split rule this
+# holds enemy stats ONLY; the director's knobs are WaveConfig, sonar/ASW knobs are SonarConfig.
 
 @export var roster: Array[EnemyDef] = []
 
@@ -27,5 +27,11 @@ static func spec_defaults() -> EnemyConfig:
 	var bo := EnemyDef.new()
 	bo.id = "bomber"; bo.layer = "air"; bo.hp = 8; bo.speed = 45.0; bo.turn = 0.5
 	bo.dmg = 2; bo.radius = 16.0; bo.cost = 5; bo.unlock = 5
-	cfg.roster = [sw, gb, bo]
+	var su := EnemyDef.new()
+	su.id = "sub"; su.layer = "sub"; su.hp = 6; su.speed = 35.0; su.turn = 0.5
+	su.dmg = 0; su.radius = 16.0; su.cost = 6; su.unlock = 7
+	su.standoff = 600.0; su.fire_range = 800.0; su.fire_period = 8.0
+	su.shell_speed = 130.0; su.shell_dmg = 2; su.lead = 0.5; su.spread = 0.03
+	su.torp_run = 900.0
+	cfg.roster = [sw, gb, bo, su]
 	return cfg

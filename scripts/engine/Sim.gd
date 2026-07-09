@@ -11,9 +11,10 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 	if not world.run_over:                     # a sunk ship freezes the war; shells already flying land
 		Movement.step(world, dt, cfg)          # C1 — naval momentum/turning, always system #1
 		Waves.step(world, dt, cfg)             # C3 — the seeded budget director
-		Enemies.step(world, dt, cfg)           # C3 — enemy movement + gunboat fire
+		Enemies.step(world, dt, cfg)           # C3/C5 — enemy movement + gunboat/sub fire
+		Sonar.step(world, dt, cfg)             # C5 — passive detection + contact latch
+		DepthCharges.step(world, dt, cfg)      # C5 — contact-gated stern volleys
 		Turrets.step(world, dt, cfg)           # C2 — hardpoint targeting/traverse/fire
-	Projectiles.step(world, dt, cfg)           # C2/C3 — shells, hits, splash, hostile fire
-	# …future: Sonar/DepthCharges — later chunks, each reading its own <Domain>Config.tres
+	Projectiles.step(world, dt, cfg)           # C2/C3/C5 — shells, torpedoes, charges, splash
 	if world.effects.size() > 400:             # render drains every frame; cap is a headless backstop
 		world.effects = world.effects.slice(world.effects.size() - 400)
