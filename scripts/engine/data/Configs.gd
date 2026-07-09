@@ -13,6 +13,7 @@ var enemies: EnemyConfig
 var progress: ProgressConfig
 var tech: TechConfig
 var sonar: SonarConfig
+var airwing: AirWingConfig
 
 # Class-default values (which mirror every .tres) — probes use this so they run without the
 # resource files; Main uses load_all() for the real tunables.
@@ -26,6 +27,7 @@ static func defaults() -> Configs:
 	c.progress = ProgressConfig.new()
 	c.tech = TechConfig.spec_defaults()
 	c.sonar = SonarConfig.new()
+	c.airwing = AirWingConfig.new()
 	return c
 
 static func load_all() -> Configs:
@@ -46,4 +48,6 @@ static func load_all() -> Configs:
 	if te != null and te.catalog.size() > 0: c.tech = te
 	var so := load("res://config/sonar.tres") as SonarConfig
 	if so != null: c.sonar = so
+	var aw := load("res://config/airwing.tres") as AirWingConfig
+	if aw != null: c.airwing = aw
 	return c

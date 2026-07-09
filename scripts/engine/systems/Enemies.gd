@@ -47,6 +47,9 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 				p.life = (def.torp_run if torp else def.fire_range * 1.4) / def.shell_speed
 				if not torp:   # no gunflash from under the water
 					world.effects.append({ "type": "gunflash", "pos": e.pos, "ang": ang })
+				if torp and cfg.tech.helo:   # C6: the bird heard the launch — worth investigating
+					world.helo_mark = e.pos
+					world.helo_mark_until = world.elapsed + cfg.airwing.investigate_hold
 		elif Hull.dist_to_hull(world, e.pos) <= def.radius + Hull.RADIUS:
 			e.active = false   # the dive lands: hull pays, the drone is spent
 			Hull.damage(world, def.dmg, cfg)

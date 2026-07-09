@@ -59,14 +59,18 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 						damage_enemy(world, e, p.dmg, cfg)
 				dead = true
 		else:
+			var struck: bool = false
 			for e in world.enemies:
 				if not e.active or e.layer == "sub":   # shells fly OVER the deep (C5 law) — domain
 					continue                            # tags gate targeting; PHYSICS spares subs too
 				if e.pos.distance_to(p.pos) <= cfg.enemies.by_id(e.type_id).radius + 2.0:
 					damage_enemy(world, e, p.dmg, cfg)
 					_ignite_if_incendiary(world, cfg, e, p.wid)
+					struck = true
 					dead = true
 					break
+			if not struck and p.life <= 0.0 and p.wid == "doorgun":
+				world.effects.append({ "type": "gunsplash", "pos": p.pos })   # the round slaps the sea (C6)
 		if dead:
 			pool.release(p)
 

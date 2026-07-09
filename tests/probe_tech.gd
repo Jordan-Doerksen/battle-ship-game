@@ -161,7 +161,7 @@ func _initialize() -> void:
 	fails += _check(ratio > 1.4 and ratio < 2.0 and w4d.crash_ready == ready_first,
 		"crash turn: window delta x%.2f (~1.8); cooldown not re-armed mid-window" % ratio)
 
-	# 5 — spend rules + AIR WING lock
+	# 5 — spend rules + AIR WING order (C6: the column is live — air1 buys, air2 waits behind it)
 	var pc5: ProgressConfig = base.progress
 	var prof := Profile.new()
 	prof.xp = _xp_for_level(pc5, 3)   # 2 points
@@ -172,9 +172,10 @@ func _initialize() -> void:
 	var chain_ok: bool = not Tech.can_buy(prof, "sea6", base.tech, pc5)
 	prof.unlocked = ["sea1", "sea2", "sea3", "sea4", "sea5"]
 	var marquee_ok: bool = Tech.can_buy(prof, "sea6", base.tech, pc5)
-	var air_ok: bool = not Tech.can_buy(prof, "air1", base.tech, pc5)
+	var air_ok: bool = Tech.can_buy(prof, "air1", base.tech, pc5) \
+		and not Tech.can_buy(prof, "air2", base.tech, pc5)
 	fails += _check(order_ok and broke_ok and chain_ok and marquee_ok and air_ok,
-		"spend rules: in-branch order, point gating, marquee chain, AIR WING locked")
+		"spend rules: in-branch order, point gating, marquee chain, AIR WING live behind air1")
 
 	# 6 — profile roundtrip (probe-only path)
 	var probe_path := "user://profile_probe.cfg"

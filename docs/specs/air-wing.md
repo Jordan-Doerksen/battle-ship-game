@@ -1,8 +1,8 @@
 # Spec — C6: AIR WING (the Helicopter)
 
-**Status:** APPROVED 2026-07-09 (owner) · Interviewed 2026-07-09 · Mockup BUILT (`design/air-wing.html`,
-harness 8/8 incl. zero-tech byte-parity vs the shipped C5 sim) — AT THE GATE, awaiting owner
-feel-approval · Not ported
+**Status:** BUILT 2026-07-09 · Spec APPROVED 2026-07-09 (owner) · Mockup rev 2 APPROVED 2026-07-09
+(owner: "apoproved" after gate revs 1–2 — `design/air-wing.html` stays the visual reference) ·
+Gated by `tests/probe_airwing.gd` (10 checks) in `verify.sh`
 **Resolves:** open thread #3 (helipad function — DECISIONS "Not Yet Decided" list). The helipad has
 been part of the hull's visual identity since C1; the AIR WING tech column has sat CLASSIFIED since
 C4. This chunk gives both their function.

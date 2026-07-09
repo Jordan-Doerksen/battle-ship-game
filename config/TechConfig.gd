@@ -21,6 +21,8 @@ extends Resource
 @export var airburst_radius: float = 20.0
 @export var salvo: bool = false
 @export var salvo_offset: float = 0.015
+@export var helo: bool = false             # C6 AIR WING: the bird itself (air1 WHIRLYBIRD)
+@export var mad_gear: bool = false         # C6 marquee: bird-made contacts never decay
 
 func by_id(nid: String) -> TechDef:
 	for n in catalog:
@@ -71,11 +73,13 @@ static func spec_defaults() -> TechConfig:
 		_node("son3", "SONAR", "Deep Pattern", "+2 charges per volley", 2, [{ "p": "sonar.dc_count", "add": 2 }]),
 		_node("son4", "SONAR", "Quick Racks", "−30% volley cooldown", 2, [{ "p": "sonar.dc_cooldown", "mul": 0.7 }]),
 		_node("son5", "SONAR", "ASDIC LOCK", "−50% scatter, +30% blast — the pattern falls tight", 3, [{ "p": "sonar.dc_scatter", "mul": 0.5 }, { "p": "sonar.dc_blast", "mul": 1.3 }], true),
-		_node("air1", "AIR WING", "████████", "PENDING BUREAU AUTHORIZATION", 0, [], false, true),
-		_node("air2", "AIR WING", "██████", "████ ████████ ████", 0, [], false, true),
-		_node("air3", "AIR WING", "█████████", "REDACTED — EXECUTIVE ORDER", 0, [], false, true),
-		_node("air4", "AIR WING", "███████", "████████", 0, [], false, true),
-		_node("air5", "AIR WING", "████ ████", "CLEARANCE INSUFFICIENT", 0, [], false, true),
+		_node("air1", "AIR WING", "WHIRLYBIRD", "the bird itself — de-redacts the program", 1, [{ "p": "tech.helo", "set": true }]),
+		_node("air2", "AIR WING", "Big Dipper", "+40% dip radius", 1, [{ "p": "airwing.dip_radius", "mul": 1.4 }]),
+		_node("air3", "AIR WING", "Drop Tanks", "+50% endurance, −40% turnaround", 2, [{ "p": "airwing.patrol_secs", "mul": 1.5 }, { "p": "airwing.turnaround_secs", "mul": 0.6 }]),
+		_node("air4", "AIR WING", "Weapons Free", "+2 charges per drop", 2, [{ "p": "airwing.dc_count", "add": 2 }]),
+		_node("air5", "AIR WING", "Door Gunner", "a gunner on the skids — weak, wild, glorious", 2, [{ "p": "airwing.gunners", "add": 1 }]),
+		_node("air6", "AIR WING", "Second Gunner", "both doors — twice the tracer, same aim", 2, [{ "p": "airwing.gunners", "add": 1 }]),
+		_node("air7", "AIR WING", "MAD GEAR", "bird-made contacts never decay this wave", 3, [{ "p": "tech.mad_gear", "set": true }], true),
 	]
 	c.catalog = cat
 	return c

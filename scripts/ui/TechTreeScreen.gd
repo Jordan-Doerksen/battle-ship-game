@@ -84,7 +84,8 @@ func _draw() -> void:
 		var br: String = BRANCHES[b]
 		var cx: float = left + b * (col_w + 12.0)
 		var cy: float = 92.0
-		var classified: bool = br == "AIR WING"
+		# C6: buying WHIRLYBIRD declassifies the program — until then only air1 shows its face
+		var classified: bool = br == "AIR WING" and not _profile.unlocked.has("air1")
 		var nodes: Array = []
 		for n in _tech.catalog:
 			if n.branch == br:
@@ -99,28 +100,35 @@ func _draw() -> void:
 			var r := Rect2(cx + 8.0, ny, col_w - 16.0, 60.0)
 			var owned: bool = _profile.unlocked.has(n.id)
 			var buyable: bool = Tech.can_buy(_profile, n.id, _tech, _pc)
-			var alpha: float = 0.45 if (classified or (not owned and not buyable)) else 1.0
+			# C6: air2+ stay REDACTED until WHIRLYBIRD is owned; air1 itself is a normal buy
+			var redacted: bool = classified and n.id != "air1"
+			var alpha: float = 0.45 if (redacted or (not owned and not buyable)) else 1.0
 			if owned:
 				draw_rect(r, Color(RED.r, RED.g, RED.b, 0.12))
 			else:
 				draw_rect(r, Color(FOAM.r, FOAM.g, FOAM.b, 0.03))
 			draw_rect(r, Color(RED.r, RED.g, RED.b, alpha) if owned else Color(BRASS_DIM.r, BRASS_DIM.g, BRASS_DIM.b, alpha), false, 1.0)
-			var name_col: Color = FOAM if owned else (RED if n.marquee else BRASS)
+			var nm: String = "████████" if redacted else n.display_name.to_upper()
+			var ds: String = "CLEARANCE: FLIGHT CREW ONLY" if redacted else n.desc
+			var name_col: Color = FOAM if owned else (RED if n.marquee and not redacted else BRASS)
 			name_col.a = alpha
 			draw_string(_sans, Vector2(r.position.x + 8.0, r.position.y + 18.0),
-				n.display_name.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, name_col)
+				nm, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, name_col)
 			var desc_col := Color(BRASS_DIM.r, BRASS_DIM.g, BRASS_DIM.b, alpha)
 			draw_string(_mono, Vector2(r.position.x + 8.0, r.position.y + 36.0),
-				n.desc.left(34), HORIZONTAL_ALIGNMENT_LEFT, -1, 9, desc_col)
-			if n.desc.length() > 34:
+				ds.left(34), HORIZONTAL_ALIGNMENT_LEFT, -1, 9, desc_col)
+			if ds.length() > 34:
 				draw_string(_mono, Vector2(r.position.x + 8.0, r.position.y + 48.0),
-					n.desc.substr(34, 34), HORIZONTAL_ALIGNMENT_LEFT, -1, 9, desc_col)
-			if not n.locked:
+					ds.substr(34, 34), HORIZONTAL_ALIGNMENT_LEFT, -1, 9, desc_col)
+			if not n.locked and not redacted:
 				var ct := "OWNED" if owned else "%d PT" % n.cost
 				var cc: Color = RED if owned else BRASS_DIM
 				draw_string(_mono, Vector2(r.end.x - _mono.get_string_size(ct, HORIZONTAL_ALIGNMENT_LEFT, -1, 9).x - 6.0, r.position.y + 14.0),
 					ct, HORIZONTAL_ALIGNMENT_LEFT, -1, 9, cc)
 				_node_hits.append({ "rect": r, "id": n.id })
+			elif redacted:
+				draw_string(_mono, Vector2(r.end.x - _mono.get_string_size("█ PT", HORIZONTAL_ALIGNMENT_LEFT, -1, 9).x - 6.0, r.position.y + 14.0),
+					"█ PT", HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(BRASS_DIM.r, BRASS_DIM.g, BRASS_DIM.b, alpha))
 			ny += 68.0
 		if classified:   # the stamp
 			draw_set_transform(Vector2(cx + col_w * 0.5, ny + 10.0), -0.07, Vector2.ONE)

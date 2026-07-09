@@ -4,6 +4,38 @@ Chunk log, newest first. Each chunk ships only after it passes the cross-check a
 
 ---
 
+## C6 — AIR WING · 2026-07-09 · Built
+
+The pad was never set dressing. Open thread #3 resolves: an autonomous ASW helicopter flies off
+the stern, and the CLASSIFIED column declassifies. Full pipeline: interview (10 decisions) →
+approved spec → mockup → TWO owner gate revisions → approval ("apoproved") → Godot port.
+
+- **The bird (air1 WHIRLYBIRD unlocks it):** one airframe, one state machine (pad → air → rtb) on
+  GameWorld, invulnerable by construction (nothing targets it; no damage path exists). Flies every
+  wave regardless — spectacle first.
+- **Gate rev 1 — escort weave + throttle:** a smooth S-weave across the bow that rides the ship;
+  the aim point leads further ahead as the ship speeds up, and the bird has a real throttle (ease
+  to station-keeping near the point — which scales with ship speed — open to ship+80 when behind;
+  astern beeline failsafe). Contract, probe-gated: from any transient dip it is back ahead of the
+  bow within 5 s. Constant-speed pursuit (draft) plunged ~800 u astern at flank — retired.
+- **ASW (detector-first):** dipping sonar (240 u) writes the SAME contact latch as ship sonar —
+  its finds are your diamonds and they arm your stern racks. Over a detected sub it drops a tight
+  contact-centered 2-charge pattern (1 dmg, 9 s cadence): softens and marks, never finishes fast —
+  the stern game stays king. Torpedo launches mark an investigate point it runs down.
+- **Gate rev 2 — DOOR GUNNERS (air5/air6):** weak, wild MG fire at the nearest air/surface target
+  near the bird; every round rolls spread AND a 40–100% reach fuse, so bursts stitch the water
+  short of max range. The deep draws zero fire.
+- **MAD GEAR (air7 marquee):** bird-made contacts never decay this wave; ship contacts still do.
+- **Deaf-deep law made PHYSICAL (latent C5 gap the gunners exposed):** friendly shells and
+  airbursts now skip submerged hulls in `Projectiles.gd` and both mockup sims — depth charges
+  remain the only sub killer, by physics and not just targeting.
+- **Tree:** the five ████ placeholders superseded by seven real nodes (1/1/2/2/2/2/3); air2+ stay
+  redacted on the board until WHIRLYBIRD is owned. `tech.tres` regenerated (36 nodes).
+- **Verify:** `probe_airwing.gd` — 10 checks (determinism, zero-tech inertness, extended ears,
+  detector-first prosecution, fuel loop, speed-coupling recovery contract, MAD GEAR, tree
+  derivation incl. 1-then-2 gunners, invulnerability, door gunners + deaf deep) — added to
+  `verify.sh`; `probe_tech`'s AIR-WING-locked check superseded. `ScreenshotC6` harness.
+
 ## C5 — SONAR, SUBMARINES & DEPTH CHARGES · 2026-07-09 · Built
 
 Something is under the water. The third D1.9 domain lands, completing the founding air/surface/sub

@@ -5,9 +5,9 @@
 > front-load design that will drift. Pairs with `DECISIONS.md` (the manifest) and `ARCHITECTURE.md`
 > (the map). Full source narrative: `docs/DESIGN-BRIEF.md`.
 >
-> **Status:** C0–C5 built — the game plays end to end across all three domains (air / surface /
-> sub) and carries a persistent career (levels + tech tree). C6+ planned, high-level only — each
-> is locked in detail at the top of its own chunk via `/spec-feature`.
+> **Status:** C0–C6 built — the game plays end to end across all three domains (air / surface /
+> sub), carries a persistent career (levels + tech tree), and flies its own wingman. C7+ planned,
+> high-level only — each is locked in detail at the top of its own chunk via `/spec-feature`.
 
 ---
 
@@ -21,8 +21,9 @@ weight; your hull's turrets auto-fire at anything in range regardless of which w
 you can force any battery onto a point. The ship's hull and turret fit are FIXED — visible mounts in a
 real battleship arrangement (small numerous, medium fewer, large fewest). Progression is persistent
 LEVELS earned across runs, unlocking a TECH TREE: movement upgrades, turret-size-specific upgrades,
-bullet effects, traverse, sonar, and a helicopter branch (owner change request 2026-07-08 —
-replaced the original purchasable-hardpoint economy). Subs are invisible until passive sonar
+bullet effects, traverse, sonar, and the AIR WING — an autonomous ASW helicopter wingman off the
+stern pad (owner change request 2026-07-08 replaced the original purchasable-hardpoint economy;
+the helicopter branch got its function in C6). Subs are invisible until passive sonar
 reveals them; depth charges are free, automatic, and deliberately inaccurate — but they arm ONLY
 on a live sonar contact (owner refinement at the C5 interview), and no gun can touch the deep.
 Tone: 1950s B-movie schlock, played completely straight-faced.
@@ -81,5 +82,12 @@ at the moment it's built — recorded then, not now.
   marquee. Locked by `docs/specs/sonar-subs.md` (`design/sonar-subs.html` stays the visual
   reference).
 
-- **C6+ — not yet scoped.** The helicopter/AIR WING function (open thread #3), boss ladder + enemy
-  naming (open thread #2). Order TBD — see `DECISIONS.md` Build Timeline.
+- **C6 — AIR WING (built 2026-07-09).** The helipad earns its keep: an autonomous, invulnerable
+  ASW helicopter unlocked by WHIRLYBIRD (air1) — weaving escort with a speed-coupled throttle
+  (never left astern), dipping sonar feeding the C5 contact latch, detector-first light drops,
+  door gunners (gate rev 2), fuel loop, MAD GEAR marquee. The CLASSIFIED column declassifies into
+  seven real nodes. Locked by `docs/specs/air-wing.md` (`design/air-wing.html` stays the visual
+  reference).
+
+- **C7+ — not yet scoped.** Boss ladder + enemy naming (open thread #2). See `DECISIONS.md` Build
+  Timeline.

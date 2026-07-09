@@ -14,7 +14,8 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 		Enemies.step(world, dt, cfg)           # C3/C5 — enemy movement + gunboat/sub fire
 		Sonar.step(world, dt, cfg)             # C5 — passive detection + contact latch
 		DepthCharges.step(world, dt, cfg)      # C5 — contact-gated stern volleys
+		AirWing.step(world, dt, cfg)           # C6 — the ASW wingman (inert without tech.helo)
 		Turrets.step(world, dt, cfg)           # C2 — hardpoint targeting/traverse/fire
-	Projectiles.step(world, dt, cfg)           # C2/C3/C5 — shells, torpedoes, charges, splash
+	Projectiles.step(world, dt, cfg)           # C2/C3/C5/C6 — shells, torpedoes, charges, tracers
 	if world.effects.size() > 400:             # render drains every frame; cap is a headless backstop
 		world.effects = world.effects.slice(world.effects.size() - 400)

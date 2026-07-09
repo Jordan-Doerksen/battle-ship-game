@@ -229,6 +229,14 @@ func _draw_radar() -> void:
 		var off: Vector2 = (p.pos - _world.ship_pos) * k
 		if off.length() <= RADAR_R:
 			draw_rect(Rect2(c.x + off.x - 0.8, c.y + off.y - 0.8, 1.6, 1.6), Color(ORANGE.r, ORANGE.g, ORANGE.b, 0.8))
+	# C6: the bird on the scope — a friendly cross + its dip ring while airborne
+	if _cfgs.tech.helo and _world.helo_state != "pad":
+		var hoff: Vector2 = (_world.helo_pos - _world.ship_pos) * k
+		if hoff.length() <= RADAR_R:
+			var hb := c + hoff
+			draw_arc(hb, _cfgs.airwing.dip_radius * k, 0.0, TAU, 24, Color(FOAM.r, FOAM.g, FOAM.b, 0.20), 1.0, true)
+			draw_line(hb + Vector2(-3, 0), hb + Vector2(3, 0), Color(FOAM.r, FOAM.g, FOAM.b, 0.9), 1.2)
+			draw_line(hb + Vector2(0, -3), hb + Vector2(0, 3), Color(FOAM.r, FOAM.g, FOAM.b, 0.9), 1.2)
 	# own ship + heading tick
 	var f := Vector2(sin(_world.ship_heading), -cos(_world.ship_heading))
 	draw_line(c - f * 4.0, c + f * 7.0, FOAM, 1.6)

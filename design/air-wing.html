@@ -702,9 +702,14 @@ function stepAirWing(sim, cfg, dt) {
       h.phase += aw.weave_rate * dt;
       const f = dirOf(sim.ship.heading), r = { x: -f.y, y: f.x };
       const shipSpd0 = Math.hypot(sim.ship.vx, sim.ship.vy);
-      const ahead = (aw.picket_dist + shipSpd0) * (0.72 + 0.28 * Math.sin(h.phase * 0.53));
-      const across = aw.weave_amp * Math.sin(h.phase);
-      pt = { x: sim.ship.x + f.x * ahead + r.x * across, y: sim.ship.y + f.y * ahead + r.y * across };
+      const along = (h.x - sim.ship.x) * f.x + (h.y - sim.ship.y) * f.y;
+      if (along < 0) {   // caught astern: beeline to the bow station, no lateral wandering
+        pt = { x: sim.ship.x + f.x * aw.picket_dist, y: sim.ship.y + f.y * aw.picket_dist };
+      } else {
+        const ahead = (aw.picket_dist + shipSpd0) * (0.72 + 0.28 * Math.sin(h.phase * 0.53));
+        const across = aw.weave_amp * Math.sin(h.phase);
+        pt = { x: sim.ship.x + f.x * ahead + r.x * across, y: sim.ship.y + f.y * ahead + r.y * across };
+      }
     }
   }
   const desired = angleTo(h, pt);

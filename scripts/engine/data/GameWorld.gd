@@ -35,6 +35,16 @@ var xp_run: int = 0                      # XP earned this sortie (C4); Main bank
 var crash_until: float = -1.0            # CRASH TURN window end (marquee; Movement.gd)
 var crash_ready: float = 0.0             # CRASH TURN cooldown gate
 var dc_cool: float = 0.0                 # depth-charge rack cooldown (C5; DepthCharges.gd)
+var helo_state: String = "pad"           # C6 AIR WING (AirWing.gd): pad | air | rtb
+var helo_pos: Vector2 = Vector2(0, 65)   # starts on the stern helipad (ship at origin, heading 0)
+var helo_heading: float = 0.0
+var helo_fuel: float = 0.0               # airborne seconds remaining
+var helo_rearm: float = 0.0              # pad seconds remaining before relaunch
+var helo_drop_cool: float = 0.0          # light-rack cooldown
+var helo_phase: float = 0.0              # escort-weave phase (gate rev 1)
+var helo_gun_cool: float = 0.0           # door-gun cadence (gate rev 2)
+var helo_mark: Vector2 = Vector2.ZERO    # last torpedo launch point (valid while elapsed < helo_mark_until)
+var helo_mark_until: float = -1.0
 var godmode: bool = false                # DEV test kit only (debug builds); guards Hull.damage
 var freeze_waves: bool = false           # DEV test kit only (debug builds); pauses the director
 

@@ -15,6 +15,7 @@ static func apply(base: Configs, unlocked: Array) -> Configs:
 	c.progress = base.progress.duplicate()
 	c.tech = base.tech.duplicate(true)
 	c.sonar = base.sonar.duplicate()
+	c.airwing = base.airwing.duplicate()
 	for node in c.tech.catalog:
 		if node.locked or not unlocked.has(node.id):
 			continue
@@ -30,6 +31,7 @@ static func _apply_mod(c: Configs, m: Dictionary) -> void:
 		"waves": target = c.waves
 		"tech": target = c.tech
 		"sonar": target = c.sonar
+		"airwing": target = c.airwing
 		"weapons": target = c.weapons.by_id(path[1])
 		"enemies": target = c.enemies.by_id(path[1])
 	if target == null:

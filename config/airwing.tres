@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="AirWingConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://config/AirWingConfig.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+speed = 160.0
+turn = 2.6
+speed_margin = 80.0
+picket_dist = 360.0
+weave_amp = 240.0
+weave_rate = 0.55
+dip_radius = 240.0
+drop_range = 70.0
+dc_count = 2
+dc_scatter = 40.0
+dc_dmg = 1
+dc_cooldown = 9.0
+patrol_secs = 45.0
+turnaround_secs = 10.0
+investigate_hold = 6.0
+gunners = 0
+gun_range = 260.0
+gun_rate = 3.0
+gun_dmg = 1
+gun_spread = 0.14
+gun_speed = 520.0

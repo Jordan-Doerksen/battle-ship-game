@@ -124,6 +124,7 @@ func _draw() -> void:
 	_draw_projectiles()
 	_draw_hull()
 	_draw_mounts()
+	_draw_helo()
 	_draw_fx()
 
 func _view_rect() -> Rect2:
@@ -248,6 +249,8 @@ func _draw_projectiles() -> void:
 			draw_circle(p.pos, 3.5 - sink * 2.0, Color(FOAM.r, FOAM.g, FOAM.b, 0.7 - sink * 0.5))
 			draw_arc(p.pos, 5.0 + sink * 6.0, 0.0, TAU, 20,
 				Color(FOAM.r, FOAM.g, FOAM.b, 0.3 - sink * 0.2), 1.0, true)
+		elif p.wid == "doorgun":   # C6: door-gun tracer — thin, hot, wild
+			draw_line(tail, p.pos, Color(FLASH.r, FLASH.g, FLASH.b, 0.75), 1.0)
 		elif p.hostile:
 			draw_line(tail, p.pos, Color(0.914, 0.404, 0.259, 0.95), 2.0)
 			draw_circle(p.pos, 2.4, Color(0.914, 0.404, 0.259, 0.95))
@@ -345,10 +348,47 @@ func _draw_mounts() -> void:
 			draw_circle(Vector2(0, 2.2), 2.6, house)                                    # pedestal + tub
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
+# C6: the AIR WING bird — shadow + dip ring while airborne, fuselage/boom/rotor at the helo
+# heading, idle rotor + rearm arc on the pad. Reads sim state one-way; rotor spin is cosmetic.
+func _draw_helo() -> void:
+	if _cfgs == null or not _cfgs.tech.helo or not show_ship:
+		return
+	var hp: Vector2 = _world.helo_pos
+	var airborne: bool = _world.helo_state != "pad"
+	var now: float = Time.get_ticks_msec() * 1.0
+	if airborne:
+		# the shadow slips off the airframe — the bird reads as ABOVE the water
+		draw_set_transform(hp + Vector2(9, 12), 0.0, Vector2(1.0, 0.57))
+		draw_circle(Vector2.ZERO, 7.0, Color(0.016, 0.047, 0.063, 0.35))
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		# dip ring pulse: the ears in the water
+		var k: float = fmod(now * 0.0006, 1.0)
+		draw_arc(hp, maxf(0.5, _cfgs.airwing.dip_radius * k), 0.0, TAU, 48,
+			Color(FOAM.r, FOAM.g, FOAM.b, 0.18 * (1.0 - k)), 1.2, true)
+		draw_arc(hp, _cfgs.airwing.dip_radius, 0.0, TAU, 48, Color(FOAM.r, FOAM.g, FOAM.b, 0.10), 1.0, true)
+	draw_set_transform(hp, _world.helo_heading, Vector2.ONE)
+	var body: Color = Color(0.353, 0.439, 0.478) if airborne else Color(0.278, 0.345, 0.373)
+	draw_set_transform(hp, _world.helo_heading, Vector2(0.52, 1.0))
+	draw_circle(Vector2(0, 1), 6.5, body)                       # fuselage (ellipse via scale)
+	draw_set_transform(hp, _world.helo_heading, Vector2.ONE)
+	draw_rect(Rect2(-1.1, 4, 2.2, 9), body)                     # tail boom
+	draw_rect(Rect2(-2.6, 12, 5.2, 1.6), STEEL)                 # tail rotor bar
+	draw_circle(Vector2(0, -2.2), 1.5, Color(FOAM.r, FOAM.g, FOAM.b, 0.75))   # canopy glint
+	var spin: float = now * (0.045 if airborne else 0.006)      # idle turn on the pad
+	draw_arc(Vector2.ZERO, 11.0, 0.0, TAU, 24, Color(FOAM.r, FOAM.g, FOAM.b, 0.14), 1.0, true)
+	draw_line(Vector2(cos(spin), sin(spin)) * 11.0, Vector2(-cos(spin), -sin(spin)) * 11.0,
+		Color(FOAM.r, FOAM.g, FOAM.b, 0.55), 1.4)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if not airborne and _world.helo_rearm > 0.0:                # rearm progress arc over the pad
+		var kk: float = 1.0 - _world.helo_rearm / maxf(_cfgs.airwing.turnaround_secs, 0.001)
+		draw_arc(hp, 16.0, -PI / 2.0, -PI / 2.0 + TAU * kk, 24,
+			Color(0.804, 0.729, 0.557, 0.7), 2.0, true)
+
 const FX_LIFE := {
 	"muzzle": 0.12, "gunflash": 0.12, "hit": 0.12, "ignite": 0.3, "shiphit": 0.4,
 	"airburst": 0.45, "death": 0.5, "splash": 0.7, "crashturn": 0.8, "shipdeath": 2.2,
 	"dcvolley": 0.3, "dcblast": 0.9, "contact": 1.2,
+	"helodrop": 0.35, "helodown": 0.5, "gunsplash": 0.25,
 	"waveclear": 0.0,
 }
 
@@ -387,6 +427,12 @@ func _draw_fx() -> void:
 				draw_arc(e["pos"], maxf(0.5, e["r"] * k), 0.0, TAU, 40, Color(0.094, 0.165, 0.212, 0.8 * (1.0 - k)), 3.0, true)
 			"dcvolley":   # C5: the racks roll — a foam pulse off the stern
 				draw_arc(e["pos"], 12.0 + 30.0 * k, 0.0, TAU, 32, Color(FOAM.r, FOAM.g, FOAM.b, 0.6 * (1.0 - k)), 1.5, true)
+			"helodrop":   # C6: the light rack lets go
+				draw_arc(e["pos"], 8.0 + 22.0 * k, 0.0, TAU, 24, Color(FOAM.r, FOAM.g, FOAM.b, 0.55 * (1.0 - k)), 1.4, true)
+			"helodown":   # C6: flare + touchdown puff on the pad
+				draw_arc(e["pos"], 10.0 + 14.0 * k, 0.0, TAU, 24, Color(0.804, 0.729, 0.557, 0.5 * (1.0 - k)), 1.2, true)
+			"gunsplash":  # C6: a door-gun round stitches the water
+				draw_circle(e["pos"], 1.5 + 3.0 * k, Color(FOAM.r, FOAM.g, FOAM.b, 0.5 * (1.0 - k)))
 			"contact":    # C5: sonar acquisition ping — expanding diamond over the water
 				var cr: float = 10.0 + 30.0 * k
 				var dia := PackedVector2Array([

@@ -70,22 +70,22 @@ marquee), `xp_sub` 80, radar sonar ring + sonar-gated diamond blips, ripple tell
 fx, six-column tree, dev-kit `+SUB`. `probe_sonar` (8 checks incl. zero-tech baseline) gates it
 in `verify.sh`.
 
-**C6 — AIR WING (helicopter) is MID-GATE (2026-07-09, revision 2):** interviewed + spec approved
-(`docs/specs/air-wing.md`), interactive mockup BUILT + revised on first owner review
-(`design/air-wing.html`): autonomous ASW wingman — air1 WHIRLYBIRD unlocks the bird + de-redacts
-the column; **gate rev 1** smooth S-weave escort riding the ship with a real throttle (top +
-station-keeping speed scale with ship speed — never left astern); dipping sonar writing the C5
-latch; light contact-centered drops on a 9s cadence (detector-first: it softens, the stern racks
-finish); ~45s/10s fuel loop; **gate rev 2** DOOR GUNNER ×2 nodes (weak, wild MG fire at
-air/surface near the bird, rounds roll spread + short reach and slap the sea — SEVEN-node column);
-MAD GEAR marquee at the tip. Scratchpad harness 10/10 incl. zero-tech byte-parity vs the shipped
-C5 sim. Revision 2 published, awaiting owner approval; NOT yet ported. Found + fixed at this gate
-(already in Godot + both mockups, Change Log): the deaf-deep law is now PHYSICAL — shells/airburst
-skip submerged hulls. On approval: port (AirWingConfig + AirWing.gd after DepthCharges + helo
-render/radar + real air1–7 nodes in tech.tres + probe_airwing + resolve open thread #3).
+**C6 — AIR WING is BUILT (2026-07-09):** interview → approved spec → mockup through two owner
+gate revisions (weaving escort + speed-coupled throttle; DOOR GUNNER ×2) → Godot port. The stern
+pad flies an autonomous, invulnerable ASW wingman: air1 WHIRLYBIRD unlocks it and de-redacts the
+seven-node column (`tech.tres` at 36 nodes); `AirWing.gd` (after DepthCharges, inert without
+`tech.helo` — zero-tech probe-gated) runs the pad→air→rtb state machine, the escort weave +
+throttle (aim point rides the ship and leads with its speed; astern beeline; acceptance contract
+is RECOVERY — back ahead of the bow <5s from any transient dip), dipping sonar on the C5 latch
+(MAD GEAR: bird latches never decay), contact-centered light drops (detector-first: softens, the
+stern racks finish), door gunners (wild short-reach tracers vs air/surface; `gunsplash` water
+slaps; the deep draws zero fire). Torpedo launches mark `helo_mark` for its investigate behavior.
+Render: rotor/shadow/dip ring/pad rearm arc + radar bird blip. `probe_airwing` (10 checks) gates
+it; `probe_tech`'s AIR-WING-locked check superseded (air1 buys, air2 gates). Also this chunk: the
+deaf-deep law went PHYSICAL (latent C5 gap — shells/airbursts now skip submerged hulls everywhere).
 
-**After C6:** the boss ladder + naming pass (open thread #2). Needs its own `/spec-feature`
-interview first.
+**Next (C7):** the boss ladder + naming pass (open thread #2 — the last founding open thread with
+systems weight). Needs its own `/spec-feature` interview first.
 
 ## 3. Tree layout
 
@@ -96,11 +96,11 @@ scripts/
                   Profile.gd — the save file; Tech.gd — config derivation + spend rules)
   engine/         the deterministic sim
     Sim.gd        step root — fixed order: Movement, Waves, Enemies, Sonar, DepthCharges,
-                  Turrets, Projectiles
+                  AirWing, Turrets, Projectiles
     data/         GameWorld truth object, InputState, Configs bundle
     entities/     plain data classes (Enemy, Projectile, Mount)
     systems/      static funcs that mutate GameWorld (Movement C1; Turrets/Projectiles C2;
-                  Waves/Enemies/Hull C3; Sonar/DepthCharges C5)
+                  Waves/Enemies/Hull C3; Sonar/DepthCharges C5; AirWing C6)
     util/         Rng, Pool — determinism primitives (Pool feeds projectiles)
   render/         one-way sim → view (FieldRenderer: sea/wake/hull/turrets/enemies/fx; patina.gdshader)
   ui/             screens + HUD (HelmGauges — gauges/pips/wave plate/radar/reticle/lost card;

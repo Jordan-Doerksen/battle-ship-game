@@ -1,5 +1,5 @@
 # Decisions Manifest — Earth Defense Force (working title)
-**Started:** 2026-07-08  ·  **Last Updated:** 2026-07-09  ·  **Status:** C5 Sonar, Subs & Depth Charges BUILT — all three D1.9 domains live (C0–C4 built 2026-07-08)
+**Started:** 2026-07-08  ·  **Last Updated:** 2026-07-09  ·  **Status:** C6 AIR WING BUILT — the bird flies; open thread #3 resolved (C0–C5 also built)
 
 > The single source of truth, written *for the next agent* — not a doc anyone maintains by hand.
 > Every future agent consults this before an architectural/behavioral change. Never silently rewrite
@@ -174,9 +174,11 @@ treated as locked:
    doesn't block systems work.
 2. **Boss ladder & enemy roster naming** — needs a B-movie-appropriate replacement for fulfillment's
    corporate title-ladder (mothership hierarchy, drone type names). Not yet designed.
-3. **Helipad function** — part of the hull's visual identity (replaces a hangar/fighter bay), but
-   whether it does anything mechanically (support ability? cosmetic only? `Fighters.gd` analog?) is
-   undefined.
+3. ~~**Helipad function**~~ — **RESOLVED 2026-07-09** by the C6 interview + spec
+   (`docs/specs/air-wing.md`): the pad flies THE AIR WING — an autonomous, invulnerable ASW
+   wingman (detector-first: its dipping sonar feeds the C5 contact latch, its light rack softens,
+   the stern racks finish), unlocked by air1 WHIRLYBIRD, upgraded through the declassified
+   seven-node column (door gunners at gate rev 2, MAD GEAR marquee). Built in C6.
 4. **Working title / trademark check** — "Earth Defense Force" collides with an existing real game
    franchise (Sandlot/D3 Publisher). Revisit before the name goes into a public repo/store listing.
 5. ~~**Hardpoint force-fire override & turret tracking**~~ — **RESOLVED 2026-07-08** by the C2
@@ -212,13 +214,34 @@ treated as locked:
   wake-drawing torpedoes, passive sonar detection + contact latch (D1.10), contact-gated stern
   depth-charge volleys (D1.11 as refined), the SONAR tech branch + ASDIC LOCK marquee, radar sonar
   ring + diamond blips, ripple tell. Spec: `docs/specs/sonar-subs.md`.
-- **C6+ — not yet scoped.** The helicopter/AIR WING function (open thread #3), boss ladder + naming
-  (open thread #2) — each needs its own `/spec-feature` interview before implementation, per this
-  repo's `CLAUDE.md`.
+- **C6 — AIR WING (built 2026-07-09).** Interviewed, spec'd, mockup-gated through two owner
+  revisions (weaving escort + speed-coupled throttle; door gunners ×2), and ported: the autonomous
+  ASW helicopter off the stern pad — escort weave, dipping sonar on the C5 latch, detector-first
+  light drops, fuel loop, MAD GEAR marquee, the AIR WING column declassified (7 real nodes).
+  Resolves open thread #3. Spec: `docs/specs/air-wing.md`.
+- **C7+ — not yet scoped.** Boss ladder + naming (open thread #2) — needs its own `/spec-feature`
+  interview before implementation, per this repo's `CLAUDE.md`.
 
 ---
 
 ## Change Log
+- **2026-07-09 — C6 AIR WING built; open thread #3 resolved; the CLASSIFIED column declassifies.**
+  The approved C6 spec + mockup (two owner gate revisions) ported to Godot: `AirWing.gd` after
+  DepthCharges in the fixed order (inert without `tech.helo` — zero-tech probe-gated),
+  `AirWingConfig`/`airwing.tres` (per-system rule), the single-bird state machine on GameWorld
+  (pad → air → rtb), the ESCORT WEAVE + THROTTLE flight model (gate rev 1: aim point rides the
+  ship and leads with its speed; the bird eases near station and opens up to ship+margin when
+  behind — plus an astern beeline rule; the acceptance contract is RECOVERY: back ahead of the bow
+  within 5 s from any transient dip), dipping sonar writing the same `detected_until` latch as
+  ship sonar (MAD GEAR marquee: bird-made latches never decay), contact-centered light drops
+  (detector-first — softens, never finishes fast; the stern racks stay the killer), DOOR GUNNERS
+  (gate rev 2: two nodes, weak wild tracers vs air/surface with rolled short reach — `gunsplash`
+  water slaps; the deep draws zero fire), fuel loop ~45 s/10 s, helo render (rotor/shadow/dip
+  ring/pad rearm arc), radar bird blip + dip ring, the seven-node AIR WING column replacing the
+  ████ placeholders (`tech.tres` regenerated, 36 nodes; tree screen redacts air2+ until
+  WHIRLYBIRD is owned). `probe_airwing` (10 checks) added to the gate; `probe_tech`'s "AIR WING
+  locked" check superseded (air1 buys, air2 gates behind it). Torpedo launches now mark
+  `world.helo_mark` for the bird's investigate behavior (gated on `tech.helo`).
 - **2026-07-09 — Deaf-deep law made PHYSICAL (latent C5 gap, found at the C6 mockup gate).** C5
   locked "the deep is deaf to gunfire" but only enforced it in TARGETING — the generic projectile
   hit test and the PROXIMITY BURST trigger/damage loops still let a stray friendly shell that
