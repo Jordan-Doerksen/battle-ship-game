@@ -219,6 +219,17 @@ treated as locked:
 ---
 
 ## Change Log
+- **2026-07-09 — Deaf-deep law made PHYSICAL (latent C5 gap, found at the C6 mockup gate).** C5
+  locked "the deep is deaf to gunfire" but only enforced it in TARGETING — the generic projectile
+  hit test and the PROXIMITY BURST trigger/damage loops still let a stray friendly shell that
+  physically crossed a submerged contact strike it (surfaced by the C6 door gunners peppering
+  water near a sub). Fixed in `Projectiles.gd` and BOTH shipped mockup sims
+  (`design/sonar-subs.html`, `design/air-wing.html`): friendly shells and airbursts now skip
+  `layer == "sub"` entirely — shells fly OVER the deep; depth charges remain the only sub killer.
+  D1.9's "domain tags gate targeting only; a shell that physically arrives hits regardless" note
+  (C3 entry) now carries this one exception: submerged hulls are physically out of reach of
+  gunfire, which is the C5 owner law, not a targeting choice. `probe_sonar`'s deaf-guns check
+  extended to force-fire straight through a sub and assert zero damage.
 - **2026-07-09 — C5 Sonar, Subs & Depth Charges built; D1.11 refined by owner supersession; D1.9's
   third domain live.** The approved C5 spec + mockup ported to Godot: `sub` in the roster
   (elite — cost 6, unlock 7, standoff torpedo shooter; `EnemyDef.torp_run` marks torpedo fire),

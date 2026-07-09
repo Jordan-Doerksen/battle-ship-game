@@ -43,6 +43,24 @@ bombs off a whirlybird.
    contacts still decay normally.
 10. **air2–air4 = Ears / Legs / Teeth.** One node per axis (see the tree table).
 
+## Gate revisions (owner, 2026-07-09 — first mockup review)
+
+**Rev 1 — the weave + the throttle.** No fixed picket orbit: the bird flies a smooth S-weave
+across the bow that curls into loops, riding the ship — and BOTH its top speed and its
+station-keeping speed rise with the ship's own, so flank speed never leaves it astern. (Pure
+pursuit at constant speed overshot its point, U-turned, and plunged ~800 u backward through the
+ship frame — the fix is a real throttle: ease off near the aim point, open up when far.
+`weave_amp`/`weave_rate`/`speed_margin` replace the draft's `orbit_radius`; validated by
+acceptance check 5b.)
+
+**Rev 2 — DOOR GUNNERS.** Two new nodes on the path (1 gunner, then 2): weak, inaccurate MG fire
+at the nearest AIR/SURFACE target near the bird — every round rolls spread AND a short fuse, so
+bursts visibly stitch the water before max range. This refines interview decision #2: the bird's
+JOB is still ASW-only (brain, drops, detection); the door gunners are token tech-gated teeth for
+spectacle and chip damage, and they can never touch subs (targeting excludes the deep, and — fixed
+during this revision — projectile PHYSICS now spares submerged hulls everywhere: shells fly over
+the deep, a latent C5 gap the gunners exposed).
+
 ## Player-facing behavior
 
 - **Buy `air1`, start a sortie:** the pad is no longer set dressing. A helicopter spins up on the
@@ -67,9 +85,19 @@ bombs off a whirlybird.
   `helo_pos`, `helo_heading`, `helo_fuel`, `helo_rearm`, `helo_drop_cool`). Inert (zero state
   writes, zero draws) unless `tech.helo` is set — zero-tech runs stay byte-identical to C5
   (probe-gated).
-- **Picket:** patrol target = ship_pos + heading-forward × `picket_dist`; the bird orbits it at
-  `orbit_radius`, matching the ship's advance. Launch/recover at the stern pad point (the C1 hull's
+- **Escort weave (gate rev 1):** the patrol aim point rides the ship — ahead
+  `(picket_dist + ship speed) × (0.72 + 0.28·sin(0.53φ))`, across `weave_amp × sin(φ)`, with the
+  phase φ advancing at `weave_rate` (sim state on the helo). The bird steers under its turn cap
+  and a THROTTLE: near the point it eases to station-keeping speed (which scales with the ship's),
+  far out it opens to `max(speed, ship speed + speed_margin)` — smooth zigzags and curls, no
+  overshoot plunges, never left astern. Launch/recover at the stern pad point (the C1 hull's
   helipad, y ≈ +65 hull-local).
+- **Door gunners (gate rev 2):** while airborne with `gunners > 0`, the nearest AIR/SURFACE enemy
+  within `gun_range` draws fire on the shared cadence — one round per gunner per trigger, each
+  rolling spread AND a 40–100% reach fuse from `world.rng` (fixed order: spread then reach, per
+  gunner). Rounds are plain friendly projectiles (`wid: "doorgun"`); an expired round emits a
+  `gunsplash` (it slaps the sea). Subs draw zero gun fire — targeting excludes the deep AND
+  projectile physics spares submerged hulls (the C5 law, now physical everywhere).
 - **Detection:** continuous passive radius `dip_radius` around the helo (the "dip" is render
   flavor — a periodic ring pulse). Writes `Enemy.detected_until = elapsed + contact_hold`
   (SonarConfig's hold — one latch, two listeners) via the same rule as `Sonar.gd`; emits the same
@@ -93,10 +121,12 @@ bombs off a whirlybird.
 
 | Tunable | Start | Meaning |
 |---|---|---|
-| `speed` | `160` | helo flight speed, u/s (faster than the ship, slower than shells) |
+| `speed` | `160` | base top speed, u/s — the effective top is `max(speed, ship speed + speed_margin)` (gate rev 1) |
 | `turn` | `2.6` | steering cap, rad/s (added at mockup build — per the tunables-in-config rule) |
-| `picket_dist` | `360` | patrol station distance ahead of the ship's course (450 at draft; pulled in at mockup build so the orbit sweeps into the viewport — an always-off-screen wingman is a radar rumor, not a crewmate) |
-| `orbit_radius` | `150` | circle radius at the patrol station (180 at draft, same reason) |
+| `speed_margin` | `80` | how much faster than the ship the bird can always fly (gate rev 1) |
+| `picket_dist` | `360` | weave station distance ahead of the ship's course (450 at draft; pulled in at mockup build so the pattern sweeps into the viewport — an always-off-screen wingman is a radar rumor, not a crewmate). The aim point leads further ahead as the ship speeds up |
+| `weave_amp` | `240` | S-weave half-width across the bow (gate rev 1 — replaces the draft's `orbit_radius`) |
+| `weave_rate` | `0.55` | weave phase speed, rad/s (gate rev 1) |
 | `dip_radius` | `240` | passive detection radius around the bird |
 | `drop_range` | `70` | must be nearly overhead a DETECTED sub to drop |
 | `dc_count` | `2` | light charges per drop |
@@ -106,24 +136,33 @@ bombs off a whirlybird.
 | `patrol_secs` | `45.0` | airborne endurance |
 | `turnaround_secs` | `10.0` | pad rearm time |
 | `investigate_hold` | `6.0` | how long a torpedo launch point stays worth visiting |
+| `gunners` | `0` | door gunners aboard — the DOOR GUNNER nodes add 1 each (gate rev 2) |
+| `gun_range` | `260` | door-gun engagement range around the bird |
+| `gun_rate` | `3.0` | rounds per second, per gunner (shared trigger cadence) |
+| `gun_dmg` | `1` | per round — chip damage, never a battery |
+| `gun_spread` | `0.14` | rad — wild by design, no target lead |
+| `gun_speed` | `520` | tracer speed; every round's reach rolls 40–100% of `gun_range` (short rounds slap the sea) |
 
 (Blast radius + fuse reuse `SonarConfig.dc_blast`/`dc_fuse` — one underwater-physics truth.)
 
-**AIR WING tree column** (`tech.tres`, replacing the five ████ placeholders; costs 1/1/2/2/3,
-strict in-branch order like every branch):
+**AIR WING tree column** (`tech.tres`, replacing the five ████ placeholders; costs 1/1/2/2/2/2/3,
+strict in-branch order like every branch — SEVEN nodes after gate rev 2):
 
 | id | Name | Cost | Effect |
 |---|---|---|---|
-| `air1` | **WHIRLYBIRD** | 1 | the bird itself (`tech.helo = true`); owning it de-redacts air2–5 |
+| `air1` | **WHIRLYBIRD** | 1 | the bird itself (`tech.helo = true`); owning it de-redacts the column |
 | `air2` | Big Dipper | 1 | +40% dip radius (`airwing.dip_radius` ×1.4) |
 | `air3` | Drop Tanks | 2 | +50% endurance, −40% turnaround (`patrol_secs` ×1.5, `turnaround_secs` ×0.6) |
 | `air4` | Weapons Free | 2 | +2 charges per drop (`airwing.dc_count` +2) |
-| `air5` | **MAD GEAR** (marquee) | 3 | bird-made contacts never decay this wave (`tech.mad_gear = true`) |
+| `air5` | Door Gunner | 2 | a gunner on the skids (`airwing.gunners` +1) — gate rev 2 |
+| `air6` | Second Gunner | 2 | both doors (`airwing.gunners` +1) — gate rev 2 |
+| `air7` | **MAD GEAR** (marquee) | 3 | bird-made contacts never decay this wave (`tech.mad_gear = true`) |
 
 ## Determinism notes
 
-- New `world.rng` draws: helo drop scatter only (per charge, volley order). The state machine,
-  picket geometry, fuel clock, and detection are pure arithmetic.
+- New `world.rng` draws: helo drop scatter (per charge, volley order) and door-gun rounds (per
+  round: spread, then reach — gunner order). The state machine, weave geometry, throttle, fuel
+  clock, and detection are pure arithmetic.
 - `AirWing.step` sits at a fixed slot (after DepthCharges); with `tech.helo` off it returns before
   touching state or RNG — baseline invariance is a probe check.
 - Rotor spin, dip-ring pulse, pad animations: render-only cosmetics on their own clock.
@@ -150,17 +189,23 @@ rhythm is drama or annoyance; approves; then it ports.
    the SHIP's racks still finish it (dc_dmg 1 × 2 charges < hp 6).
 5. **Fuel loop:** airborne ≈ `patrol_secs`, then RTB → pad for ≈ `turnaround_secs` → relaunch;
    detection contributes nothing while it's on the pad.
+5b. **Speed coupling (gate rev 1):** 40 s at flank speed — the bird's along-keel station never
+   falls meaningfully astern of the ship (it is never left behind).
 6. **MAD GEAR:** a bird-made contact outlives `contact_hold` indefinitely; a SHIP-made contact
    still decays on schedule.
-7. **Tree:** air nodes derive dip radius / endurance / turnaround / charge count correctly; air2–5
-   unbuyable before air1 (strict order); the old locked/0-cost placeholders are fully replaced (no
-   dead nodes).
+7. **Tree:** air nodes derive dip radius / endurance / turnaround / charge count / gunners (1 then
+   2) correctly; air2–7 unbuyable before their predecessors (strict order); the old locked/0-cost
+   placeholders are fully replaced (no dead nodes).
 8. Existing probes (sim, movement, hardpoints, waves, tech, sonar) pass unchanged.
+9. **Door gunners (gate rev 2):** with gunners aboard, an air/surface target near the bird takes
+   chip hits over time and some rounds splash short (`gunsplash`); a sub in the same water draws
+   ZERO fire and takes ZERO damage from gun rounds (with the rack emptied for isolation).
 
 ## Out of scope (explicit cuts from the interview)
 
-- Any non-ASW helo role (AA escort, surface strikes, scouting/spotting for the batteries) — the
-  bird is a sub hunter, full stop.
+- Any non-ASW helo ROLE (AA escort duty, surface strike runs, scouting/spotting for the
+  batteries) — the bird's brain hunts subs, full stop. (The DOOR GUNNERS of gate rev 2 are token
+  opportunistic teeth, not a role: they never steer the bird.)
 - Shoot-downs / helo health / airframe loss (invulnerable by owner decision #3).
 - Player helo orders of any kind (autonomous by owner decision #1).
 - A second airframe (TWIN BIRDS was considered and passed over for MAD GEAR).
@@ -171,4 +216,7 @@ rhythm is drama or annoyance; approves; then it ports.
 At build time: resolve open thread #3 (helipad function → THE AIR WING, this spec); note under the
 C4 Change Request entry that the "helicopter tech tree" question is answered; D1.9/D1.10/D1.11
 untouched (the bird plugs into C5's latch — it adds a listener, changes no rules). The CLASSIFIED
-placeholders in `tech.tres` are superseded by real nodes (recorded in the Change Log).
+placeholders in `tech.tres` are superseded by real nodes (recorded in the Change Log). Already
+logged at the mockup gate: the deaf-deep law is now PHYSICAL — friendly shells and airbursts skip
+submerged hulls in `Projectiles.gd` and both mockup sims (a latent C5 gap the door gunners
+exposed; Change Log 2026-07-09).

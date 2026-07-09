@@ -29,14 +29,22 @@ func _initialize() -> void:
 	fails += _check(same and wa.rng.calls == wb.rng.calls,
 		"determinism: 3600 ticks with subs/torpedoes/DC byte-identical (rng.calls %d, hull %d)" % [wa.rng.calls, wa.hull])
 
-	# 2 — deaf guns: a lone sub inside every gun's range draws ZERO muzzle effects in auto
+	# 2 — deaf guns: a lone sub inside every gun's range draws ZERO muzzle effects in auto, AND
+	#     shells force-fired straight through it pass over (physical immunity — the deep is deaf)
 	var c2 := _quiet()
 	c2.enemies.by_id("sub").speed = 0.0
+	c2.enemies.by_id("sub").fire_range = 0.0
 	var w2 := GameWorld.new(5)
 	Sim.step(w2, DT, c2)
 	_place(w2, "sub", Vector2(0, -200), 999999, c2)
 	var muzzles: int = _count_fx(w2, c2, 8.0, "muzzle")
-	fails += _check(muzzles == 0, "deaf guns: %d muzzle effects at a point-blank sub (domain exclusion)" % muzzles)
+	w2.input.force_all = true
+	w2.input.aim_world = Vector2(0, -200)
+	_run(w2, c2, 6.0)
+	w2.input.force_all = false
+	var sub_hp: int = w2.enemies[0].hp
+	fails += _check(muzzles == 0 and sub_hp == 999999,
+		"deaf guns: %d muzzles in auto; force-fire through the sub left hp %d (shells fly over the deep)" % [muzzles, sub_hp])
 
 	# 3 — detection + latch: outside radius = silent; inside = one contact ping; latch holds
 	#     contact_hold after it vanishes, then drops

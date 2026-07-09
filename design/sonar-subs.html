@@ -751,7 +751,7 @@ function stepProjectiles(sim, cfg, dt) {
       // PROXIMITY BURST (marquee): 5-in shells become flak vs air — near-miss detonation, small AoE
       let burst = false;
       for (const e of sim.enemies) {
-        if (!e.active) continue;
+        if (!e.active || e.layer === "sub") continue;   // the deep neither triggers nor feels flak
         const trigger = e.layer === "air" ? cfg.enemies[e.type].radius + cfg.tech.airburst_trigger
                                           : cfg.enemies[e.type].radius + 2;
         if (Math.hypot(e.x - p.x, e.y - p.y) <= trigger) { burst = true; break; }
@@ -759,7 +759,7 @@ function stepProjectiles(sim, cfg, dt) {
       if (burst) {
         sim.effects.push({ type: "airburst", x: p.x, y: p.y, r: cfg.tech.airburst_radius });
         for (const e of sim.enemies) {
-          if (!e.active) continue;
+          if (!e.active || e.layer === "sub") continue;
           if (Math.hypot(e.x - p.x, e.y - p.y) <= cfg.tech.airburst_radius + cfg.enemies[e.type].radius) {
             damageEnemy(sim, e, p.dmg, cfg);
           }
@@ -768,7 +768,7 @@ function stepProjectiles(sim, cfg, dt) {
       }
     } else {
       for (const e of sim.enemies) {
-        if (!e.active) continue;
+        if (!e.active || e.layer === "sub") continue;   // shells fly OVER the deep (C5 law)
         if (Math.hypot(e.x - p.x, e.y - p.y) <= cfg.enemies[e.type].radius + 2) {
           damageEnemy(sim, e, p.dmg, cfg);
           igniteIfIncendiary(sim, cfg, e, p.wid);

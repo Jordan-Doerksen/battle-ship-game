@@ -70,16 +70,19 @@ marquee), `xp_sub` 80, radar sonar ring + sonar-gated diamond blips, ripple tell
 fx, six-column tree, dev-kit `+SUB`. `probe_sonar` (8 checks incl. zero-tech baseline) gates it
 in `verify.sh`.
 
-**C6 — AIR WING (helicopter) is MID-GATE (2026-07-09):** interviewed + spec approved
-(`docs/specs/air-wing.md`), interactive mockup BUILT (`design/air-wing.html` — autonomous ASW
-wingman: air1 WHIRLYBIRD unlocks the bird + de-redacts the column, contact-led picket, dipping
-sonar writing the C5 latch, light contact-centered drops on a 9s cadence [detector-first: it
-softens, the stern racks finish], ~45s/10s fuel loop, MAD GEAR marquee; scratchpad harness 8/8
-incl. zero-tech byte-parity vs the shipped C5 sim) and published for owner feel-approval. NOT yet
-approved, NOT yet ported. Three tunables were adjusted at mockup build and noted in the spec table
-(dc_cooldown 6→9, picket_dist 450→360, orbit_radius 180→150). On approval: record it, then port
-(AirWingConfig + AirWing.gd after DepthCharges + helo render/radar + real air1–5 nodes in
-tech.tres + probe_airwing + resolve open thread #3 in DECISIONS).
+**C6 — AIR WING (helicopter) is MID-GATE (2026-07-09, revision 2):** interviewed + spec approved
+(`docs/specs/air-wing.md`), interactive mockup BUILT + revised on first owner review
+(`design/air-wing.html`): autonomous ASW wingman — air1 WHIRLYBIRD unlocks the bird + de-redacts
+the column; **gate rev 1** smooth S-weave escort riding the ship with a real throttle (top +
+station-keeping speed scale with ship speed — never left astern); dipping sonar writing the C5
+latch; light contact-centered drops on a 9s cadence (detector-first: it softens, the stern racks
+finish); ~45s/10s fuel loop; **gate rev 2** DOOR GUNNER ×2 nodes (weak, wild MG fire at
+air/surface near the bird, rounds roll spread + short reach and slap the sea — SEVEN-node column);
+MAD GEAR marquee at the tip. Scratchpad harness 10/10 incl. zero-tech byte-parity vs the shipped
+C5 sim. Revision 2 published, awaiting owner approval; NOT yet ported. Found + fixed at this gate
+(already in Godot + both mockups, Change Log): the deaf-deep law is now PHYSICAL — shells/airburst
+skip submerged hulls. On approval: port (AirWingConfig + AirWing.gd after DepthCharges + helo
+render/radar + real air1–7 nodes in tech.tres + probe_airwing + resolve open thread #3).
 
 **After C6:** the boss ladder + naming pass (open thread #2). Needs its own `/spec-feature`
 interview first.

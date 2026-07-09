@@ -45,7 +45,7 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 			# PROXIMITY BURST (C4 marquee): 5-in shells become flak vs air — near-miss detonation, AoE
 			var burst: bool = false
 			for e in world.enemies:
-				if not e.active:
+				if not e.active or e.layer == "sub":   # the deep neither triggers nor feels flak (C5 law)
 					continue
 				var trigger: float = cfg.enemies.by_id(e.type_id).radius \
 					+ (cfg.tech.airburst_trigger if e.layer == "air" else 2.0)
@@ -55,13 +55,13 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 			if burst:
 				world.effects.append({ "type": "airburst", "pos": p.pos, "r": cfg.tech.airburst_radius })
 				for e in world.enemies:
-					if e.active and e.pos.distance_to(p.pos) <= cfg.tech.airburst_radius + cfg.enemies.by_id(e.type_id).radius:
+					if e.active and e.layer != "sub" and e.pos.distance_to(p.pos) <= cfg.tech.airburst_radius + cfg.enemies.by_id(e.type_id).radius:
 						damage_enemy(world, e, p.dmg, cfg)
 				dead = true
 		else:
 			for e in world.enemies:
-				if not e.active:
-					continue
+				if not e.active or e.layer == "sub":   # shells fly OVER the deep (C5 law) — domain
+					continue                            # tags gate targeting; PHYSICS spares subs too
 				if e.pos.distance_to(p.pos) <= cfg.enemies.by_id(e.type_id).radius + 2.0:
 					damage_enemy(world, e, p.dmg, cfg)
 					_ignite_if_incendiary(world, cfg, e, p.wid)

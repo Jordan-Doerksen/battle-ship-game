@@ -332,9 +332,13 @@ const DEFAULT_CFG = {
     dc_range: 220, dc_count: 4, dc_scatter: 90, dc_fuse: 1.5, dc_blast: 55, dc_dmg: 3, dc_cooldown: 4.0,
   },
   airwing: {   // == config/airwing.tres (C6 spec table); blast/fuse reuse sonar.dc_* — one truth
-    speed: 160, turn: 2.6, picket_dist: 360, orbit_radius: 150, dip_radius: 240,
+    speed: 160, turn: 2.6, speed_margin: 80,        // top speed rises with the ship's — never left astern
+    picket_dist: 360, weave_amp: 240, weave_rate: 0.55,   // smooth S-weave across the bow (gate rev 1)
+    dip_radius: 240,
     drop_range: 70, dc_count: 2, dc_scatter: 40, dc_dmg: 1, dc_cooldown: 9.0,
     patrol_secs: 45.0, turnaround_secs: 10.0, investigate_hold: 6.0,
+    gunners: 0,                                     // DOOR GUNNER nodes add 1 each (gate rev 2)
+    gun_range: 260, gun_rate: 3.0, gun_dmg: 1, gun_spread: 0.14, gun_speed: 520,
   },
   progress: {   // == config/progress.tres — XP + level curve (C4 spec table)
     xp_swarmer: 10, xp_gunboat: 30, xp_bomber: 50, xp_sub: 80, xp_wave_bonus: 25,
@@ -385,7 +389,9 @@ const TECH = [
   { id: "air2", br: "AIR WING", name: "Big Dipper",   cost: 1, desc: "+40% dip radius", mods: [{ p: "airwing.dip_radius", mul: 1.4 }] },
   { id: "air3", br: "AIR WING", name: "Drop Tanks",   cost: 2, desc: "+50% endurance, \u221240% turnaround", mods: [{ p: "airwing.patrol_secs", mul: 1.5 }, { p: "airwing.turnaround_secs", mul: 0.6 }] },
   { id: "air4", br: "AIR WING", name: "Weapons Free", cost: 2, desc: "+2 charges per drop", mods: [{ p: "airwing.dc_count", add: 2 }] },
-  { id: "air5", br: "AIR WING", name: "MAD GEAR",     cost: 3, desc: "bird-made contacts never decay this wave", mods: [{ p: "tech.mad_gear", set: true }], marquee: true },
+  { id: "air5", br: "AIR WING", name: "Door Gunner",  cost: 2, desc: "a gunner on the skids \u2014 weak, wild, glorious", mods: [{ p: "airwing.gunners", add: 1 }] },
+  { id: "air6", br: "AIR WING", name: "Second Gunner", cost: 2, desc: "both doors \u2014 twice the tracer, same aim", mods: [{ p: "airwing.gunners", add: 1 }] },
+  { id: "air7", br: "AIR WING", name: "MAD GEAR",     cost: 3, desc: "bird-made contacts never decay this wave", mods: [{ p: "tech.mad_gear", set: true }], marquee: true },
 ];
 const BRANCHES = ["SEAMANSHIP", "FLAK", "GUNNERY", "ORDNANCE", "SONAR", "AIR WING"];
 
@@ -450,7 +456,7 @@ function makeSim(seed, cfg) {
     mounts: cfg.mounts.map(() => ({ ang: 0, cool: 0, bloom: 0, mode: "stow" })),
     enemies: [], projectiles: [], effects: [],
     hull: cfg.waves.hull_pips, grace_until: 0, run_over: false, dc_cool: 0,
-    helo: { state: "pad", x: 0, y: 65, heading: 0, fuel: 0, rearm: 0, drop_cool: 0 },
+    helo: { state: "pad", x: 0, y: 65, heading: 0, fuel: 0, rearm: 0, drop_cool: 0, phase: 0, gun_cool: 0 },
     helo_mark: null, helo_mark_until: -1,   // last torpedo launch point (C6; bird-only state)
     wave: 0, wave_state: "lull", lull_until: cfg.waves.first_wave_delay,
     crash_until: -1, crash_ready: 0,
@@ -658,6 +664,7 @@ function stepAirWing(sim, cfg, dt) {
   const aw = cfg.airwing, h = sim.helo;
   if (sim.helo_mark && sim.t >= sim.helo_mark_until) sim.helo_mark = null;
   h.drop_cool -= dt;
+  h.gun_cool -= dt;
   if (h.state === "pad") {
     const pad = heloPad(sim);
     h.x = pad.x; h.y = pad.y; h.heading = sim.ship.heading;   // lashed to the pad
@@ -670,16 +677,15 @@ function stepAirWing(sim, cfg, dt) {
     h.fuel -= dt;
     if (h.fuel <= 0) h.state = "rtb";
   }
-  let desired;
+  // pick the aim point: home pad → live contact → torpedo launch point → the escort weave
+  let pt;
   if (h.state === "rtb") {
-    const pad = heloPad(sim);
-    desired = angleTo(h, pad);
-    if (Math.hypot(pad.x - h.x, pad.y - h.y) <= 20) {
+    pt = heloPad(sim);
+    if (Math.hypot(pt.x - h.x, pt.y - h.y) <= 20) {
       h.state = "pad"; h.rearm = aw.turnaround_secs;
-      sim.effects.push({ type: "helodown", x: pad.x, y: pad.y });
+      sim.effects.push({ type: "helodown", x: pt.x, y: pt.y });
     }
   } else {
-    // contact-led: nearest live contact → else the torpedo launch point → else the picket
     let tgt = null, best = Infinity;
     for (const e of sim.enemies) {
       if (!e.active || e.layer !== "sub" || !subDetected(sim, e)) continue;
@@ -687,21 +693,32 @@ function stepAirWing(sim, cfg, dt) {
       if (d < best) { best = d; tgt = e; }
     }
     if (tgt) {
-      desired = angleTo(h, tgt);
+      pt = tgt;
     } else if (sim.helo_mark) {
-      desired = angleTo(h, sim.helo_mark);
+      pt = sim.helo_mark;
     } else {
-      const f = dirOf(sim.ship.heading);
-      const px = sim.ship.x + f.x * aw.picket_dist, py = sim.ship.y + f.y * aw.picket_dist;
-      const dc = Math.hypot(h.x - px, h.y - py);
-      desired = dc > aw.orbit_radius ? angleTo(h, { x: px, y: py })
-                                     : angleTo({ x: px, y: py }, h) + Math.PI / 2;   // tangential
+      // gate rev 1: no fixed picket — a smooth S-weave across the bow that rides the ship and
+      // leads further ahead as the ship speeds up; the throttle below keeps it from overshooting.
+      h.phase += aw.weave_rate * dt;
+      const f = dirOf(sim.ship.heading), r = { x: -f.y, y: f.x };
+      const shipSpd0 = Math.hypot(sim.ship.vx, sim.ship.vy);
+      const ahead = (aw.picket_dist + shipSpd0) * (0.72 + 0.28 * Math.sin(h.phase * 0.53));
+      const across = aw.weave_amp * Math.sin(h.phase);
+      pt = { x: sim.ship.x + f.x * ahead + r.x * across, y: sim.ship.y + f.y * ahead + r.y * across };
     }
   }
+  const desired = angleTo(h, pt);
   h.heading += Math.max(-aw.turn * dt, Math.min(aw.turn * dt, angDiff(desired, h.heading)));
   const d = dirOf(h.heading);
-  h.x += d.x * aw.speed * dt;
-  h.y += d.y * aw.speed * dt;
+  // gate rev 1: a helicopter has a THROTTLE — near its point it eases to station-keeping (which
+  // scales with the ship's own speed, so flank never leaves it astern); far out it opens up to a
+  // top speed that also rises with the ship's. No more shell-style overshoot + U-turn plunges.
+  const shipSpd = Math.hypot(sim.ship.vx, sim.ship.vy);
+  const distPt = Math.hypot(pt.x - h.x, pt.y - h.y);
+  const top = Math.max(aw.speed, shipSpd + aw.speed_margin);
+  const spd = Math.min(top, 50 + shipSpd * 0.9 + distPt * 1.6);
+  h.x += d.x * spd * dt;
+  h.y += d.y * spd * dt;
   // dipping sonar: same latch as the ship's ears (two listeners, one truth). MAD GEAR
   // (marquee): the BIRD'S contacts never decay — ship-made latches still do.
   for (const e of sim.enemies) {
@@ -726,6 +743,27 @@ function stepAirWing(sim, cfg, dt) {
       }
       sim.effects.push({ type: "helodrop", x: h.x, y: h.y });
       break;
+    }
+  }
+  // gate rev 2: DOOR GUNNERS — weak, wild, glorious. They pepper the nearest air/surface target;
+  // every round rolls spread AND a short fuse, so bursts stitch the water before max range.
+  if (aw.gunners > 0 && h.state === "air" && h.gun_cool <= 0) {
+    let gt = null, gbest = Infinity;
+    for (const e of sim.enemies) {
+      if (!e.active || e.layer === "sub") continue;   // the deep stays deaf to gunfire
+      const d2 = Math.hypot(e.x - h.x, e.y - h.y);
+      if (d2 <= aw.gun_range && d2 < gbest) { gbest = d2; gt = e; }
+    }
+    if (gt) {
+      h.gun_cool = 1 / aw.gun_rate;
+      for (let g = 0; g < aw.gunners; g++) {
+        const ang = angleTo(h, gt) + (draw(sim) * 2 - 1) * aw.gun_spread;   // no lead — that's the charm
+        const reach = (0.4 + 0.6 * draw(sim)) * aw.gun_range;               // short rounds slap the sea
+        const gd = dirOf(ang);
+        sim.projectiles.push({ x: h.x + gd.x * 10, y: h.y + gd.y * 10,
+          vx: gd.x * aw.gun_speed, vy: gd.y * aw.gun_speed,
+          dmg: aw.gun_dmg, splash: 0, life: reach / aw.gun_speed, wid: "doorgun", hostile: false });
+      }
     }
   }
 }
@@ -849,7 +887,7 @@ function stepProjectiles(sim, cfg, dt) {
       // PROXIMITY BURST (marquee): 5-in shells become flak vs air — near-miss detonation, small AoE
       let burst = false;
       for (const e of sim.enemies) {
-        if (!e.active) continue;
+        if (!e.active || e.layer === "sub") continue;   // the deep neither triggers nor feels flak
         const trigger = e.layer === "air" ? cfg.enemies[e.type].radius + cfg.tech.airburst_trigger
                                           : cfg.enemies[e.type].radius + 2;
         if (Math.hypot(e.x - p.x, e.y - p.y) <= trigger) { burst = true; break; }
@@ -857,7 +895,7 @@ function stepProjectiles(sim, cfg, dt) {
       if (burst) {
         sim.effects.push({ type: "airburst", x: p.x, y: p.y, r: cfg.tech.airburst_radius });
         for (const e of sim.enemies) {
-          if (!e.active) continue;
+          if (!e.active || e.layer === "sub") continue;
           if (Math.hypot(e.x - p.x, e.y - p.y) <= cfg.tech.airburst_radius + cfg.enemies[e.type].radius) {
             damageEnemy(sim, e, p.dmg, cfg);
           }
@@ -865,14 +903,19 @@ function stepProjectiles(sim, cfg, dt) {
         dead = true;
       }
     } else {
+      let struck = false;
       for (const e of sim.enemies) {
-        if (!e.active) continue;
+        if (!e.active || e.layer === "sub") continue;   // shells fly OVER the deep (C5 law)
         if (Math.hypot(e.x - p.x, e.y - p.y) <= cfg.enemies[e.type].radius + 2) {
           damageEnemy(sim, e, p.dmg, cfg);
           igniteIfIncendiary(sim, cfg, e, p.wid);
+          struck = true;
           dead = true;
           break;
         }
+      }
+      if (!struck && p.life <= 0 && p.wid === "doorgun") {
+        sim.effects.push({ type: "gunsplash", x: p.x, y: p.y });   // the round slaps the sea
       }
     }
     if (dead) sim.projectiles.splice(i, 1);
@@ -1261,6 +1304,10 @@ function drawProjectiles() {
     } else if (p.splash > 0) {
       ctx.fillStyle = "rgba(228,240,242,0.95)";
       ctx.beginPath(); ctx.arc(px, py, 2.6 * ZOOM, 0, TAU); ctx.fill();
+    } else if (p.wid === "doorgun") {   // C6: door-gun tracer — thin, hot, wild
+      ctx.strokeStyle = "rgba(232,180,110,0.75)";
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(px, py); ctx.stroke();
     } else {
       ctx.strokeStyle = p.wid === "aa20" ? "rgba(205,186,142,0.9)" : "rgba(228,240,242,0.85)";
       ctx.lineWidth = 1.2;
@@ -1412,6 +1459,7 @@ function drawFx(now) {
                  e.type === "ignite" ? 0.3 : e.type === "crashturn" ? 0.8 :
                  e.type === "dcblast" ? 0.9 : e.type === "dcvolley" ? 0.3 :
                  e.type === "helodrop" ? 0.35 : e.type === "helodown" ? 0.5 :
+                 e.type === "gunsplash" ? 0.25 :
                  e.type === "contact" ? 1.2 : 0.12;
     if (age >= life) { fx.splice(i, 1); continue; }
     const k = age / life;
@@ -1447,6 +1495,10 @@ function drawFx(now) {
       ctx.beginPath(); ctx.arc(px, py, e.r * (0.3 + k * 0.7) * ZOOM, 0, TAU); ctx.fill();
       ctx.strokeStyle = `rgba(24,42,54,${0.8 * (1 - k)})`; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.arc(px, py, e.r * k * ZOOM, 0, TAU); ctx.stroke();
+    } else if (e.type === "gunsplash") {   // C6: a door-gun round stitches the water
+      const [px, py] = w2s(e.x, e.y);
+      ctx.fillStyle = `rgba(228,240,242,${0.5 * (1 - k)})`;
+      ctx.beginPath(); ctx.arc(px, py, (1.5 + 3 * k) * ZOOM, 0, TAU); ctx.fill();
     } else if (e.type === "helodrop") {   // C6: the light rack lets go
       const [px, py] = w2s(e.x, e.y);
       ctx.strokeStyle = `rgba(228,240,242,${0.55 * (1 - k)})`; ctx.lineWidth = 1.4;
