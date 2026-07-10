@@ -1,0 +1,2280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EDF The War, Repacked — C16 mockup gate</title>
+</head>
+<body>
+<!-- ================================================================================
+  Earth Defense Force (working title) — C16 THE WAR, REPACKED · mockup gate
+  Forked from design/the-waters.html (the APPROVED C15 reference — untouched).
+  The enemy learned drill. The old staging (two glued gunboats, four cosmetic
+  swarmers, scheduled scene beats) is REPLACED by the NEW WAVE DIRECTOR — this
+  file is the Godot port's reference for the C3 director's supersession.
+    · FORMATION TEMPLATES — a data table (headed for waves.tres): GNAT SWARM
+      (5× swarmer wedge) · GNAT SCREEN + JACKAL LINE (4 swarmers line-abreast,
+      2 gunboats on the same bearing ~8 s behind — the screened advance) ·
+      JACKAL PINCER (2 gunboats, bearings ~70° apart) · WASP FLIGHT (3 wasps,
+      loose echelon-right, from a flank) · VULTURE RAID (2 bombers, near-opposite
+      bearings — the anvil) · WOLFPACK (2 subs, one quiet bearing, wide, wave 7+).
+      Template cost = Σ member costs (swarmer 1 · gunboat 3 · wasp 4 · bomber 5 ·
+      sub 6). Each: { name, members:[{type,n,delay?}], shape (wedge|line|loose|
+      split:angle), spacing, min_wave, ambush_ok, echelon, weight }.
+    · COMPOSITION — seeded, deterministic: one mulberry32 substream per wave keyed
+      (wave_seed, wave) so NEXT WAVE NOW and REPLAY never desync it. Budget =
+      base + per_wave×(wave−1) (knobs). Spend: weighted draws of affordable
+      unlocked templates until none fit, then the old greedy singles path fills
+      the remainder exactly. Purchases land in 2–3 ECHELONS — vanguard 0 s ·
+      main body ~15 s · sting ~28 s (knobs; times normalize so the earliest lands
+      at 0). A formation spawns at a shared ANCHOR bearing + shape offsets,
+      arriving as a body beyond the view ring (no warp telegraph — C3 law).
+    · TERRAIN-AWARE PACKING — (a) LANES: candidate bearings are scored by open
+      water along the ship→spawn approach line (samples every ~150 u against the
+      body circles); surface/sub formations heavily prefer clear lanes, air
+      ignores them. (b) AMBUSH: ambush_ok templates (JACKAL PINCER halves,
+      WOLFPACK) may instead stage just behind a terrain feature 600–1100 u out,
+      far side from the ship — "they were waiting behind the rock." Seeded roll,
+      ~35 % (knob) when a feature exists.
+    · REAL QUIET — between waves NOTHING trickles. The lull is a knob (default
+      12 s vs the old 8); the war plate's countdown reads like a breath.
+    · THE FIGHT — the player keeps WASD/autopilot + the C11 guns; enemies carry
+      hp (mockup pacing: mb16 burst 4 · dp5 2 · S-gun 1 — not balance) and the
+      wave clears when the water does. Subs stay deaf to gunfire (C5 law); the
+      stern racks auto-roll a spread when a sub closes within 300 u.
+    · WAR PLATE — bottom-left timeline strip: the wave's echelons as brass ticks
+      on a time ruler, formation names lighting as each lands; quiet = countdown.
+  Terrain locked to C15 (knobs kept, closed) · sea C9 · camera C10 · fire C11 ·
+  hull C14. Only the war is on trial. Deterministic per (terrain seed, wave seed).
+  Keys: WASD helm · hold RMB main battery · wheel zoom · N next wave · P pause.
+================================================================================= -->
+<style>
+  :root {
+    --sea-deep:   #0A1E28;
+    --foam:       #E4F0F2;
+    --signal-red: #D94F2B;
+    --brass:      #CDBA8E;
+    --brass-dim:  #8E815F;
+    --steel:      #93A7AE;
+    --plate:      rgba(13, 32, 40, 0.88);
+    --plate-edge: rgba(205, 186, 142, 0.5);
+    --mono: ui-monospace, "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --disp: "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; }
+  body { background: var(--sea-deep); color: var(--brass); font-family: var(--disp); user-select: none; }
+  #sea { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #patina {
+    position: absolute; inset: 0; pointer-events: none;
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.07) 0 1px, transparent 1px 3px),
+      radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(2, 10, 14, 0.55) 100%);
+  }
+  .plate {
+    position: absolute; background: var(--plate); border: 1px solid var(--plate-edge);
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    padding: 12px 16px; pointer-events: none;
+  }
+  .eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 0.32em; text-transform: uppercase; color: var(--brass-dim); }
+  .eyebrow .star { color: var(--signal-red); }
+  h1 { font-size: 17px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--foam); margin-top: 3px; text-wrap: balance; }
+  #mission { top: 18px; left: 18px; max-width: 360px; }
+  #mission .voice { margin-top: 7px; font-family: var(--mono); font-size: 11.5px; color: var(--brass); letter-spacing: 0.04em; }
+  #mission .voice.dim { color: var(--brass-dim); }
+  #mission .hint { margin-top: 8px; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--brass-dim); }
+  #mission kbd {
+    font-family: var(--mono); font-size: 10px; color: var(--foam);
+    border: 1px solid var(--brass-dim); border-bottom-width: 2px; border-radius: 2px;
+    padding: 0 4px; background: rgba(228,240,242,0.06);
+  }
+
+  #tuning { position: absolute; top: 18px; right: 18px; width: 312px; max-height: calc(100% - 36px); overflow-y: auto; z-index: 4; }
+  #tuning summary, #tuning .sect summary {
+    cursor: pointer; list-style: none;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.28em; text-transform: uppercase; color: var(--foam);
+    background: var(--plate); border: 1px solid var(--plate-edge); padding: 10px 16px;
+  }
+  #tuning > summary { clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px); }
+  #tuning summary::before { content: "▸ "; color: var(--signal-red); }
+  #tuning[open] > summary::before, #tuning .sect[open] > summary::before { content: "▾ "; }
+  #tuning .body { background: var(--plate); border: 1px solid var(--plate-edge); border-top: none; padding: 10px 12px 12px; }
+  #tuning .sect summary { font-size: 10px; letter-spacing: 0.2em; border: 1px solid rgba(205,186,142,0.25); background: rgba(228,240,242,0.03); margin-top: 8px; }
+  #tuning .sect .body { border: 1px solid rgba(205,186,142,0.25); border-top: none; background: transparent; }
+  .tun { margin-bottom: 8px; }
+  .tun .row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 2px; }
+  .tun .name { font-family: var(--mono); font-size: 10.5px; color: var(--brass); }
+  .tun .val { font-family: var(--mono); font-size: 10.5px; color: var(--foam); font-variant-numeric: tabular-nums; }
+  .tun input[type="range"] { width: 100%; accent-color: var(--signal-red); height: 13px; }
+  .tun input[type="number"] {
+    flex: 0 0 88px; font-family: var(--mono); font-size: 11px; color: var(--foam);
+    background: rgba(228,240,242,0.06); border: 1px solid var(--brass-dim); padding: 4px 6px;
+  }
+  .kbtn {
+    font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--brass); background: rgba(228,240,242,0.04);
+    border: 1px solid var(--brass-dim); padding: 6px 10px; cursor: pointer; margin: 4px 4px 0 0;
+  }
+  .kbtn:hover { border-color: var(--brass); color: var(--foam); }
+  .kbtn.active { background: var(--signal-red); border-color: var(--signal-red); color: var(--foam); }
+  #reset-cfg {
+    font-family: var(--disp); font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--sea-deep); background: var(--brass);
+    border: none; padding: 7px 14px; cursor: pointer; margin-top: 10px;
+  }
+  #reset-cfg:hover { background: var(--foam); }
+  .kbtn:focus-visible, #reset-cfg:focus-visible, #tuning summary:focus-visible, .tun input:focus-visible {
+    outline: 2px solid var(--signal-red); outline-offset: 2px;
+  }
+</style>
+
+<canvas id="sea"></canvas>
+<div id="patina"></div>
+
+<section id="mission" class="plate">
+  <div class="eyebrow"><span class="star">★</span> Earth Defense Force · Naval Trials Bureau</div>
+  <h1>C16 — The War, Repacked</h1>
+  <div class="voice">The enemy learned drill. The quiet learned menace.</div>
+  <div class="voice dim">Waters C15 · sea C9 · camera C10 · guns C11 · hull C14 — all locked. Only the war is on trial.</div>
+  <div class="hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> helm · <kbd>hold RMB</kbd> main battery · <kbd>wheel</kbd> zoom · <kbd>N</kbd> next wave</div>
+</section>
+
+<details id="tuning" open>
+  <summary>Tuning — C16 the-war tables</summary>
+  <div class="body" id="tuning-body"></div>
+</details>
+
+<script>
+"use strict";
+/* ════════════════════════════ CONFIG — every knob the panel exposes ════════════════════════════
+   The sea domains map 1:1 onto the planned config/field.tres additions (C9, locked); `zoom`
+   is the approved C10 table (CameraConfig.tres); `fire` the approved C11 table; `terrain`
+   the approved C15 table (kept, closed). NEW here: the `war` domain — the C16 director
+   tables headed for waves.tres (budget/echelons/quiet/ambush + the wave seed). */
+const DEFAULT_CFG = {
+  // C16 tables: THE WAR — budget = base + per_wave×(wave−1) (the C3 numbers, now knobs) ·
+  // echelon delays (vanguard is always 0) · the REAL QUIET between waves (was 8 in C3) ·
+  // ambush roll chance for ambush_ok templates · wave_seed keys the per-wave substreams
+  war: { budget_base: 6, budget_per_wave: 4, main_delay: 15, sting_delay: 28,
+         quiet_secs: 12, ambush_chance: 0.35, wave_seed: 7 },
+  swell:  { amp: 0.55, speed: 1.0, scale: 1.0 },   // band opacity mult · drift mult · spatial mult
+  glint:  { intensity: 0.5 },                       // 0 = today's dead sea
+  foam:   { density: 130, crest_bias: 0.6, crest_streaks: 0.0 },   // fleck count · crest cling · breaking streaks (direction B)
+  ship:   { heave_px: 1.4, roll_deg: 1.0, shadow_px: 3.5 },   // render-only; sim never sees these
+  splash: { scale: 1.0, foam_life: 4.0, dye: false },         // dye = per-battery rim tint (WWII spotting)
+  wake:   { life: 7.0, width: 1.0 },
+  // C10 tables: wheel bounds · home view (owner's judged 0.51) · wheel multiplier per notch ·
+  // lerp half-life (s) · min-apparent-size floor in screen px (0 disables)
+  zoom:   { min: 0.40, max: 0.85, home: 0.51, wheel_step: 1.18, half_life: 0.12, min_px: 10 },
+  // C11 tables: RANGEKEEPER snap radius (world u, contact-nearest-cursor gate) · scope
+  // burst-flash life (s) · flight-time readout toggle · RANGEKEEPER advisory toggle
+  // (default ON for the demo — in the game it's a tech-tree unlock)
+  fire:   { snap_radius: 120, flash_life: 1.2, show_time: true, rangekeeper: true },
+  // C15 tables: THE WATERS — `seed` feeds a DEDICATED mulberry32 stream (the scene rng never
+  // touches it); islets/rocks/size regenerate the field on change; shoal/fringe are draw-time
+  terrain: { seed: 7, islets: 3, rocks: 9, size: 1.35, shoal: 1.54, fringe: 1.0 },   // islets 3 · rocks 9 · size 1.35 · shoal 1.54 = the owner's gate tunes (2026-07-10)
+  view:   { zoom: 0.51 },                           // ANIMATED camera zoom — chases targetZoom each frame
+};
+let cfg = structuredClone(DEFAULT_CFG);
+const MOVE = {   // C1 movement, owner-approved — unchanged
+  max_speed_ahead: 220.0, astern_frac: 0.35, thrust_accel: 55.0, brake_accel: 90.0,
+  drag_forward: 0.08, drag_lateral: 1.8, turn_rate_max: 0.55, turn_speed_floor: 0.25,
+};
+const SIM_DT = 1 / 60, TAU = Math.PI * 2;
+const SUN = { x: -0.55, y: -0.835 };                 // light from upper-left…
+const SHADOW = { x: 0.55, y: 0.835 };                // …shadows fall lower-right
+
+/* ════════════════════════════ UTIL ════════════════════════════ */
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rng = mulberry32(0xC9A1);                      // scene randomness (seeded, in-language)
+function mod(a, n) { return ((a % n) + n) % n; }
+function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+function sstep(e0, e1, x) { const t = clamp((x - e0) / (e1 - e0), 0, 1); return t * t * (3 - 2 * t); }
+function easeOutBack(k) { const c = 1.70158, x = k - 1; return 1 + (c + 1) * x * x * x + c * x * x; }
+function dirOf(a) { return { x: Math.sin(a), y: -Math.cos(a) }; }   // heading space: 0 = north
+function angleTo(from, to) { return Math.atan2(to.x - from.x, -(to.y - from.y)); }
+function angDiff(a, b) { return ((a - b + Math.PI) % TAU + TAU) % TAU - Math.PI; }
+function hash2(x, y) { const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return s - Math.floor(s); }
+function vnoise(x, y) {   // smoothed value noise — the glint fields sample this
+  const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+  const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+  return hash2(xi, yi) * (1 - u) * (1 - v) + hash2(xi + 1, yi) * u * (1 - v)
+       + hash2(xi, yi + 1) * (1 - u) * v + hash2(xi + 1, yi + 1) * u * v;
+}
+
+/* ════════════════════════════ C15 — THE WATERS · seeded terrain ════════════════════════════
+   The heart of the gate. generateTerrain() draws from its OWN mulberry32(seed) stream — the
+   scene rng (0xC9A1) never feeds it, so the same seed always lays the same archipelago no
+   matter what the war is doing. 2–4 blobby islets (8–12 verts on a wobbled 60–140 u radius)
+   + 8–16 rock/reef features (10–30 u, singles and clusters of 2–3) over a ~3000×2200 u field
+   around the origin. Rejection sampling: nothing within 250 u of the ship start, 180 u of
+   open water between feature EDGES (those gaps are the channels the hint is about). The
+   FIRST islet is staged 420–650 u out — inside the gun/orbit envelope — so the fire story
+   (boats duelling through an islet, shells eating rock) shows without hunting for it.
+   Sim truth = per-BODY circles at the mean coast radius (the polygons are art); the
+   feature-level bounding circle serves the broad phase and the helmsmen's avoidance.
+   Static: terrain never moves, never despawns. */
+let TERRAIN = [];   // [{ kind, x, y, r:bounding, polys:[{x,y,r:mean,maxR,pts,facets}], props, ph }]
+function generateTerrain() {
+  const tr = mulberry32((cfg.terrain.seed | 0) >>> 0);   // the terrain stream — nothing else draws here
+  const S = cfg.terrain.size, HW = 1500, HH = 1100;
+  const feats = [];
+  const fits = (x, y, r) => {
+    if (Math.hypot(x, y) - r < 250) return false;        // the ship-start exclusion
+    for (const f of feats)
+      if (Math.hypot(x - f.x, y - f.y) - r - f.r < 180) return false;   // edge gap = the channel
+    return true;
+  };
+  const place = (r, ringLo, ringHi) => {                 // rejection sampling — deterministic order
+    for (let i = 0; i < 90; i++) {
+      let x, y;
+      if (ringLo !== undefined) {
+        const a = tr() * TAU, d = ringLo + tr() * (ringHi - ringLo);
+        x = Math.sin(a) * d; y = -Math.cos(a) * d;
+      } else { x = (tr() * 2 - 1) * HW; y = (tr() * 2 - 1) * HH; }
+      if (Math.abs(x) > HW || Math.abs(y) > HH) continue;
+      if (fits(x, y, r)) return { x, y };
+    }
+    return null;                                          // crowded seed — feature skipped, still deterministic
+  };
+  const blob = (cx, cy, R, nLo, nHi) => {                 // wobbled-radius polygon + relief facets
+    const n = nLo + Math.floor(tr() * (nHi - nLo + 1));
+    const pts = []; let mean = 0, maxR = 0;
+    for (let k = 0; k < n; k++) {
+      const a = (k / n) * TAU + (tr() - 0.5) * (TAU / n) * 0.6;
+      const rad = R * (0.72 + 0.42 * tr());
+      mean += rad; maxR = Math.max(maxR, rad);
+      pts.push([cx + Math.sin(a) * rad, cy - Math.cos(a) * rad]);
+    }
+    const facets = [];                                    // darker relief lines, coast toward heart
+    const nf = 2 + Math.floor(tr() * 2);
+    for (let k = 0; k < nf; k++) {
+      const p0 = pts[Math.floor(tr() * n)];
+      const ia = tr() * TAU, id = R * (0.10 + 0.30 * tr());
+      facets.push([cx + (p0[0] - cx) * 0.82, cy + (p0[1] - cy) * 0.82,
+                   cx + Math.sin(ia) * id, cy - Math.cos(ia) * id]);
+    }
+    return { x: cx, y: cy, r: mean / n, maxR, pts, facets };
+  };
+  // islets — 2–4, the first staged inside the engagement envelope
+  const nIslet = Math.round(cfg.terrain.islets);
+  for (let i = 0; i < nIslet; i++) {
+    const R = (60 + tr() * 80) * S;
+    const pos = i === 0 ? place(R, 420, 650) : place(R);
+    if (!pos) continue;
+    const body = blob(pos.x, pos.y, R, 8, 12);
+    const props = [];
+    const np = 1 + (tr() < 0.5 ? 1 : 0);                  // 1–2 deadpan props per islet
+    for (let k = 0; k < np; k++) {
+      const type = tr() < 0.55 ? "bush" : "light";
+      const a = tr() * TAU, d = body.r * (0.28 + 0.32 * tr());
+      const offs = [];                                    // bush dot scatter, fixed at gen time
+      for (let j = 0; j < 4; j++) offs.push([(tr() * 2 - 1) * 6, (tr() * 2 - 1) * 6]);
+      props.push({ type, x: pos.x + Math.sin(a) * d, y: pos.y - Math.cos(a) * d, ph: tr() * TAU, offs });
+    }
+    feats.push({ kind: "islet", x: pos.x, y: pos.y, r: body.maxR, polys: [body], props, ph: tr() * TAU });
+  }
+  // rocks/reefs — 8–16 features, singles and clusters of 2–3
+  const nRock = Math.round(cfg.terrain.rocks);
+  for (let i = 0; i < nRock; i++) {
+    const nSub = tr() < 0.55 ? 1 : (tr() < 0.6 ? 2 : 3);
+    const r0 = (10 + tr() * 20) * S;
+    const pos = place(nSub === 1 ? r0 * 1.2 : r0 * 2.6);
+    if (!pos) continue;
+    const polys = [blob(pos.x, pos.y, r0, 5, 8)];
+    for (let j = 1; j < nSub; j++) {
+      const rj = (10 + tr() * 20) * S;
+      const a = tr() * TAU, d = (polys[0].maxR + rj) * (0.85 + 0.5 * tr());
+      polys.push(blob(pos.x + Math.sin(a) * d, pos.y - Math.cos(a) * d, rj, 5, 8));
+    }
+    let bound = 0;
+    for (const B of polys) bound = Math.max(bound, Math.hypot(B.x - pos.x, B.y - pos.y) + B.maxR);
+    feats.push({ kind: "rock", x: pos.x, y: pos.y, r: bound, polys, props: [], ph: tr() * TAU });
+  }
+  TERRAIN = feats;
+}
+// ── sim queries ── per-BODY circles are the collision truth; feature circles are broad phase
+function terrainBodyAt(x, y, pad = 0) {
+  for (const F of TERRAIN) {
+    if (Math.hypot(x - F.x, y - F.y) > F.r + pad + 4) continue;
+    for (const B of F.polys)
+      if (Math.hypot(x - B.x, y - B.y) <= B.r + pad) return B;
+  }
+  return null;
+}
+/* Tangent avoidance — shared by the gunboats (200 u lookahead) and the autopilot. If the
+   forward ray passes within (bounding r + clearance) of a feature inside the lookahead,
+   answer the heading that grazes the tangent; null = channel clear. The tangent SIDE is
+   STICKY per agent (stored on the agent object): with a feature dead ahead the raw side
+   flips sign every frame, the two turn orders cancel, and the helmsman motors straight
+   into the rock and parks — the headless probe caught boats stalled 40 s at a time. */
+function avoidHeading(x, y, heading, look, clear, agent) {
+  const d = dirOf(heading);
+  let hit = null, ht = Infinity;
+  for (const F of TERRAIN) {
+    const rx = F.x - x, ry = F.y - y;
+    const t = rx * d.x + ry * d.y;
+    const rr = F.r + clear;
+    if (t < -rr || t - rr > look) continue;
+    const miss = Math.hypot(rx - d.x * t, ry - d.y * t);
+    if (miss >= rr) continue;
+    if (t < ht) { ht = t; hit = { F, rr, side: (d.x * ry - d.y * rx) >= 0 ? -1 : 1 }; }
+  }
+  if (!hit) { if (agent) agent.avF = null; return null; }
+  let side = hit.side;
+  if (agent) {
+    if (agent.avF === hit.F) side = agent.avSide;   // committed — keep rounding the same way
+    else { agent.avF = hit.F; agent.avSide = side; }
+  }
+  const dc = Math.hypot(hit.F.x - x, hit.F.y - y);
+  /* Outside the clearance ring: graze the tangent. INSIDE it, a capped asin points slightly
+     inward and becomes a stable limit cycle — the probe caught a gunboat doing donuts around
+     an islet forever while the ship sailed off. Inside, steer OUTWARD-tangential (>90°) so
+     the helmsman spirals back out of the ring, then the normal tangent takes over. */
+  const off = dc >= hit.rr
+    ? Math.asin(Math.min(1, hit.rr / dc))
+    : (Math.PI / 2) * (2 - dc / hit.rr);
+  return angleTo({ x, y }, hit.F) + side * off;
+}
+/* Player hull vs terrain — capsule (half-length 97 × radius 30, the C14 hull) against body
+   circles. Sliding response: gentle push-out along the contact normal, the into-rock velocity
+   component killed (she slides along the coast), speed bled while grinding, churned foam at
+   the waterline. NO damage in this mockup — whether grounding costs hull is a gate question. */
+const SHIP_CAPS = { half: 97, r: 30 };
+let nextGrind = 0;
+function collideShip(dt) {
+  const f = dirOf(ship.heading);
+  for (const F of TERRAIN) {
+    if (Math.hypot(F.x - ship.x, F.y - ship.y) > F.r + SHIP_CAPS.half + SHIP_CAPS.r + 24) continue;
+    for (const B of F.polys) {
+      const t = clamp((B.x - ship.x) * f.x + (B.y - ship.y) * f.y, -SHIP_CAPS.half, SHIP_CAPS.half);
+      const px = ship.x + f.x * t, py = ship.y + f.y * t;
+      let dx = px - B.x, dy = py - B.y, d = Math.hypot(dx, dy);
+      if (d < 1e-4) { dx = 1; dy = 0; d = 1; }
+      const pen = SHIP_CAPS.r + B.r - d;
+      if (pen <= 0) continue;
+      const nx = dx / d, ny = dy / d;                    // contact normal, off the rock
+      ship.x += nx * pen; ship.y += ny * pen;            // gentle push-out (a few u/frame at most)
+      const vn = ship.vx * nx + ship.vy * ny;
+      if (vn < 0) { ship.vx -= nx * vn; ship.vy -= ny * vn; }   // slide: kill the into-rock component
+      ship.vx *= 1 - 0.55 * dt; ship.vy *= 1 - 0.55 * dt;       // the grind — she loses way on the rocks
+      if (simT >= nextGrind) {                           // churned foam at the contact point
+        nextGrind = simT + 0.13;
+        spawnSplash(B.x + nx * B.r, B.y + ny * B.r, "gun", false);
+      }
+    }
+  }
+}
+/* ════════════════════════════ C16 — THE WAR, REPACKED · the new director ════════════════════════════
+   The heart of the gate. Supersedes the C3 blob director (scripts/engine/systems/Waves.gd):
+   the budget now buys FORMATION TEMPLATES with shape, assigned to ECHELONS, staged down
+   open-water LANES or as AMBUSHES behind terrain. Composition is seeded and deterministic —
+   one mulberry32 substream per wave keyed (wave_seed, wave), draws in ONE defined order
+   (templates → singles → per-purchase staging) — so the same seeds always field the same
+   war. Behavior jitter (weaves, fire scatter) stays on the scene rng, cosmetic-grade. */
+const ENEMY = {   // mirrors config/enemies.tres — costs/unlocks drive the budget, the rest the brains
+  swarmer: { rep: "GNAT",    layer: "air",  hp: 2, speed: 115, turn: 2.2, cost: 1, unlock: 1, len: 12 },
+  gunboat: { rep: "JACKAL",  layer: "surf", hp: 5, speed: 65,  turn: 1.2, cost: 3, unlock: 3, len: 28,
+             standoff: 500, fire_range: 700, fire_period: 4.0 },
+  wasp:    { rep: "WASP",    layer: "air",  hp: 2, speed: 130, turn: 1.4, cost: 4, unlock: 4, len: 10,
+             standoff: 460, fire_range: 560, fire_period: 6.0, salvo: 4 },
+  bomber:  { rep: "VULTURE", layer: "air",  hp: 8, speed: 45,  turn: 0.5, cost: 5, unlock: 5, len: 16,
+             standoff: 380, fire_range: 520, fire_period: 12.0, torp_run: 650 },
+  sub:     { rep: "LAMPREY", layer: "sub",  hp: 6, speed: 35,  turn: 0.5, cost: 6, unlock: 7, len: 30,
+             standoff: 600, fire_range: 800, fire_period: 8.0, torp_run: 900 },
+};
+/* THE TEMPLATE TABLE — this literal becomes waves.tres content at the port. delay = the member
+   group lands that many seconds AFTER the formation's echelon time (the screened advance:
+   swarmers at t, gunboats at t+8 on the same bearing). flank = anchor bears ~70–110° off the
+   wave's dominant bearing. weight = draw weight in the spend loop (a tuning column, all near 1). */
+const TEMPLATES = [
+  { name: "GNAT SWARM",               members: [{ type: "swarmer", n: 5 }],
+    shape: "wedge",     spacing: 46,  min_wave: 1, ambush_ok: false, echelon: "vanguard", weight: 1.0 },
+  { name: "GNAT SCREEN + JACKAL LINE", members: [{ type: "swarmer", n: 4 }, { type: "gunboat", n: 2, delay: 8 }],
+    shape: "line",      spacing: 70,  min_wave: 3, ambush_ok: false, echelon: "vanguard", weight: 1.2 },
+  { name: "JACKAL PINCER",            members: [{ type: "gunboat", n: 2 }],
+    shape: "split:70",  spacing: 0,   min_wave: 3, ambush_ok: true,  echelon: "main",     weight: 1.0 },
+  { name: "WASP FLIGHT",              members: [{ type: "wasp", n: 3 }],
+    shape: "loose",     spacing: 60,  min_wave: 4, ambush_ok: false, echelon: "sting",    weight: 0.9, flank: true },
+  { name: "VULTURE RAID",             members: [{ type: "bomber", n: 2 }],
+    shape: "split:170", spacing: 0,   min_wave: 5, ambush_ok: false, echelon: "main",     weight: 0.8 },
+  { name: "WOLFPACK",                 members: [{ type: "sub", n: 2 }],
+    shape: "line",      spacing: 160, min_wave: 7, ambush_ok: true,  echelon: "main",     weight: 0.7 },
+];
+function tplCost(t) { let c = 0; for (const m of t.members) c += ENEMY[m.type].cost * m.n; return c; }
+const SINGLE_ECH = { swarmer: "vanguard", gunboat: "main", sub: "main", wasp: "sting", bomber: "sting" };
+const enemies = [];
+const war = { state: "quiet", wave: 0, until: 0, startT: 0, plan: null, queue: [], bag: 0 };
+
+/* LANES — score a candidate bearing by open water along the ship→spawn approach: sample every
+   ~150 u out to the ring against the body circles (60 u pad ≈ a formation's elbow room).
+   1 = a clear channel. Surface/sub formations pick among the FULLY clear lanes when any exist
+   (heavily prefer), best-scored otherwise; air never calls this. Scored at compose time from
+   the ship's position then — the war stream draws the candidates, so it stays deterministic. */
+function laneScore(bearing, ring) {
+  const d = dirOf(bearing);
+  let clear = 0, n = 0;
+  for (let s = 150; s <= ring; s += 150) {
+    n++;
+    if (!terrainBodyAt(ship.x + d.x * s, ship.y + d.y * s, 60)) clear++;
+  }
+  return n ? clear / n : 1;
+}
+function pickLane(wr, ring) {
+  const base = wr() * TAU, cands = [];
+  for (let k = 0; k < 16; k++) {
+    const b = base + (k / 16) * TAU;
+    cands.push({ b, s: laneScore(b, ring) });
+  }
+  const open = cands.filter((c) => c.s >= 0.999);
+  if (open.length) return open[Math.floor(wr() * open.length)].b;
+  let best = cands[0];
+  for (const c of cands) if (c.s > best.s) best = c;
+  return best.b;
+}
+/* SHAPE OFFSETS — formation frame: +ox = right of the bearing, +oy = further OUT (behind the
+   anchor, away from the ship). wedge = a V pointing at the ship · line = abreast · loose =
+   echelon-right with seeded jitter. split:angle is handled at the anchor level (two bearings). */
+function shapeOffsets(shape, n, spacing, wr) {
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    if (shape === "wedge") {
+      const k = Math.ceil(i / 2), side = i === 0 ? 0 : (i % 2 ? -1 : 1);
+      out.push([side * k * spacing, k * spacing * 0.8]);
+    } else if (shape === "loose") {
+      out.push([i * spacing + (wr() - 0.5) * spacing * 0.5, i * spacing * 0.6 + (wr() - 0.5) * spacing * 0.5]);
+    } else {   // line (and each split half)
+      out.push([(i - (n - 1) / 2) * spacing, 0]);
+    }
+  }
+  return out;
+}
+/* COMPOSITION — the spend. Substream keyed (wave_seed, wave) so skipping the quiet or
+   replaying re-derives the identical wave. Order of draws is THE contract for the port:
+   template picks → single picks → per-purchase (ambush roll, bearings, ring, offsets). */
+function composeWave(n) {
+  const wr = mulberry32((Math.imul(cfg.war.wave_seed | 0, 0x9E3779B9) ^ Math.imul(n, 0x85EBCA6B)) >>> 0);
+  let budget = Math.round(cfg.war.budget_base) + Math.round(cfg.war.budget_per_wave) * (n - 1);
+  const buys = [];
+  while (true) {   // templates first — weighted draw among affordable unlocked
+    const aff = TEMPLATES.filter((t) => t.min_wave <= n && tplCost(t) <= budget);
+    if (!aff.length) break;
+    let tw = 0; for (const t of aff) tw += t.weight;
+    let roll = wr() * tw, tpl = aff[aff.length - 1];
+    for (const t of aff) { roll -= t.weight; if (roll <= 0) { tpl = t; break; } }
+    budget -= tplCost(tpl);
+    buys.push(tpl);
+  }
+  const singles = [];
+  while (true) {   // the old greedy path spends the remainder exactly (C3 verbatim)
+    const aff = Object.keys(ENEMY).filter((k) => ENEMY[k].unlock <= n && ENEMY[k].cost <= budget);
+    if (!aff.length) break;
+    const type = aff[Math.floor(wr() * aff.length)];
+    budget -= ENEMY[type].cost;
+    singles.push(type);
+  }
+  // echelon times — normalize so the earliest purchased echelon lands at 0 (no dead air)
+  const echT = { vanguard: 0, main: cfg.war.main_delay, sting: cfg.war.sting_delay };
+  const used = new Set(buys.map((t) => t.echelon));
+  for (const s of singles) used.add(SINGLE_ECH[s]);
+  let shift = Infinity;
+  for (const e of used) shift = Math.min(shift, echT[e]);
+  if (!isFinite(shift)) shift = 0;
+  // staging — every draw below is wr, stored in the plan so REPLAY re-stages the same war
+  const feats = TERRAIN.filter((F) => {
+    const d = Math.hypot(F.x - ship.x, F.y - ship.y);
+    return d > 600 && d < 1100;   // ambush country: between the ring and the ship
+  });
+  const plan = { wave: n, entries: [], ticks: [], lines: { vanguard: [], main: [], sting: [] } };
+  let dominant = null;
+  const stage = (tpl, name, ech, members) => {
+    const rel = echT[ech] - shift;
+    const surface = members.some((m) => ENEMY[m.type].layer !== "air");
+    const ring = 1350 + wr() * 250;
+    const split = tpl && tpl.shape.startsWith("split:") ? parseFloat(tpl.shape.split(":")[1]) * Math.PI / 180 : 0;
+    const ambush = tpl && tpl.ambush_ok && feats.length > 0 && wr() < cfg.war.ambush_chance;
+    let bearing;
+    if (tpl && tpl.flank && dominant !== null)
+      bearing = dominant + (wr() < 0.5 ? -1 : 1) * (70 + wr() * 40) * Math.PI / 180;
+    else if (surface) bearing = pickLane(wr, ring);
+    else bearing = wr() * TAU;
+    if (dominant === null) dominant = bearing;
+    const anchors = split ? [bearing - split / 2, bearing + split / 2] : [bearing];
+    // ambush: each anchor swaps its ring spawn for a feature's far side ("waiting behind the rock");
+    // features are COPIED into the plan (center + bounding r) so a terrain regen never dangles
+    const ambFeats = ambush
+      ? anchors.map(() => { const F = feats[Math.floor(wr() * feats.length)]; return { x: F.x, y: F.y, r: F.r }; })
+      : null;
+    const flat = [];
+    for (const m of members)
+      for (let i = 0; i < m.n; i++) flat.push({ type: m.type, delay: m.delay || 0 });
+    const shape = tpl ? (split ? "line" : tpl.shape) : "line";
+    const spacing = tpl ? tpl.spacing : 0;
+    const perAnchor = anchors.map(() => []);
+    flat.forEach((f, i) => perAnchor[i % anchors.length].push(f));
+    anchors.forEach((b, ai) => {
+      const offs = shapeOffsets(shape, perAnchor[ai].length, Math.max(spacing, split ? 60 : spacing), wr);
+      perAnchor[ai].forEach((f, i) => {
+        plan.entries.push({ rel: rel + f.delay, type: f.type, bearing: b, ring,
+                            ox: offs[i][0], oy: offs[i][1], feat: ambFeats ? ambFeats[ai] : null });
+      });
+    });
+    plan.ticks.push({ rel, ech, label: name + (ambush ? " ⚑" : "") });
+    plan.lines[ech].push(name + (ambush ? " — AMBUSH" : ""));
+  };
+  for (const tpl of buys) stage(tpl, tpl.name, tpl.echelon, tpl.members);
+  const singleCount = {};
+  for (const s of singles) singleCount[s] = (singleCount[s] || 0) + 1;
+  for (const [type, n2] of Object.entries(singleCount))
+    stage(null, `${ENEMY[type].rep} STRAGGLER${n2 > 1 ? " ×" + n2 : ""}`, SINGLE_ECH[type],
+          [{ type, n: n2 }]);
+  // collapse duplicate line labels: "GNAT SWARM ×2"
+  for (const ech of ["vanguard", "main", "sting"]) {
+    const c = {};
+    for (const l of plan.lines[ech]) c[l] = (c[l] || 0) + 1;
+    plan.lines[ech] = Object.entries(c).map(([l, k]) => (k > 1 ? `${l} ×${k}` : l));
+  }
+  return plan;
+}
+/* STAGING — spawn positions resolve at SPAWN TIME: ring spawns are ship-relative (the body
+   arrives beyond the ring wherever she now is); ambush spawns are TERRAIN-relative (the rock
+   doesn't move — they were waiting). Waterborne spawns nudge radially outward until clear
+   (pure arithmetic, capped — the Waves.gd C15 rule, re-derived). */
+function spawnEntry(en) {
+  const d = ENEMY[en.type];
+  let x, y, u;
+  if (en.feat) {
+    u = dirOf(angleTo(ship, en.feat));                     // ship → rock: "behind" is the far side
+    const r = { x: -u.y, y: u.x };
+    x = en.feat.x + u.x * (en.feat.r + 90 + en.oy) + r.x * en.ox;
+    y = en.feat.y + u.y * (en.feat.r + 90 + en.oy) + r.y * en.ox;
+  } else {
+    u = dirOf(en.bearing);
+    const r = { x: -u.y, y: u.x };
+    x = ship.x + u.x * (en.ring + en.oy) + r.x * en.ox;
+    y = ship.y + u.y * (en.ring + en.oy) + r.y * en.ox;
+  }
+  if (d.layer !== "air") {
+    let n = 0;
+    while (n++ < 60 && terrainBodyAt(x, y, 40)) { x += u.x * 40; y += u.y * 40; }
+  }
+  enemies.push({
+    type: en.type, layer: d.layer, hp: d.hp, x, y, vx: 0, vy: 0,
+    heading: angleTo({ x, y }, ship), active: true, state: "run", stT: 0,
+    cool: 1.2 + rng() * 2.0, dir: en.ox >= 0 ? 1 : -1, ph: rng() * TAU, avF: null, avSide: 1,
+  });
+}
+function beginWave(n, reuse) {
+  war.wave = n;
+  war.plan = reuse || composeWave(n);
+  war.state = "fighting";
+  war.startT = simT;
+  war.queue = war.plan.entries.slice().sort((a, b) => a.rel - b.rel);
+}
+function stepWar(dt) {
+  if (war.state === "quiet") {
+    if (simT >= war.until) beginWave(war.wave + 1, null);
+    return;   // REAL QUIET — nothing trickles, the plate just breathes
+  }
+  while (war.queue.length && simT - war.startT >= war.queue[0].rel)
+    spawnEntry(war.queue.shift());   // the plate lights ticks off the wave clock, not spawn events
+  let any = false;
+  for (const e of enemies) if (e.active) { any = true; break; }
+  if (!any && !war.queue.length) {
+    enemies.length = 0;                       // the water clears (Waves.gd clears the array too)
+    war.state = "quiet";
+    war.until = simT + cfg.war.quiet_secs;    // the REAL quiet — longer than the old 8, knob
+  }
+}
+function nextWaveNow() {   // skip the quiet; mid-fight it force-clears and calls the next wave
+  if (war.state === "quiet") { war.until = simT; return; }
+  enemies.length = 0;
+  war.queue.length = 0;
+  beginWave(war.wave + 1, null);
+}
+function replayWave() {    // same composition, re-staged around wherever she now is
+  if (!war.plan) return;
+  enemies.length = 0;
+  war.queue.length = 0;
+  beginWave(war.plan.wave, war.plan);
+}
+function resetWar() {      // seed change / regenerate — the war starts over from wave 0's quiet
+  enemies.length = 0;
+  war.queue.length = 0;
+  war.plan = null;
+  war.wave = 0;
+  war.bag = 0;
+  war.state = "quiet";
+  war.until = simT + 5;    // one short first breath, then wave 1
+}
+
+/* ════════════════════════════ CANVAS / CAMERA ════════════════════════════ */
+const canvas = document.getElementById("sea");
+const ctx = canvas.getContext("2d");
+let W = 0, H = 0, DPR = 1;
+function resize() {
+  DPR = Math.min(devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight;
+  canvas.width = W * DPR; canvas.height = H * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+addEventListener("resize", resize);
+resize();
+const cam = { x: 0, y: 0 };
+let targetZoom = 0.51;   // the wheel drives THIS; cfg.view.zoom chases it (boots at the judged home view)
+let compOn = true;       // C10 gate decision — stroke compensation, default ON
+function w2s(wx, wy) { const z = cfg.view.zoom; return [(wx - cam.x) * z + W / 2, (wy - cam.y) * z + H / 2]; }
+// STROKE COMPENSATION — world-art line widths widen as the camera pulls back so outlines hold
+// apparent width instead of thinning to fuzz. Factor 1 at zoom ≥ 0.85 (the C9 view is untouched),
+// capped ×2.2 so nothing turns to marker. Chart grid / HUD / fills stay OUT of it on purpose.
+function lw(w) { return compOn ? w * Math.min(2.2, Math.max(1, 0.85 / cfg.view.zoom)) : w; }
+// high-frequency layers fade as the zoom pulls back — keyed to the wheel TARGET, not the animated
+// value, so the fade commits once per wheel stop instead of shimmering through every mid-lerp frame
+function hfFade() { return sstep(0.42, 0.75, targetZoom); }
+
+/* ════════════════════════════ LAYER 1+2 — SWELL BANDS ════════════════════════════
+   Two pre-rendered seamless tiles (sums of integer-wavevector sines → wrap cleanly),
+   drawn as repeating patterns scrolled at different scales/speeds. Barely-there value
+   shifts on the deep base: crests lift toward a cool lit sea, troughs sink darker. */
+const TILE = 512;
+function buildBandTile(waves, lightA, darkA) {
+  const c = document.createElement("canvas"); c.width = c.height = TILE;
+  const g = c.getContext("2d");
+  const img = g.createImageData(TILE, TILE), d = img.data;
+  for (let y = 0; y < TILE; y++) {
+    for (let x = 0; x < TILE; x++) {
+      let h = 0;
+      for (const [nx, ny, amp, ph] of waves) h += amp * Math.sin(TAU * (nx * x + ny * y) / TILE + ph);
+      const i = (y * TILE + x) * 4;
+      if (h > 0) { d[i] = 62; d[i + 1] = 112; d[i + 2] = 128; d[i + 3] = Math.round(sstep(0.18, 0.95, h) * lightA * 255); }
+      else       { d[i] = 3;  d[i + 1] = 10;  d[i + 2] = 15;  d[i + 3] = Math.round(sstep(0.18, 0.95, -h) * darkA * 255); }
+    }
+  }
+  g.putImageData(img, 0, 0);
+  return ctx.createPattern(c, "repeat");
+}
+const BAND_LAYERS = [
+  // broad diagonal swell — the long newsreel roll. scale: tile spans ~1180 world units.
+  { pat: buildBandTile([[2, 1, 0.55, 0.7], [1, 2, 0.30, 2.9], [3, -1, 0.15, 5.1]], 0.16, 0.20),
+    scale: 2.3, alpha: 1.0, dx: 8.5, dy: 8.5, hf: false },
+  // finer counter-diagonal chop riding on top — fades with zoom (high-frequency layer)
+  { pat: buildBandTile([[4, 3, 0.50, 1.3], [3, -4, 0.30, 4.0], [6, 2, 0.20, 0.5]], 0.10, 0.12),
+    scale: 1.15, alpha: 0.8, dx: -10, dy: 14, hf: true },
+];
+function drawSwell(seaT) {
+  const z = cfg.view.zoom, fade = hfFade();
+  for (const L of BAND_LAYERS) {
+    const s = z * cfg.swell.scale * L.scale, per = TILE * s;
+    const ox = mod(W / 2 - cam.x * z + L.dx * seaT * cfg.swell.speed * z, per);
+    const oy = mod(H / 2 - cam.y * z + L.dy * seaT * cfg.swell.speed * z, per);
+    ctx.save();
+    ctx.globalAlpha = cfg.swell.amp * L.alpha * (L.hf ? 0.35 + 0.65 * fade : 1);
+    ctx.translate(ox - per, oy - per);
+    ctx.scale(s, s);
+    ctx.fillStyle = L.pat;
+    ctx.fillRect(0, 0, (W + 2 * per) / s, (H + 2 * per) / s);
+    ctx.restore();
+  }
+}
+// Analytic swell height (−1…1) for heave/roll + crest-biased foam. Shares direction and
+// tempo with the band tiles, not exact phase — at these amplitudes nothing visibly disagrees,
+// and the Godot shader gets one function driving both anyway.
+function swellH(wx, wy, seaT) {
+  const k = 0.0035 / Math.max(0.2, cfg.swell.scale), sp = cfg.swell.speed;
+  return 0.6 * Math.sin((wx * 0.71 + wy * 0.71) * k + seaT * 0.25 * sp)
+       + 0.4 * Math.sin((wx * 0.44 - wy * 0.90) * k * 1.9 - seaT * 0.37 * sp);
+}
+
+/* ════════════════════════════ LAYER 3 — CHART GRID (unchanged language) ════════════════════════════
+   Screen-space 1 px by design — charts don't thicken when you pull back. NOT routed through lw(). */
+function drawGrid() {
+  const z = cfg.view.zoom;
+  for (const [step, a] of [[200, 0.035], [1000, 0.07]]) {
+    ctx.strokeStyle = `rgba(228,240,242,${a})`; ctx.lineWidth = 1; ctx.beginPath();
+    const wx0 = cam.x - (W / 2) / z, wy0 = cam.y - (H / 2) / z;
+    for (let gx = Math.floor(wx0 / step) * step; ; gx += step) {
+      const px = (gx - cam.x) * z + W / 2; if (px > W) break;
+      ctx.moveTo(px, 0); ctx.lineTo(px, H);
+    }
+    for (let gy = Math.floor(wy0 / step) * step; ; gy += step) {
+      const py = (gy - cam.y) * z + H / 2; if (py > H) break;
+      ctx.moveTo(0, py); ctx.lineTo(W, py);
+    }
+    ctx.stroke();
+  }
+}
+
+/* ════════════════════════════ LAYER 4 — GLINT FIELD ════════════════════════════
+   Two counter-scrolling noise fields multiplied, smoothstep-thresholded — evaluated at a
+   world-anchored jittered point grid (the cheap point-sampled equivalent of the shader's
+   full-field multiply). Soft foam-colored flecks of light, never hard sparkle. */
+function drawGlints(seaT) {
+  const inten = cfg.glint.intensity * hfFade();
+  if (inten <= 0.02) return;
+  const z = cfg.view.zoom;
+  const cell = Math.max(24, Math.round(42 / z));     // world units per candidate point
+  const wx0 = cam.x - (W / 2) / z, wy0 = cam.y - (H / 2) / z;
+  const wx1 = cam.x + (W / 2) / z, wy1 = cam.y + (H / 2) / z;
+  ctx.fillStyle = "rgba(228,240,242,1)";
+  for (let gy = Math.floor(wy0 / cell); gy * cell < wy1 + cell; gy++) {
+    for (let gx = Math.floor(wx0 / cell); gx * cell < wx1 + cell; gx++) {
+      const jx = hash2(gx, gy), jy = hash2(gx + 57.3, gy - 11.9);
+      const px = (gx + jx) * cell, py = (gy + jy) * cell;
+      const n1 = vnoise(px * 0.012 + seaT * 0.55, py * 0.012 + seaT * 0.40);
+      const n2 = vnoise(px * 0.017 - seaT * 0.45, py * 0.017 + seaT * 0.35);
+      const m = sstep(0.42, 0.58, n1 * n2);
+      if (m <= 0.03) continue;
+      const [sx, sy] = w2s(px, py);
+      ctx.globalAlpha = m * 0.5 * inten;
+      ctx.fillRect(sx - 1.5, sy - 0.5, 3, 1);        // tiny horizontal light-catch, fleck language
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* ════════════════════════════ LAYER 5 — CREST-BIASED FOAM FLECKS ════════════════════════════ */
+const FLECK_TILE = 1600, FLECK_MAX = 260, FLECKS = [];
+for (let i = 0; i < FLECK_MAX; i++)
+  FLECKS.push({ x: rng() * FLECK_TILE, y: rng() * FLECK_TILE, len: 3 + rng() * 9, ph: rng() * TAU });
+function drawFlecks(seaT, reduced) {
+  const z = cfg.view.zoom, fade = 0.45 + 0.55 * hfFade();
+  const n = Math.min(FLECK_MAX, Math.round(cfg.foam.density));
+  const bias = cfg.foam.crest_bias;
+  for (let i = 0; i < n; i++) {
+    const f = FLECKS[i];
+    const wx = mod(f.x - cam.x + FLECK_TILE / 2, FLECK_TILE) - FLECK_TILE / 2 + cam.x;
+    const wy = mod(f.y - cam.y + FLECK_TILE / 2, FLECK_TILE) - FLECK_TILE / 2 + cam.y;
+    const [px, py] = w2s(wx, wy);
+    if (px < -20 || px > W + 20 || py < -20 || py > H + 20) continue;
+    const crest = sstep(0.1, 0.9, (swellH(wx, wy, seaT) + 1) / 2);
+    const a = 0.16 * (1 - bias * 0.65 + bias * 1.3 * crest) * fade;
+    if (a <= 0.01) continue;
+    const bob = reduced ? 0 : Math.sin(seaT * 0.6 + f.ph) * 1.5;
+    const len = f.len * (0.8 + 0.5 * crest) * z;
+    ctx.strokeStyle = `rgba(228,240,242,${a.toFixed(3)})`;
+    ctx.lineWidth = 1; ctx.beginPath();
+    ctx.moveTo(px - len / 2, py + bob * z); ctx.lineTo(px + len / 2, py + bob * z);
+    ctx.stroke();
+  }
+}
+/* ════════════════════════════ SCENE SIM — a REAL fight now (C16) ════════════════════════════
+   The ship steams (autopilot or WASD), the DIRECTOR fields waves in echelons, enemies carry
+   hp and die under the guns, the water clears, the quiet holds, the next wave forms.
+   The SHIP still takes no damage — the owner judges engagements here, not death. */
+let simT = 0, seaT = 0;
+const ship = { x: 0, y: 0, vx: 0, vy: 0, heading: 0, along: 0 };
+function stepShip(inp, dt) {                        // C1 model, unchanged
+  const speed = Math.hypot(ship.vx, ship.vy);
+  const auth = Math.max(MOVE.turn_speed_floor, Math.min(1, speed / MOVE.max_speed_ahead));
+  ship.heading += MOVE.turn_rate_max * auth * inp.rudder * dt;
+  const f = dirOf(ship.heading), r = { x: -f.y, y: f.x };
+  let along = ship.vx * f.x + ship.vy * f.y;
+  let lat = ship.vx * r.x + ship.vy * r.y;
+  if (inp.thrust !== 0) {
+    const opposing = (inp.thrust > 0 && along < -0.01) || (inp.thrust < 0 && along > 0.01);
+    along += (opposing ? MOVE.brake_accel : MOVE.thrust_accel) * inp.thrust * dt;
+  }
+  along *= Math.exp(-MOVE.drag_forward * dt);
+  lat *= Math.exp(-MOVE.drag_lateral * dt);
+  along = Math.min(MOVE.max_speed_ahead, Math.max(-MOVE.max_speed_ahead * MOVE.astern_frac, along));
+  ship.vx = f.x * along + r.x * lat; ship.vy = f.y * along + r.y * lat;
+  ship.x += ship.vx * dt; ship.y += ship.vy * dt;
+  ship.along = along;
+}
+
+/* ════════════════════════════ C16 — ENEMY BRAINS · one helm, five hands ════════════════════════════
+   Every enemy shares helm(): turn-rate steering toward a wanted heading, tangent avoidance +
+   hard push-out for the waterborne (subs route around land too — the deep does NOT pass under,
+   the owner's land rule), air crosses everything. Brains re-derive the shipped Enemies.gd
+   postures at roster numbers: GNAT suicide run · JACKAL standoff-orbit + straddle fire ·
+   WASP run-in / rocket ripple / extend passes · VULTURE slow standoff circles dropping running
+   torpedoes · LAMPREY creeping to 600 and fanning torpedoes. Behavior jitter = scene rng. */
+function helm(e, want, speed, turn, dt) {
+  if (e.layer !== "air") {
+    const av = avoidHeading(e.x, e.y, e.heading, 200, 34, e);
+    if (av !== null) want = av;
+  }
+  e.heading += clamp(angDiff(want, e.heading), -turn * dt, turn * dt);
+  const d = dirOf(e.heading);
+  e.vx = d.x * speed; e.vy = d.y * speed;             // real velocity — RANGEKEEPER reads this
+  e.x += e.vx * dt; e.y += e.vy * dt;
+  if (e.layer !== "air") {
+    const B = terrainBodyAt(e.x, e.y, 14);            // hard safety: never park a hull inside a rock
+    if (B) {
+      const dx = e.x - B.x, dy = e.y - B.y, dd = Math.max(1e-3, Math.hypot(dx, dy));
+      e.x = B.x + dx / dd * (B.r + 14); e.y = B.y + dy / dd * (B.r + 14);
+    }
+  }
+}
+function standoffWant(e, standoff) {   // tangent orbit that leans in when far, out when crowded
+  const dist = Math.hypot(ship.x - e.x, ship.y - e.y);
+  const k = clamp((dist - standoff) / 400, -0.8, 0.8);
+  return angleTo(e, ship) + e.dir * (Math.PI / 2) * (1 - k);
+}
+function fireStraddle(e) {             // the C15 gunboat shot, verbatim — near-misses matter
+  const tof = Math.hypot(ship.x - e.x, ship.y - e.y) / 620;
+  const aim = { x: ship.x + ship.vx * tof * 0.7 + (rng() * 2 - 1) * 60,
+                y: ship.y + ship.vy * tof * 0.7 + (rng() * 2 - 1) * 60 };
+  const ang = angleTo(e, aim), d = dirOf(ang);
+  const dist = Math.hypot(aim.x - e.x, aim.y - e.y);
+  shells.push({ x: e.x, y: e.y, vx: d.x * 620, vy: d.y * 620, life: dist / 620, hostile: true, kind: "dp5" });
+  fxAbove.push({ type: "gunflash", x: e.x + d.x * 14, y: e.y + d.y * 14, t0: simT });
+}
+function launchTorp(e, run) {          // a running torpedo laid across the ship's track
+  const tof = Math.hypot(ship.x - e.x, ship.y - e.y) / 120;
+  const aim = { x: ship.x + ship.vx * tof * 0.6, y: ship.y + ship.vy * tof * 0.6 };
+  const d = dirOf(angleTo(e, aim));
+  torps.push({ x: e.x, y: e.y, vx: d.x * 120, vy: d.y * 120, life: run / 120, emit: 0 });
+  spawnSplash(e.x, e.y, "gun", true);  // the drop plop
+}
+const BRAIN = {
+  swarmer(e, dt) {
+    const D = ENEMY.swarmer;
+    helm(e, angleTo(e, ship) + Math.sin(simT * 1.8 + e.ph) * 0.15, D.speed, D.turn, dt);
+    if (Math.hypot(ship.x - e.x, ship.y - e.y) < 34) {   // the suicide run connects — spent, not bagged
+      fxUnder.push({ type: "boathit", x: e.x, y: e.y, t0: simT });
+      spawnSplash(e.x, e.y, "dp5", true);
+      e.active = false;
+    }
+  },
+  gunboat(e, dt) {
+    const D = ENEMY.gunboat;
+    helm(e, standoffWant(e, D.standoff), D.speed, D.turn, dt);
+    e.cool -= dt;
+    if (e.cool <= 0 && Math.hypot(ship.x - e.x, ship.y - e.y) <= D.fire_range) {
+      e.cool = D.fire_period + rng() * 1.2;
+      fireStraddle(e);
+    }
+  },
+  wasp(e, dt) {
+    const D = ENEMY.wasp;
+    if (e.state === "extend") {                        // overfly past the ship, then come around
+      helm(e, e.heading, D.speed, 0.3, dt);
+      if (simT - e.stT > 2.6) e.state = "run";
+      return;
+    }
+    const dist = Math.hypot(ship.x - e.x, ship.y - e.y);
+    const tof = dist / 320;
+    const aim = { x: ship.x + ship.vx * tof * 0.4, y: ship.y + ship.vy * tof * 0.4 };
+    helm(e, angleTo(e, aim), D.speed, D.turn, dt);
+    e.cool -= dt;
+    if (e.cool <= 0 && dist <= D.fire_range) {         // the ripple — 4 unguided rockets, wide
+      e.cool = D.fire_period;
+      e.state = "extend"; e.stT = simT;
+      for (let k = 0; k < D.salvo; k++) {
+        const ex = e.x, ey = e.y;                      // capture — the wasp keeps moving
+        pending.push({ t: simT + k * 0.12, fn: () => {
+          const ang = angleTo({ x: ex, y: ey }, aim) + (rng() * 2 - 1) * 0.16;
+          const d = dirOf(ang);
+          const reach = Math.hypot(aim.x - ex, aim.y - ey) * (0.75 + rng() * 0.6);   // shorts + overflies
+          shells.push({ x: ex, y: ey, vx: d.x * 320, vy: d.y * 320, life: reach / 320, hostile: true, kind: "dp5" });
+          fxAbove.push({ type: "gunflash", x: ex + d.x * 10, y: ey + d.y * 10, t0: simT });
+        } });
+      }
+    }
+  },
+  bomber(e, dt) {
+    const D = ENEMY.bomber;
+    helm(e, standoffWant(e, D.standoff), D.speed, D.turn, dt);
+    e.cool -= dt;
+    if (e.cool <= 0 && Math.hypot(ship.x - e.x, ship.y - e.y) <= D.fire_range) {
+      e.cool = D.fire_period;
+      launchTorp(e, D.torp_run);
+    }
+  },
+  sub(e, dt) {
+    const D = ENEMY.sub;
+    helm(e, standoffWant(e, D.standoff), D.speed, D.turn, dt);
+    e.cool -= dt;
+    if (e.cool <= 0 && Math.hypot(ship.x - e.x, ship.y - e.y) <= D.fire_range) {
+      e.cool = D.fire_period;
+      launchTorp(e, D.torp_run);
+    }
+  },
+};
+function stepEnemies(dt) {
+  for (const e of enemies) if (e.active) BRAIN[e.type](e, dt);
+}
+function hitEnemy(e, dmg) {
+  e.hp -= dmg;
+  fxUnder.push({ type: "boathit", x: e.x, y: e.y, t0: simT });
+  if (e.hp <= 0) {
+    e.active = false;
+    war.bag++;
+    spawnSplash(e.x, e.y, e.type === "bomber" || e.type === "sub" ? "mb16" : "dp5", false);
+  }
+}
+/* THE RACKS — subs stay deaf to gunfire (C5 law), so the mockup fields the counterplay: when a
+   LAMPREY closes within 300 u the stern racks auto-roll a 3-charge spread (the K-gun language,
+   simplified — no sonar kit here). Run the wolfpack down; two blasts end one. */
+let nextRack = 0;
+function stepRacks() {
+  if (simT < nextRack) return;
+  let near = null, bd = Infinity;
+  for (const e of enemies) {
+    if (!e.active || e.layer !== "sub") continue;
+    const d = Math.hypot(e.x - ship.x, e.y - ship.y);
+    if (d < bd) { bd = d; near = e; }
+  }
+  if (!near || bd > 300) return;
+  nextRack = simT + 6;
+  const aft = dirOf(ship.heading);
+  for (let k = 0; k < 3; k++) {
+    const px = ship.x - aft.x * (120 + k * 45) + (rng() * 2 - 1) * 55;
+    const py = ship.y - aft.y * (120 + k * 45) + (rng() * 2 - 1) * 55;
+    pending.push({ t: simT + k * 0.35, fn: () => {
+      if (terrainBodyAt(px, py)) return;               // dud on land — the C15 rule
+      spawnSplash(px, py, "gun", true);                // the sink plop
+      charges.push({ x: px, y: py, t0: simT, fuse: 1.6 });
+    } });
+  }
+}
+
+/* ════════════════════════════ C16 — ENEMY ART · five classes, one draw ════════════════════════════
+   Gunboat raft + swarmer delta are the shipped C3 art, verbatim. NEW: WASP — a slim swept
+   dart, faster and smaller than the delta; VULTURE — a broad twin-tail silhouette, slow;
+   LAMPREY — a dim submerged shape (dark teal hull under the water + a breathing foam ring,
+   the C5 detected language), emphatically NOT a surface craft. Air classes cast the C9
+   offset shadow. Every class rides the C10 MIN-APPARENT-SIZE FLOOR at its own length. */
+function boatTrace() {
+  ctx.beginPath();
+  ctx.moveTo(0, -16); ctx.quadraticCurveTo(7, -8, 7, 2); ctx.lineTo(6, 14);
+  ctx.lineTo(-6, 14); ctx.lineTo(-7, 2); ctx.quadraticCurveTo(-7, -8, 0, -16);
+  ctx.closePath();
+}
+function drawEnemies(reduced) {
+  const z = cfg.view.zoom;
+  for (const e of enemies) {
+    if (!e.active) continue;
+    const [px, py] = w2s(e.x, e.y);
+    if (px < -60 || px > W + 60 || py < -60 || py > H + 60) continue;
+    const zb = z * Math.max(1, cfg.zoom.min_px / Math.max(0.001, ENEMY[e.type].len * z));   // THE FLOOR
+    if (e.type === "sub") {                            // the deep — under everything surface
+      const pulse = reduced ? 0 : Math.sin(seaT * 1.1 + e.ph);
+      ctx.save();
+      ctx.translate(px, py); ctx.scale(zb, zb); ctx.rotate(e.heading);
+      ctx.fillStyle = "rgba(16,36,44,0.60)";           // the hull, a shadow under the water
+      ctx.beginPath(); ctx.ellipse(0, 0, 5, 15, 0, 0, TAU); ctx.fill();
+      ctx.fillStyle = "rgba(20,44,52,0.75)";
+      ctx.fillRect(-1.6, -4, 3.2, 7);                  // the sail
+      ctx.strokeStyle = `rgba(228,240,242,${(0.22 + 0.08 * pulse).toFixed(3)})`;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.ellipse(0, 0, 8 + pulse, 18 + pulse, 0, 0, TAU); ctx.stroke();   // detected ring
+      ctx.fillStyle = "rgba(228,240,242,0.5)";         // periscope feather
+      ctx.beginPath(); ctx.arc(0, -9, 1.2, 0, TAU); ctx.fill();
+      ctx.restore();
+      continue;
+    }
+    if (e.type === "gunboat") {                        // C3 raft, riding the same sea
+      const bob = reduced ? 0 : swellH(e.x, e.y, seaT) * cfg.ship.heave_px * 0.8;
+      const rock = reduced ? 0 : Math.sin(seaT * 0.9 + e.ph * 3.1) * 0.05 * cfg.ship.roll_deg;
+      const off = cfg.ship.shadow_px * 0.6 * z;
+      ctx.save();
+      ctx.translate(px + SHADOW.x * off, py + SHADOW.y * off);
+      ctx.scale(zb, zb); ctx.rotate(e.heading + rock);
+      boatTrace(); ctx.fillStyle = "rgba(2,10,14,0.35)"; ctx.fill();
+      ctx.restore();
+      ctx.save();
+      ctx.translate(px + SUN.x * bob, py + SUN.y * bob);
+      ctx.scale(zb, zb); ctx.rotate(e.heading + rock);
+      boatTrace(); ctx.fillStyle = "#2E3E45"; ctx.fill();
+      ctx.strokeStyle = "rgba(228,240,242,0.4)"; ctx.lineWidth = lw(1); ctx.stroke();
+      ctx.fillStyle = "#4A5F68"; ctx.fillRect(-3.5, -4, 7, 9);          // gun house
+      ctx.fillStyle = "#93A7AE"; ctx.fillRect(-0.8, -12, 1.6, 8);       // the gun
+      ctx.restore();
+      continue;
+    }
+    // the air — C9 language: a shadow thrown well off the airframe
+    const off = cfg.ship.shadow_px * 1.6 * z;
+    const drawAir = (shadow) => {
+      ctx.save();
+      ctx.translate(px + (shadow ? SHADOW.x * off : 0), py + (shadow ? SHADOW.y * off : 0));
+      ctx.scale(zb, zb); ctx.rotate(e.heading);
+      ctx.fillStyle = shadow ? "rgba(2,10,14,0.30)" : "#D94F2B";
+      if (e.type === "swarmer") {                      // the shipped delta
+        ctx.beginPath();
+        ctx.moveTo(0, -7); ctx.lineTo(5, 5); ctx.lineTo(0, 2.6); ctx.lineTo(-5, 5);
+        ctx.closePath(); ctx.fill();
+      } else if (e.type === "wasp") {                  // slim swept dart
+        ctx.beginPath();
+        ctx.moveTo(0, -6); ctx.lineTo(1.4, -0.5); ctx.lineTo(6, 2.4); ctx.lineTo(1.6, 1.6);
+        ctx.lineTo(2.2, 5.6); ctx.lineTo(0, 4.4); ctx.lineTo(-2.2, 5.6); ctx.lineTo(-1.6, 1.6);
+        ctx.lineTo(-6, 2.4); ctx.lineTo(-1.4, -0.5);
+        ctx.closePath(); ctx.fill();
+      } else {                                         // bomber — broad wings, twin tail
+        ctx.fillRect(-1.6, -9, 3.2, 17);               // fuselage
+        ctx.beginPath();
+        ctx.moveTo(-11, -1); ctx.lineTo(11, -1); ctx.lineTo(9, 2.4); ctx.lineTo(-9, 2.4);
+        ctx.closePath(); ctx.fill();
+        ctx.fillRect(-5.5, 6, 11, 1.8);                // tailplane
+        ctx.fillRect(-5.5, 4.4, 1.6, 3.6); ctx.fillRect(3.9, 4.4, 1.6, 3.6);   // twin fins
+      }
+      ctx.restore();
+    };
+    if (!reduced) drawAir(true);
+    drawAir(false);
+    if (e.type !== "bomber") {                         // tiny foam/prop dot at the tail
+      ctx.save(); ctx.translate(px, py); ctx.scale(zb, zb); ctx.rotate(e.heading);
+      ctx.fillStyle = "rgba(228,240,242,0.45)";
+      ctx.beginPath(); ctx.arc(0, 7.6, 1.5, 0, TAU); ctx.fill();
+      ctx.restore();
+    }
+  }
+}
+
+// player mounts — the C2 art, aimed by a slim slew loop (mockup: gunboats are the only targets)
+const MOUNTS = [
+  { x: 0, y: -72, size: "L" }, { x: 0, y: 36, size: "L" },
+  { x: -19, y: -28, size: "M" }, { x: 19, y: -28, size: "M" },
+  { x: -19, y: 14, size: "M" }, { x: 19, y: 14, size: "M" },
+  { x: -16, y: -55, size: "S" }, { x: 16, y: -55, size: "S" },
+  { x: -17, y: 52, size: "S" }, { x: 17, y: 52, size: "S" },
+];
+const GUN = {   // C2 weapons, rates eased so splash cadence reads (mockup pacing, not balance)
+  L: { rate: 0.31, traverse: 0.9, speed: 420, range: 900, spread: 0.012, splash: "mb16", active: true, dmg: 4 },
+  M: { rate: 0.5, traverse: 2.2, speed: 620, range: 560, spread: 0.05, splash: "dp5", active: true, dmg: 2 },
+  S: { rate: 2.6, traverse: 4.0, speed: 700, range: 420, spread: 0.05, splash: "gun", active: true, dmg: 1 }, // C16: there IS an air war now — the crewed guns stand to
+};
+const mounts = MOUNTS.map(() => ({ ang: 0, cool: 0 }));
+const RECOIL = MOUNTS.map(() => 0);
+const FLASH_LEN = { L: 35, M: 22, S: 13 };
+function mountWorld(mc) {
+  const c = Math.cos(ship.heading), s = Math.sin(ship.heading);
+  const ax = mc.x * HULL_ART, ay = mc.y * HULL_ART;   // C14: mount offsets ride the hull scale
+  return { x: ship.x + ax * c - ay * s, y: ship.y + ax * s + ay * c };
+}
+function stepMounts(dt) {
+  const cw = cursorWorld();
+  for (let i = 0; i < MOUNTS.length; i++) {
+    const mc = MOUNTS[i], m = mounts[i], w = GUN[mc.size];
+    const mp = mountWorld(mc);
+    if (mc.size === "L") {
+      /* C11 — the main battery answers to the cursor and nothing else in this mockup.
+         Hold RMB: slew onto the cursor bearing, fire on the C11 rule. Released: no auto
+         targeting — the turrets stow on the bow (the gate is manual fire control). */
+      const desired = rmbHeld ? angleTo(mp, cw) : ship.heading;
+      m.ang += clamp(angDiff(desired, m.ang), -w.traverse * dt, w.traverse * dt);
+      m.cool -= dt;
+      if (rmbHeld && m.cool <= 0 && Math.abs(angDiff(desired, m.ang)) <= 0.06) {
+        m.cool = 1 / w.rate;
+        const cdist = Math.hypot(cw.x - mp.x, cw.y - mp.y);
+        // THE C11 RULE: cursor in range → the shell's flight ends AT the cursor point
+        // (life = dist/speed) and bursts there. Beyond range → full 900 along the
+        // cursor bearing, burst at the end (today's rule). Prox-fuse splash unchanged.
+        const dist = Math.min(cdist, w.range);
+        const d = dirOf(m.ang + (rng() * 2 - 1) * w.spread);
+        shells.push({ x: mp.x, y: mp.y, vx: d.x * w.speed, vy: d.y * w.speed,
+                      life: dist / w.speed, hostile: false, kind: w.splash, own: true });
+        fxAbove.push({ type: "muzzle", x: mp.x, y: mp.y, ang: m.ang, size: mc.size, t0: simT });
+        RECOIL[i] = 1;
+      }
+      continue;
+    }
+    // M/S mounts auto-slew, auto-fire — dual-purpose, air-first on the S rings. THE DEAF-DEEP
+    // LAW: no gun ever targets (or hurts) a sub — depth charges are the only sub killer.
+    let tgt = null, bd = Infinity;
+    if (w.active) for (const e of enemies) {
+      if (!e.active || e.layer === "sub") continue;
+      const d = Math.hypot(e.x - mp.x, e.y - mp.y);
+      if (d > w.range) continue;
+      const score = d - (mc.size === "S" && e.layer === "air" ? 600 : 0);   // AA leads with the sky
+      if (score < bd) { bd = score; tgt = e; }
+    }
+    let lead = tgt;
+    if (tgt) {   // the C3 port fix, kept: no-lead fire can't touch a crossing contact
+      const tof = Math.hypot(tgt.x - mp.x, tgt.y - mp.y) / w.speed;
+      lead = { x: tgt.x + tgt.vx * tof * 0.6, y: tgt.y + tgt.vy * tof * 0.6 };
+    }
+    const desired = tgt ? angleTo(mp, lead) : ship.heading;
+    const dAng = angDiff(desired, m.ang);
+    m.ang += clamp(dAng, -w.traverse * dt, w.traverse * dt);
+    m.cool -= dt;
+    if (tgt && m.cool <= 0 && Math.abs(angDiff(desired, m.ang)) <= 0.06) {
+      m.cool = 1 / w.rate;
+      const d = dirOf(m.ang + (rng() * 2 - 1) * w.spread);
+      const dist = Math.min(Math.hypot(lead.x - mp.x, lead.y - mp.y) + (rng() * 2 - 1) * 30, w.range);
+      shells.push({ x: mp.x, y: mp.y, vx: d.x * w.speed, vy: d.y * w.speed,
+                    life: dist / w.speed, hostile: false, kind: w.splash, tgt, dmg: w.dmg });
+      fxAbove.push({ type: "muzzle", x: mp.x, y: mp.y, ang: m.ang, size: mc.size, t0: simT });
+      RECOIL[i] = 1;
+    }
+  }
+}
+
+const shells = [];
+const scopeFlashes = [];   // C11 fall-of-shot: own mb16 bursts flash on the mini scope
+function stepShells(dt) {
+  for (let i = shells.length - 1; i >= 0; i--) {
+    const p = shells[i];
+    p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
+    /* C15 — the rule of the waters: mb16 splash shells ARC OVER terrain (ballistic, flight
+       untouched); everything FLAT — gunboat dp5 at the player, own dp5 direct rounds —
+       TERMINATES on rock with a gray basalt puff, not foam. Islands are cover both ways. */
+    if (p.kind !== "mb16" && terrainBodyAt(p.x, p.y)) {
+      spawnRockHit(p.x, p.y, false);
+      shells.splice(i, 1);
+      continue;
+    }
+    if (p.life > 0) continue;
+    if (p.kind === "mb16" && terrainBodyAt(p.x, p.y)) {
+      // a ballistic burst that comes DOWN on land: rock dust, not a water column — but it
+      // still marks the scope (fall of shot is fall of shot)
+      spawnRockHit(p.x, p.y, true);
+      if (!p.hostile) scopeFlashes.push({ x: p.x, y: p.y, t0: simT });
+      shells.splice(i, 1);
+      continue;
+    }
+    spawnSplash(p.x, p.y, p.kind, p.hostile);
+    if (!p.hostile && p.kind === "mb16")             // C11: your burst exists on the scope
+      scopeFlashes.push({ x: p.x, y: p.y, t0: simT });
+    /* C16 — the fight is real now. mb16 bursts strike everything under the burst disc; the
+       auto guns resolve against their carried tgt. The deep is physically out of reach of
+       gunfire (C5 law) — no branch here ever touches a sub. Mockup pacing damages, not balance. */
+    if (!p.hostile) {
+      if (p.kind === "mb16") {
+        for (const e of enemies)
+          if (e.active && e.layer !== "sub" && Math.hypot(e.x - p.x, e.y - p.y) < 42)
+            hitEnemy(e, GUN.L.dmg);
+      } else if (p.tgt && p.tgt.active && Math.hypot(p.tgt.x - p.x, p.tgt.y - p.y) < 42) {
+        hitEnemy(p.tgt, p.dmg || 1);
+      }
+    }
+    shells.splice(i, 1);
+  }
+}
+
+/* ════════════════════════════ ORDNANCE — pending fuzes, charges, torpedoes ════════════════════════════
+   C16: the scripted scene beats are GONE. Torpedoes come from VULTUREs and LAMPREYs now;
+   the charges come off the racks when a sub closes (stepRacks). This block just runs the
+   physics: pending scheduled shots, charge fuzes (blasts hurt SUBS ONLY — the C5 rule),
+   torpedo runs (still dying on rock with a full column — the C15 rule, verbatim). */
+const pending = [];    // {t, fn}
+const charges = [], torps = [], bubbles = [];
+function stepOrdnance(dt) {
+  for (let i = pending.length - 1; i >= 0; i--)
+    if (simT >= pending[i].t) { pending[i].fn(); pending.splice(i, 1); }
+  for (let i = charges.length - 1; i >= 0; i--) {
+    const c = charges[i];
+    if (simT - c.t0 >= c.fuse) {
+      fxUnder.push({ type: "dcblast", x: c.x, y: c.y, r: 46, t0: simT });
+      for (const e of enemies)                       // the only thing that hurts the deep
+        if (e.active && e.layer === "sub" && Math.hypot(e.x - c.x, e.y - c.y) < 85)
+          hitEnemy(e, 3);
+      charges.splice(i, 1);
+    }
+  }
+  for (let i = torps.length - 1; i >= 0; i--) {
+    const t = torps[i];
+    t.x += t.vx * dt; t.y += t.vy * dt; t.life -= dt; t.emit -= dt;
+    if (terrainBodyAt(t.x, t.y)) {                   // C15 — torpedoes die on rock, full column
+      spawnSplash(t.x, t.y, "mb16", true);
+      torps.splice(i, 1);
+      continue;
+    }
+    if (t.emit <= 0) {                               // the bright bubbling line
+      t.emit = 0.03;
+      bubbles.push({ x: t.x + (rng() * 2 - 1) * 2, y: t.y + (rng() * 2 - 1) * 2, t0: simT });
+      if (bubbles.length > 500) bubbles.shift();
+    }
+    if (t.life <= 0) torps.splice(i, 1);
+  }
+}
+
+/* ════════════════════════════ WAKE — persistent foam + bow wave ════════════════════════════ */
+const wakePts = [];
+let wakeEmit = 0;
+function stepWake(dt) {
+  wakeEmit -= dt;
+  const speed = Math.hypot(ship.vx, ship.vy);
+  if (wakeEmit > 0 || speed < 6) return;
+  wakeEmit = 1 / 30;
+  const f = dirOf(ship.heading), r = { x: -f.y, y: f.x };
+  const stern = { x: ship.x - f.x * 96 * HULL_ART, y: ship.y - f.y * 96 * HULL_ART };   // C14: the stern moved aft
+  const w = Math.min(1, speed / MOVE.max_speed_ahead);
+  wakePts.push({ x: stern.x, y: stern.y, t0: simT, ang: ship.heading, w, sx: 0, sy: 0 });          // prop churn
+  for (const side of [-1, 1])                        // shoulders drift outward → a widening V
+    wakePts.push({ x: stern.x + r.x * side * 14 * HULL_ART, y: stern.y + r.y * side * 14 * HULL_ART, t0: simT,
+                   ang: ship.heading, w: w * 0.7, sx: r.x * side * 7 * HULL_ART, sy: r.y * side * 7 * HULL_ART });
+  if (wakePts.length > 900) wakePts.splice(0, wakePts.length - 900);
+}
+function drawWake() {
+  const z = cfg.view.zoom, life = cfg.wake.life, wd = cfg.wake.width;
+  for (const p of wakePts) {
+    const age = (simT - p.t0) / life;
+    if (age >= 1) continue;
+    const [px, py] = w2s(p.x + p.sx * (simT - p.t0), p.y + p.sy * (simT - p.t0));
+    const r = (1.6 + p.w * 3 + age * 6 * p.w) * wd * z;
+    const a = (p.sx === 0 && age < 0.12 ? 0.20 : 0.12) * p.w * Math.pow(1 - age, 1.6);
+    ctx.fillStyle = `rgba(228,240,242,${a.toFixed(3)})`;
+    ctx.save(); ctx.translate(px, py); ctx.rotate(p.ang); ctx.scale(1, 1.7);   // elongated along track
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+  // torpedo bubble trail — brighter than wake foam, tight line
+  for (let i = bubbles.length - 1; i >= 0; i--) {
+    const b = bubbles[i], age = (simT - b.t0) / 2.8;
+    if (age >= 1) { bubbles.splice(i, 1); continue; }
+    const [px, py] = w2s(b.x, b.y);
+    ctx.fillStyle = `rgba(228,240,242,${(0.6 * (1 - age)).toFixed(3)})`;
+    ctx.beginPath(); ctx.arc(px, py, (0.8 + age * 2.4) * z, 0, TAU); ctx.fill();
+  }
+}
+function drawBowWave() {   // inside ship-local transform, before the hull fill overlaps it
+  const spd01 = clamp(Math.hypot(ship.vx, ship.vy) / MOVE.max_speed_ahead, 0, 1);
+  if (spd01 < 0.05) return;
+  ctx.strokeStyle = `rgba(228,240,242,${(0.12 + 0.5 * spd01).toFixed(3)})`;
+  ctx.lineWidth = lw(2); ctx.lineCap = "round";
+  for (const s of [-1, 1]) {
+    ctx.beginPath();
+    ctx.moveTo(s * 3, -118);
+    ctx.quadraticCurveTo(s * 12, -112, s * (14 + spd01 * 5), -94);
+    ctx.stroke();
+  }
+  ctx.lineCap = "butt";
+}
+
+/* ════════════════════════════ SPLASH COLUMNS — approved at C9, verbatim machinery ════════════════════════════
+   Top-down vertical-column read via five cues: (1) white plume drawn ABOVE ship art,
+   (2) sun-opposite shadow whose offset tracks column height, (3) scale-pop with overshoot,
+   (4) droplets flying outward then stopping, (5) pale foam disc lingering 2–6 s.
+   Dye knob: WWII navies tinted splashes per battery for spotting — mb16 brass, dp5 steel.
+   C10 touch: disc ring + dye rim widths route through lw(). */
+const SPLASH_KIND = {
+  mb16: { r: 36, rise: 0.26, hang: 0.16, fall: 0.42, drops: 14, foamMul: 1.0, minPx: 12, dye: "rgba(205,186,142,0.55)" },
+  dp5:  { r: 16, rise: 0.20, hang: 0.10, fall: 0.34, drops: 8,  foamMul: 0.8, minPx: 7,  dye: "rgba(147,167,174,0.6)" },
+  gun:  { r: 6,  rise: 0.15, hang: 0.05, fall: 0.22, drops: 4,  foamMul: 0.5, minPx: 4,  dye: null },
+};
+const splashes = [];
+function spawnSplash(x, y, kind, hostile) {
+  const K = SPLASH_KIND[kind];
+  const drops = [];
+  for (let i = 0; i < K.drops; i++) {
+    const a = rng() * TAU;
+    drops.push({ dx: Math.sin(a), dy: -Math.cos(a), dist: K.r * (1.2 + rng()) });
+  }
+  splashes.push({ x, y, kind, hostile: !!hostile, t0: simT, drops });
+  if (splashes.length > 80) splashes.shift();
+}
+function colH(K, age) {
+  if (age < K.rise) return easeOutBack(age / K.rise);          // overshoot pop
+  if (age < K.rise + K.hang) return 1;
+  const f = (age - K.rise - K.hang) / K.fall;
+  return f >= 1 ? 0 : 1 - f * f;
+}
+function drawSplashWater(reduced) {   // foam discs + column shadows + DC domes — UNDER ship art
+  const z = cfg.view.zoom, ss = cfg.splash.scale;
+  for (let i = splashes.length - 1; i >= 0; i--) {
+    const sp = splashes[i], K = SPLASH_KIND[sp.kind];
+    const age = simT - sp.t0, foamLife = cfg.splash.foam_life * K.foamMul;
+    if (age >= foamLife) { splashes.splice(i, 1); continue; }
+    const [px, py] = w2s(sp.x, sp.y);
+    const Rf = Math.max(K.r * ss * z, K.minPx);
+    // (5) lingering foam disc — kept even under reduced motion; it carries gameplay info
+    const grow = reduced ? 1 : 0.75 + 0.35 * Math.min(age / 0.6, 1);
+    const fa = 0.34 * Math.pow(1 - age / foamLife, 1.3);
+    ctx.fillStyle = `rgba(228,240,242,${(fa * 0.8).toFixed(3)})`;
+    ctx.beginPath(); ctx.arc(px, py, Rf * grow, 0, TAU); ctx.fill();
+    ctx.strokeStyle = `rgba(228,240,242,${fa.toFixed(3)})`; ctx.lineWidth = lw(1.4);
+    ctx.beginPath(); ctx.arc(px, py, Rf * grow, 0, TAU); ctx.stroke();
+    if (cfg.splash.dye && K.dye && !sp.hostile && age < foamLife * 0.4) {   // per-battery rim tint
+      ctx.strokeStyle = K.dye; ctx.lineWidth = lw(2);
+      ctx.globalAlpha = 1 - age / (foamLife * 0.4);
+      ctx.beginPath(); ctx.arc(px, py, Rf * grow * 0.82, 0, TAU); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    if (reduced) continue;
+    // (2) sun-opposite shadow, offset tracking column height
+    const h = colH(K, age);
+    if (h > 0.02) {
+      const off = (2 + h * K.r * ss * 0.5) * z;
+      ctx.fillStyle = `rgba(2,10,14,${(0.30 * Math.min(1, h)).toFixed(3)})`;
+      ctx.save(); ctx.translate(px + SHADOW.x * off, py + SHADOW.y * off); ctx.scale(1, 0.55);
+      ctx.beginPath(); ctx.arc(0, 0, Rf * 0.7 * h, 0, TAU); ctx.fill();
+      ctx.restore();
+    }
+  }
+  // DC underwater blast — dome lit from below, subsurface glow, dark ring chasing it
+  for (let i = fxUnder.length - 1; i >= 0; i--) {
+    const e = fxUnder[i], age = simT - e.t0;
+    const life = e.type === "dcblast" ? 0.9 : 0.5;
+    if (age >= life) { fxUnder.splice(i, 1); continue; }
+    const k = age / life, [px, py] = w2s(e.x, e.y);
+    if (e.type === "dcblast") {
+      const R = e.r * z;
+      const gl = ctx.createRadialGradient(px, py, 0, px, py, R * 1.5);
+      gl.addColorStop(0, `rgba(80,160,170,${(0.22 * (1 - k)).toFixed(3)})`);
+      gl.addColorStop(1, "rgba(80,160,170,0)");
+      ctx.fillStyle = gl;
+      ctx.beginPath(); ctx.arc(px, py, R * 1.5, 0, TAU); ctx.fill();
+      ctx.fillStyle = `rgba(228,240,242,${(0.35 * (1 - k)).toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(px, py, R * (0.3 + 0.7 * k), 0, TAU); ctx.fill();
+      ctx.strokeStyle = `rgba(10,30,42,${(0.8 * (1 - k)).toFixed(3)})`; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(px, py, Math.max(0.5, R * k), 0, TAU); ctx.stroke();
+    } else {   // boathit — red arc on a straddled gunboat
+      ctx.strokeStyle = `rgba(217,79,43,${(0.85 * (1 - k)).toFixed(3)})`; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(px, py, (6 + 22 * k) * z, 0, TAU); ctx.stroke();
+    }
+  }
+  // sinking charges — shrinking dot + spreading ring (C5 language)
+  for (const c of charges) {
+    const sink = clamp((simT - c.t0) / c.fuse, 0, 1);
+    const [px, py] = w2s(c.x, c.y);
+    ctx.fillStyle = `rgba(228,240,242,${(0.7 - sink * 0.5).toFixed(3)})`;
+    ctx.beginPath(); ctx.arc(px, py, Math.max(0.5, (3.5 - sink * 2) * z), 0, TAU); ctx.fill();
+    ctx.strokeStyle = `rgba(228,240,242,${(0.3 - sink * 0.2).toFixed(3)})`; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(px, py, (5 + sink * 6) * z, 0, TAU); ctx.stroke();
+  }
+}
+function drawSplashPlumes(reduced) {   // (1) plume + (3) pop + (4) droplets — ABOVE ship art
+  if (reduced) return;                 // reduced motion keeps only the discs (drawn under)
+  const z = cfg.view.zoom, ss = cfg.splash.scale;
+  for (const sp of splashes) {
+    const K = SPLASH_KIND[sp.kind], age = simT - sp.t0;
+    const h = colH(K, age);
+    if (h > 0.02) {
+      const [px, py] = w2s(sp.x, sp.y);
+      const R = Math.max(K.r * ss * z, K.minPx) * (0.5 + 0.5 * Math.min(h, 1.15));
+      const a = 0.92 * Math.min(1, h);
+      ctx.fillStyle = `rgba(228,240,242,${a.toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(px, py, R * 0.6 * h, 0, TAU); ctx.fill();                       // base cap
+      ctx.beginPath(); ctx.arc(px + SUN.x * R * 0.15, py + SUN.y * R * 0.15, R * 0.42 * h, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(px + SUN.x * R * 0.30, py + SUN.y * R * 0.30 - R * 0.12 * h, R * 0.26 * h, 0, TAU); ctx.fill();
+      if (cfg.splash.dye && K.dye && !sp.hostile) {
+        ctx.strokeStyle = K.dye; ctx.lineWidth = lw(2);
+        ctx.beginPath(); ctx.arc(px, py, R * 0.72 * h, 0, TAU); ctx.stroke();
+      }
+    }
+    if (age < 0.9) {                   // droplets: fly out, stop, fade
+      const k = Math.min(age / 0.5, 1), eased = 1 - (1 - k) * (1 - k);
+      const da = age < 0.5 ? 0.9 : Math.max(0, 0.9 * (1 - (age - 0.5) / 0.4));
+      ctx.fillStyle = `rgba(228,240,242,${da.toFixed(3)})`;
+      for (const d of sp.drops) {
+        const [px, py] = w2s(sp.x + d.dx * d.dist * eased * ss, sp.y + d.dy * d.dist * eased * ss);
+        ctx.fillRect(px - 0.8, py - 0.8, 1.6, 1.6);
+      }
+    }
+  }
+}
+
+/* ════════════════════════════ ABOVE-SHIP FX — muzzle flashes + C15 rock-hit dust ════════════════════════════ */
+const fxAbove = [], fxUnder = [];
+function spawnRockHit(x, y, big) {
+  // C15 — flat fire dying on rock: gray basalt dust, emphatically NOT foam. Speckle offsets
+  // come from the scene rng (cosmetic) — the terrain stream never draws here.
+  const specks = [];
+  const n = big ? 7 : 4;
+  for (let i = 0; i < n; i++) {
+    const a = rng() * TAU, d = (big ? 30 : 13) * (0.6 + rng());
+    specks.push([Math.sin(a) * d, -Math.cos(a) * d]);
+  }
+  fxAbove.push({ type: "rockhit", x, y, big: !!big, t0: simT, specks });
+}
+function drawFxAbove() {
+  const z = cfg.view.zoom;
+  for (let i = fxAbove.length - 1; i >= 0; i--) {
+    const e = fxAbove[i], age = simT - e.t0;
+    const life = e.type === "rockhit" ? (e.big ? 0.7 : 0.45) : 0.12;
+    if (age >= life) { fxAbove.splice(i, 1); continue; }
+    const k = age / life;
+    if (e.type === "rockhit") {   // C15 — gray dust puff + darker core + flying grit
+      const [px, py] = w2s(e.x, e.y);
+      const R = Math.max((e.big ? 26 : 9) * (0.55 + 0.8 * k) * z, 3);
+      ctx.fillStyle = `rgba(126,120,108,${(0.55 * (1 - k)).toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(px, py, R, 0, TAU); ctx.fill();
+      ctx.fillStyle = `rgba(58,54,46,${(0.5 * (1 - k)).toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(px, py, R * 0.5, 0, TAU); ctx.fill();
+      const eased = 1 - (1 - Math.min(k * 1.4, 1)) ** 2;
+      ctx.fillStyle = `rgba(140,134,120,${(0.7 * (1 - k)).toFixed(3)})`;
+      for (const [ox, oy] of e.specks) {
+        const [qx, qy] = w2s(e.x + ox * eased, e.y + oy * eased);
+        ctx.fillRect(qx - 0.9, qy - 0.9, 1.8, 1.8);
+      }
+      continue;
+    }
+    if (e.type === "muzzle") {
+      const d = dirOf(e.ang), len = FLASH_LEN[e.size] * HULL_ART;   // C14: muzzle reach rides the hull scale
+      const [px, py] = w2s(e.x + d.x * len, e.y + d.y * len);
+      ctx.fillStyle = `rgba(232,180,110,${(0.9 * (1 - k)).toFixed(3)})`;
+      ctx.beginPath();
+      ctx.arc(px, py, (e.size === "L" ? 6.5 : e.size === "M" ? 3.2 : 2.2) * (1 + k) * z, 0, TAU);
+      ctx.fill();
+    } else {   // hostile gunflash
+      const [px, py] = w2s(e.x, e.y);
+      ctx.fillStyle = `rgba(233,103,66,${(0.9 * (1 - k)).toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(px, py, 3 * (1 + k) * z, 0, TAU); ctx.fill();
+    }
+  }
+}
+/* ════════════════════════════ CREST-FOAM STREAKS — heavy weather's signature ════════════════════════════
+   Thin white lines that form and break along swell crests (crest direction = perpendicular to
+   the main wavevector). Spawned near crests, they grow, arc slightly, and fade. High-frequency
+   layer — fades with the zoom TARGET; width rides the stroke compensation. */
+const STREAKS = [];
+function stepStreaks(dt, reduced) {
+  const inten = cfg.foam.crest_streaks;
+  if (reduced || inten <= 0.02) { STREAKS.length = 0; return; }
+  const z = cfg.view.zoom;
+  for (let k = 0; k < 3; k++) {
+    if (rng() > inten * 0.75) continue;
+    const wx = cam.x + (rng() - 0.5) * W / z, wy = cam.y + (rng() - 0.5) * H / z;
+    if (swellH(wx, wy, seaT) < 0.55) continue;                    // crests only
+    STREAKS.push({ x: wx, y: wy, t0: simT, life: 1.6 + rng() * 1.2,
+                   len: 18 + rng() * 26, ang: -Math.PI / 4 + (rng() - 0.5) * 0.5 });
+    if (STREAKS.length > 90) STREAKS.shift();
+  }
+}
+function drawStreaks() {
+  const z = cfg.view.zoom, fade = 0.45 + 0.55 * hfFade();
+  for (let i = STREAKS.length - 1; i >= 0; i--) {
+    const s = STREAKS[i], k = (simT - s.t0) / s.life;
+    if (k >= 1) { STREAKS.splice(i, 1); continue; }
+    const a = 0.30 * Math.sin(Math.PI * k) * fade * cfg.foam.crest_streaks;
+    if (a <= 0.01) continue;
+    const dx = Math.cos(s.ang), dy = Math.sin(s.ang);
+    const half = s.len * (0.5 + 0.7 * k) * z / 2;
+    const [px, py] = w2s(s.x, s.y);
+    ctx.strokeStyle = `rgba(228,240,242,${a.toFixed(3)})`;
+    ctx.lineWidth = lw(1.3);
+    ctx.beginPath();
+    ctx.moveTo(px - dx * half, py - dy * half);
+    ctx.quadraticCurveTo(px - dy * 4 * z, py + dx * 4 * z, px + dx * half, py + dy * half);
+    ctx.stroke();
+  }
+}
+
+/* ════════════════════════════ C15 — TERRAIN ART · the waters' look ════════════════════════════
+   Each body, coast-out: (a) SHOAL HALO — pale shallow sea-green fading to nothing at ~shoal×
+   the coast radius (the sea gets pale near land); (b) FOAM FRINGE — two breathing foam rings
+   hugging the coastline (the splash-disc foam language, slow pulse on the sea clock; static
+   under reduced motion but KEPT — it carries gameplay info, where the coast is); (c) the
+   BODY — dark basalt gray-brown, blobby smoothed coast, darker heart + facet lines for
+   relief. Clearly NOT hostile-red, NOT ship-steel: warm dark grays. Islets carry their
+   deadpan props — scrubby bushes, a lone nav light on a slow blink. Rock bodies get a
+   min-px ART floor (same trick as the swarmers) so a 10 u reef still reads at 0.4; the SIM
+   circle stays honest at world size. World layer — strokes ride lw(). */
+function traceBlob(B, scale) {   // smoothed coast: quadratics through edge midpoints
+  const n = B.pts.length, sp = [];
+  for (const p of B.pts) sp.push(w2s(B.x + (p[0] - B.x) * scale, B.y + (p[1] - B.y) * scale));
+  ctx.beginPath();
+  ctx.moveTo((sp[n - 1][0] + sp[0][0]) / 2, (sp[n - 1][1] + sp[0][1]) / 2);
+  for (let i = 0; i < n; i++) {
+    const q = sp[(i + 1) % n];
+    ctx.quadraticCurveTo(sp[i][0], sp[i][1], (sp[i][0] + q[0]) / 2, (sp[i][1] + q[1]) / 2);
+  }
+  ctx.closePath();
+}
+const TONE = {   // 2–3 basalt tones inside the house value range — never red, never steel-blue
+  isletBody: "#4A443A", rockBody: "#3F3A32",
+  core: "rgba(22,19,15,0.30)", facet: "rgba(16,14,11,0.5)", coast: "rgba(15,13,10,0.55)",
+  shoal: "74,128,120", bush: "#2F4A33",
+};
+function drawTerrain(seaTNow, reduced) {
+  const z = cfg.view.zoom, fr = cfg.terrain.fringe, sh = cfg.terrain.shoal;
+  for (const F of TERRAIN) {
+    const [fx, fy] = w2s(F.x, F.y);
+    const cull = (F.r * Math.max(sh, 1.3) + 60) * z + 80;
+    if (fx < -cull || fx > W + cull || fy < -cull || fy > H + cull) continue;
+    const bodies = F.polys.map((B) => ({ B, boost: Math.max(1, 5 / Math.max(0.001, B.r * z)) }));
+    for (const { B, boost } of bodies) {              // (a) shoal halos first, under everything
+      const [bx, by] = w2s(B.x, B.y);
+      const Ro = Math.max(1, B.r * boost * sh * z);
+      const g = ctx.createRadialGradient(bx, by, Ro * 0.35, bx, by, Ro);
+      g.addColorStop(0, `rgba(${TONE.shoal},0.30)`);
+      g.addColorStop(0.55, `rgba(${TONE.shoal},0.15)`);
+      g.addColorStop(1, `rgba(${TONE.shoal},0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(bx, by, Ro, 0, TAU); ctx.fill();
+    }
+    for (const { B, boost } of bodies) {              // (b) foam fringe — breathing, coast-hugging
+      const pulse = reduced ? 0 : Math.sin(seaTNow * 0.7 + F.ph + B.x * 0.013);
+      const a1 = (0.30 + 0.10 * pulse) * fr, a2 = (0.13 + 0.05 * pulse) * fr;
+      if (a1 > 0.01) {
+        ctx.strokeStyle = `rgba(228,240,242,${a1.toFixed(3)})`;
+        ctx.lineWidth = Math.max(lw(1.6), 1.2);
+        traceBlob(B, boost * (1.05 + 0.013 * pulse)); ctx.stroke();
+      }
+      if (a2 > 0.01) {
+        ctx.strokeStyle = `rgba(228,240,242,${a2.toFixed(3)})`;
+        ctx.lineWidth = Math.max(lw(1.1), 1);
+        traceBlob(B, boost * (1.16 + 0.025 * pulse)); ctx.stroke();
+      }
+    }
+    for (const { B, boost } of bodies) {              // (c) the rock itself
+      traceBlob(B, boost);
+      ctx.fillStyle = F.kind === "islet" ? TONE.isletBody : TONE.rockBody;
+      ctx.fill();
+      ctx.strokeStyle = TONE.coast; ctx.lineWidth = Math.max(lw(1.2), 1);
+      ctx.stroke();
+      traceBlob(B, boost * 0.52);                     // darker heart — cheap relief
+      ctx.fillStyle = TONE.core; ctx.fill();
+      ctx.strokeStyle = TONE.facet; ctx.lineWidth = Math.max(lw(1), 0.8);
+      for (const [x0, y0, x1, y1] of B.facets) {
+        const [p0x, p0y] = w2s(B.x + (x0 - B.x) * boost, B.y + (y0 - B.y) * boost);
+        const [p1x, p1y] = w2s(B.x + (x1 - B.x) * boost, B.y + (y1 - B.y) * boost);
+        ctx.beginPath(); ctx.moveTo(p0x, p0y); ctx.lineTo(p1x, p1y); ctx.stroke();
+      }
+    }
+    for (const pr of F.props) {                       // (d) deadpan props — islets only
+      const [ppx, ppy] = w2s(pr.x, pr.y);
+      if (pr.type === "bush") {                       // scrubby bush: a dark-green dot cluster
+        ctx.fillStyle = TONE.bush;
+        for (const [ox, oy] of pr.offs) {
+          ctx.beginPath();
+          ctx.arc(ppx + ox * z, ppy + oy * z, Math.max(2.4 * z, 1.4), 0, TAU);
+          ctx.fill();
+        }
+      } else {                                        // the lone navigation light, blinking slowly
+        const on = reduced ? true : ((seaTNow * 0.45 + pr.ph) % 3) < 0.4;
+        const rr = Math.max(2 * z, 1.6);
+        if (on && !reduced) {                         // soft brass halo on the flash
+          ctx.fillStyle = "rgba(205,186,142,0.22)";
+          ctx.beginPath(); ctx.arc(ppx, ppy, rr * 3, 0, TAU); ctx.fill();
+        }
+        ctx.fillStyle = reduced ? "rgba(205,186,142,0.7)" : (on ? "#CDBA8E" : "rgba(205,186,142,0.28)");
+        ctx.beginPath(); ctx.arc(ppx, ppy, rr, 0, TAU); ctx.fill();
+      }
+    }
+  }
+}
+
+/* ════════════════════════════ SHIP ART — the C2 LOOK-LOCKED hull at the C14 SCALE ════════════════════════════
+   Same silhouette, turret classes and line weights as design/hardpoint-hull.html — but the
+   owner sized the hull up at C14: art scale 2.4 → 2.75. The deck furniture below is all
+   hand-tuned in 2.4-scale coordinates, so every hull-local transform (outline, deck, mounts,
+   bow wave) rides HULL_ART = 2.75/2.4 — one multiplier, uniform growth, strokes included.
+   C10: every deck-art STROKE routes through lw(). The sim's terrain capsule (97×30) matches
+   THIS hull; the sim underneath never sees any of the art. */
+const HULL_SCALE = 2.75;                       // C14 — the hull grew (was 2.4 from the C2 gate)
+const HULL_ART_BASE = 2.4;                     // the scale the C2 deck art was hand-tuned at
+const HULL_ART = HULL_SCALE / HULL_ART_BASE;   // ×1.146 — applied in every hull-local transform
+const HULL_PTS = (() => {  // C1 silhouette proportions at the ART-BASE scale (HULL_ART carries the rest)
+  const pts = [[0, -50]];
+  const quad = (p0, c, p1, n) => { for (let i = 1; i <= n; i++) { const t = i / n;
+    const ax = p0[0] + (c[0] - p0[0]) * t, ay = p0[1] + (c[1] - p0[1]) * t;
+    const bx = c[0] + (p1[0] - c[0]) * t, by = c[1] + (p1[1] - c[1]) * t;
+    pts.push([ax + (bx - ax) * t, ay + (by - ay) * t]); } };
+  quad([0, -50], [8, -38], [9.5, -24], 8); pts.push([10, 20]);
+  quad([10, 20], [10, 32], [6, 35], 6); quad([6, 35], [0, 38], [-6, 35], 6);
+  quad([-6, 35], [-10, 32], [-10, 20], 6); pts.push([-9.5, -24]);
+  quad([-9.5, -24], [-8, -38], [0, -50], 8);
+  return pts.map(([x, y]) => [x * HULL_ART_BASE, y * HULL_ART_BASE]);
+})();
+function hullTrace() {
+  ctx.beginPath();
+  ctx.moveTo(HULL_PTS[0][0], HULL_PTS[0][1]);
+  for (const p of HULL_PTS) ctx.lineTo(p[0], p[1]);
+  ctx.closePath();
+}
+function shipRide(reduced) {   // heave px + roll rad, from the analytic swell — render-only
+  if (reduced) return { heave: 0, roll: 0, h01: 0 };
+  const f = dirOf(ship.heading), r = { x: -f.y, y: f.x };
+  const h01 = swellH(ship.x, ship.y, seaT);
+  const dif = (swellH(ship.x + r.x * 30, ship.y + r.y * 30, seaT)
+             - swellH(ship.x - r.x * 30, ship.y - r.y * 30, seaT)) * 0.5;
+  return { heave: h01 * cfg.ship.heave_px, roll: dif * cfg.ship.roll_deg * Math.PI / 180 * 2, h01 };
+}
+function drawShip(reduced) {
+  const z = cfg.view.zoom;
+  const ride = shipRide(reduced);
+  const [sx0, sy0] = w2s(ship.x, ship.y);
+  const off = cfg.ship.shadow_px * (1 + 0.35 * ride.h01) * z;      // shadow breathes with the heave
+  if (off > 0.2) {
+    ctx.save();
+    ctx.translate(sx0 + SHADOW.x * off, sy0 + SHADOW.y * off);
+    ctx.scale(z * HULL_ART, z * HULL_ART); ctx.rotate(ship.heading + ride.roll);   // C14 scale
+    hullTrace(); ctx.fillStyle = "rgba(2,10,14,0.38)"; ctx.fill();
+    ctx.restore();
+  }
+  const sx = sx0 + SUN.x * ride.heave, sy = sy0 + SUN.y * ride.heave;   // lift toward the light
+  ctx.save();
+  ctx.translate(sx, sy); ctx.scale(z * HULL_ART, z * HULL_ART);   // C14: the whole deck grows with the hull
+  ctx.rotate(ship.heading + ride.roll);
+  drawBowWave();
+  hullTrace();
+  ctx.fillStyle = "#3C4F57"; ctx.fill();
+  const speed = Math.hypot(ship.vx, ship.vy);
+  ctx.strokeStyle = `rgba(228,240,242,${Math.min(0.55, 0.12 + speed / MOVE.max_speed_ahead * 0.5)})`;
+  ctx.lineWidth = lw(1.2); ctx.stroke();
+  ctx.fillStyle = "#5A707A";
+  ctx.fillRect(-13, -31, 26, 41); ctx.fillRect(-8, -43, 16, 12);      // superstructure + bridge
+  ctx.fillStyle = "#4A5F68";
+  ctx.fillRect(-4, -18, 8, 8);                                        // funnel
+  ctx.strokeStyle = "#93A7AE"; ctx.lineWidth = lw(1);
+  ctx.beginPath(); ctx.arc(0, 65, 14, 0, TAU); ctx.stroke();          // helipad stays clear
+  ctx.beginPath(); ctx.moveTo(-8, 65); ctx.lineTo(8, 65); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, -120); ctx.lineTo(0, -90); ctx.stroke();   // bow jack line
+  // mounts — drawn hull-local so they ride the heave/roll with the deck; houses rotate to the
+  // world barrel angle (local = world − heading). Class identity: L twin turret · M angular
+  // house · S open AA ring (stowed in this scene — no air targets).
+  for (let i = 0; i < MOUNTS.length; i++) {
+    const mc = MOUNTS[i], m = mounts[i];
+    RECOIL[i] *= 0.9;
+    const rec = RECOIL[i];
+    ctx.save(); ctx.translate(mc.x, mc.y);
+    ctx.strokeStyle = "rgba(228,240,242,0.25)";   // barbette rings stay hull-fixed under the turret
+    if (mc.size === "L") { ctx.lineWidth = lw(1.5); ctx.beginPath(); ctx.arc(0, 0, 11.5, 0, TAU); ctx.stroke(); }
+    if (mc.size === "M") { ctx.lineWidth = lw(1); ctx.beginPath(); ctx.arc(0, 0, 7.5, 0, TAU); ctx.stroke(); }
+    ctx.rotate(m.ang - ship.heading);
+    if (mc.size === "L") {
+      ctx.fillStyle = "#93A7AE";
+      for (const bx of [-3.2, 3.2]) {
+        ctx.fillRect(bx - 1.3, -9 - 26 + rec * 4, 2.6, 26);
+        ctx.fillRect(bx - 1.9, -9 - 26 + rec * 4, 3.8, 3);          // muzzle brakes
+      }
+      ctx.fillStyle = "#647885";
+      ctx.beginPath();
+      ctx.moveTo(-8, 12); ctx.lineTo(-8, -4); ctx.quadraticCurveTo(-8, -10, 0, -10);
+      ctx.quadraticCurveTo(8, -10, 8, -4); ctx.lineTo(8, 12); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = "rgba(10,30,40,0.55)"; ctx.lineWidth = lw(1); ctx.stroke();
+      ctx.fillStyle = "#93A7AE";
+      ctx.fillRect(-10, 3, 3, 2.4); ctx.fillRect(7, 3, 3, 2.4);      // rangefinder ears
+    } else if (mc.size === "M") {
+      ctx.fillStyle = "#93A7AE";
+      ctx.fillRect(-1.1, -6 - 16 + rec * 3, 2.2, 16);
+      ctx.fillRect(-1.7, -6 - 7 + rec * 3, 3.4, 7);                  // recoil sleeve
+      ctx.fillStyle = "#647885";
+      ctx.beginPath();
+      ctx.moveTo(-5.5, 8); ctx.lineTo(-5.5, -2); ctx.lineTo(-3, -6.5);
+      ctx.lineTo(3, -6.5); ctx.lineTo(5.5, -2); ctx.lineTo(5.5, 8); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = "rgba(10,30,40,0.55)"; ctx.lineWidth = lw(1); ctx.stroke();
+    } else {
+      ctx.strokeStyle = "#7E939C"; ctx.lineWidth = lw(1.2);
+      ctx.beginPath(); ctx.arc(0, 0, 5.5, 0, TAU); ctx.stroke();     // open ring mount
+      ctx.fillStyle = "#93A7AE";
+      for (const bx of [-1.5, 1.5]) ctx.fillRect(bx - 0.55, -2 - 11 + rec * 2, 1.1, 11);
+      ctx.fillStyle = "#647885";
+      ctx.beginPath(); ctx.arc(0, 2.2, 2.6, 0, TAU); ctx.fill();     // pedestal + gunner tub
+    }
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+/* (C16: the gunboat raft draw moved into drawEnemies — one draw for all five classes.) */
+
+/* ════════════════════════════ TRACERS — C2 language: line + bright head on splash shells ════════════════════════════ */
+function drawTracers() {
+  const z = cfg.view.zoom;
+  for (const p of shells) {
+    const [px, py] = w2s(p.x, p.y);
+    const [tx, ty] = w2s(p.x - p.vx * 0.03, p.y - p.vy * 0.03);
+    if (p.hostile) {
+      ctx.strokeStyle = "rgba(233,103,66,0.85)"; ctx.lineWidth = lw(1.2);
+    } else if (p.kind === "mb16") {
+      ctx.fillStyle = "rgba(228,240,242,0.95)";
+      ctx.beginPath(); ctx.arc(px, py, Math.max(2.6 * z, 1.4), 0, TAU); ctx.fill();
+      ctx.strokeStyle = "rgba(228,240,242,0.35)"; ctx.lineWidth = lw(2);
+    } else {
+      ctx.strokeStyle = "rgba(228,240,242,0.85)"; ctx.lineWidth = lw(1.2);
+    }
+    ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(px, py); ctx.stroke();
+  }
+}
+
+/* ════════════════════════════ SEA PRESET — direction B, approved at the C9 gate 2026-07-09 ════════════════════════════
+   The A/B vote is closed: HEAVY WEATHER shipped, with the owner's tunes applied (column scale
+   1.15→1.4, foam disc life 4.5→3.4, wake foam life 9.5→9.0 — judged at zoom 0.51, which is now
+   homeZoom). The sea is LOCKED here; its knobs remain below as closed reference sections only. */
+const PRESETS = {
+  B: { name: "HEAVY WEATHER",
+       cfg: { swell: { amp: 0.95, speed: 1.4, scale: 1.15 }, glint: { intensity: 0.75 },
+              foam: { density: 210, crest_bias: 0.85, crest_streaks: 0.8 },
+              ship: { heave_px: 3.0, roll_deg: 2.6, shadow_px: 5.0 },
+              splash: { scale: 1.4, foam_life: 3.4, dye: true }, wake: { life: 9.0, width: 1.35 } } },
+};
+function applyPreset(id) {
+  const zoom = cfg.view.zoom;                        // the animated camera survives a reset
+  cfg = structuredClone(DEFAULT_CFG);
+  for (const [dom, vals] of Object.entries(PRESETS[id].cfg))
+    for (const [k, v] of Object.entries(vals)) cfg[dom][k] = v;
+  cfg.view.zoom = zoom;
+  syncPanel();
+}
+
+/* ════════════════════════════ INPUT — wheel zoom, optional helm, autopilot otherwise ════════════════════════════ */
+const keys = {};
+let manualUntil = -1, paused = false;
+let reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;   // house law: honored by default
+addEventListener("keydown", (e) => {
+  const k = e.key.toLowerCase();
+  if (k === "p" && !e.repeat) togglePause();
+  if (k === "n" && !e.repeat) nextWaveNow();         // C16 — skip the quiet (or force the next wave)
+  if (k === "h") { targetZoom = clamp(cfg.zoom.home, cfg.zoom.min, cfg.zoom.max); syncPanel(); }   // home view
+  if ("wasd".includes(k)) { keys[k] = true; manualUntil = simT + 6; }
+});
+addEventListener("keyup", (e) => { keys[e.key.toLowerCase()] = false; });
+// THE C10 WHEEL — exponential steps on the TARGET; the animated zoom chases it in frame().
+// Listener on the canvas only, so the knob panel keeps its own scroll; preventDefault so the
+// page never scrolls (passive: false is required for that to take).
+canvas.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  if (!e.deltaY) return;
+  targetZoom = clamp(targetZoom * Math.pow(cfg.zoom.wheel_step, -Math.sign(e.deltaY)),
+                     cfg.zoom.min, cfg.zoom.max);
+  syncPanel();
+}, { passive: false });
+/* THE C11 TRIGGER — hold RIGHT MOUSE = force the main battery onto the cursor. Mouse tracked
+   on the window so the reticle survives leaving the canvas; mousedown on the canvas only so
+   the knob panel keeps its native right-click. contextmenu suppressed on the canvas. */
+const mouse = { x: innerWidth / 2, y: innerHeight / 3 };
+let rmbHeld = false;
+addEventListener("mousemove", (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+canvas.addEventListener("mousedown", (e) => { if (e.button === 2) { rmbHeld = true; e.preventDefault(); } });
+addEventListener("mouseup", (e) => { if (e.button === 2) rmbHeld = false; });
+canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+function cursorWorld() {   // screen → world, inverse of w2s at the live animated zoom
+  const z = cfg.view.zoom;
+  return { x: (mouse.x - W / 2) / z + cam.x, y: (mouse.y - H / 2) / z + cam.y };
+}
+function nearestLMount(pt) {   // readout + RANGEKEEPER both fire "from the nearest L mount"
+  let best = null, bd = Infinity;
+  for (const mc of MOUNTS) {
+    if (mc.size !== "L") continue;
+    const mp = mountWorld(mc);
+    const d = Math.hypot(pt.x - mp.x, pt.y - mp.y);
+    if (d < bd) { bd = d; best = mp; }
+  }
+  return { mp: best, dist: bd };
+}
+function readInput() {
+  if (simT < manualUntil)
+    return { thrust: (keys.w ? 1 : 0) + (keys.s ? -1 : 0), rudder: (keys.d ? 1 : 0) + (keys.a ? -1 : 0) };
+  /* autopilot — C15's chart-wise pilot, plus a C16 combat habit: while a wave is on the
+     water she slows to fighting speed (a captain who stands and fights) — at 0.7 cruise
+     (154 u/s) she outruns 115 u/s gnats forever and the demo never engages. Manual helm
+     (WASD) gets NO assists — the owner's fight is the gate. */
+  let rudder = Math.sin(simT * 0.07) * 0.3 + Math.sin(simT * 0.023 + 1.7) * 0.2;
+  if (Math.hypot(ship.x, ship.y) > 1100)
+    rudder = clamp(angDiff(angleTo(ship, { x: 0, y: 0 }), ship.heading) * 1.2, -0.8, 0.8);
+  const av = avoidHeading(ship.x, ship.y, ship.heading, 320, 110, ship);
+  if (av !== null) rudder = clamp(angDiff(av, ship.heading) * 2.5, -1, 1);
+  let engaged = false;
+  for (const e of enemies) if (e.active) { engaged = true; break; }
+  return { thrust: ship.along < MOVE.max_speed_ahead * (engaged ? 0.38 : 0.7) ? 1 : 0, rudder };
+}
+function togglePause() {
+  paused = !paused;
+  const b = document.getElementById("btn-pause");
+  if (b) b.classList.toggle("active", paused);
+}
+
+/* ════════════════════════════ KNOB PANEL ════════════════════════════ */
+const SLIDERS = [   // [section, [path, label, min, max, step]...] — first section = the gate, open; rest = approved reference, closed
+  ["The war — C16 tables", [
+    ["war.budget_base", "budget base", 2, 20, 1],
+    ["war.budget_per_wave", "budget / wave", 0, 10, 1],
+    ["war.main_delay", "main body delay (s)", 5, 30, 0.5],
+    ["war.sting_delay", "sting delay (s)", 10, 45, 0.5],
+    ["war.quiet_secs", "the quiet (s)", 4, 25, 0.5],
+    ["war.ambush_chance", "ambush chance", 0, 1, 0.01]]],
+  ["The waters — C15 tables", [
+    ["terrain.islets", "islet count", 2, 4, 1],
+    ["terrain.rocks", "rock features", 8, 16, 1],
+    ["terrain.size", "feature size (×)", 0.6, 1.6, 0.01],
+    ["terrain.shoal", "shoal halo (× r)", 1.0, 2.5, 0.01],
+    ["terrain.fringe", "foam fringe", 0, 2, 0.01]]],
+  ["Fire control — the C11 tables", [
+    ["fire.snap_radius", "RK snap radius (u)", 40, 240, 1],
+    ["fire.flash_life", "scope flash life (s)", 0.4, 3, 0.05]]],
+  ["Zoom — the C10 tables", [
+    ["view.zoom", "zoom (target)", 0.3, 1.2, 0.01],
+    ["zoom.min", "zoom min", 0.3, 0.6, 0.01],
+    ["zoom.max", "zoom max", 0.7, 1.2, 0.01],
+    ["zoom.home", "home zoom", 0.4, 0.85, 0.01],
+    ["zoom.wheel_step", "wheel step (×/notch)", 1.05, 1.4, 0.01],
+    ["zoom.half_life", "lerp half-life (s)", 0.03, 0.4, 0.01],
+    ["zoom.min_px", "min-size floor (px)", 0, 18, 1]]],
+  ["Swell", [["swell.amp", "band strength", 0, 1.6, 0.01], ["swell.speed", "drift speed", 0, 3, 0.01],
+             ["swell.scale", "band scale", 0.4, 2.5, 0.01]]],
+  ["Light & foam", [["glint.intensity", "glint intensity", 0, 1, 0.01], ["foam.density", "fleck density", 0, 260, 1],
+                    ["foam.crest_bias", "crest bias", 0, 1, 0.01], ["foam.crest_streaks", "crest streaks", 0, 1, 0.01]]],
+  ["Ship ride", [["ship.heave_px", "heave (px)", 0, 5, 0.1], ["ship.roll_deg", "roll (deg)", 0, 4, 0.1],
+                 ["ship.shadow_px", "hull shadow (px)", 0, 8, 0.1]]],
+  ["Splash columns", [["splash.scale", "column scale", 0.5, 1.8, 0.01], ["splash.foam_life", "foam disc life (s)", 1, 6, 0.1]]],
+  ["Wake", [["wake.life", "foam life (s)", 2, 12, 0.1], ["wake.width", "width", 0.5, 2, 0.01]]],
+];
+// knobs that reshape the field — they re-run the generator live (same seed + same knobs = same waters)
+const REGEN_PATHS = new Set(["terrain.islets", "terrain.rocks", "terrain.size"]);
+function getPath(path) {
+  if (path === "view.zoom") return targetZoom;               // the View slider reads/drives the TARGET
+  const [a, b] = path.split("."); return cfg[a][b];
+}
+function setPath(path, v) {
+  if (path === "view.zoom") { targetZoom = clamp(v, cfg.zoom.min, cfg.zoom.max); return; }
+  const [a, b] = path.split("."); cfg[a][b] = v;
+  if (a === "zoom") targetZoom = clamp(targetZoom, cfg.zoom.min, cfg.zoom.max);   // bounds moved under it
+}
+function buildPanel() {
+  const body = document.getElementById("tuning-body");
+  body.style.pointerEvents = "auto";
+  let html = "";
+  SLIDERS.forEach(([sect, items], si) => {
+    html += `<details class="sect"${si === 0 ? " open" : ""}><summary>${sect}</summary><div class="body">`;
+    if (si === 0)   // the WAVE SEED row + the gate's two buttons — the war's own controls
+      html += `<div class="tun"><div class="row"><span class="name">wave seed (retype/± resets the war)</span>
+        <span class="val" id="val-war-seed"></span></div>
+        <div style="display:flex;gap:6px;align-items:center">
+        <input type="number" id="in-war-seed" step="1" value="${cfg.war.wave_seed}">
+        <button class="kbtn" id="btn-war-regen" style="margin:0">Regenerate</button></div>
+        <div style="margin-top:6px">
+        <button class="kbtn" id="btn-next" style="margin:0 4px 0 0">Next wave now</button>
+        <button class="kbtn" id="btn-replay" style="margin:0">Replay wave</button></div></div>`;
+    if (si === 1)   // the C15 terrain seed row — a typed integer; REGENERATE = next archipelago
+      html += `<div class="tun"><div class="row"><span class="name">seed (retype/± regenerates)</span>
+        <span class="val" id="val-terrain-seed"></span></div>
+        <div style="display:flex;gap:6px;align-items:center">
+        <input type="number" id="in-terrain-seed" step="1" value="${cfg.terrain.seed}">
+        <button class="kbtn" id="btn-regen" style="margin:0">Regenerate</button></div></div>`;
+    for (const [path, label, min, max, step] of items)
+      html += `<div class="tun"><div class="row"><span class="name">${label}</span>
+        <span class="val" id="val-${path.replace(".", "-")}"></span></div>
+        <input type="range" id="in-${path.replace(".", "-")}" data-path="${path}"
+               min="${min}" max="${max}" step="${step}"></div>`;
+    if (si === 2)   // the C11 toggles live with the fire-control tables
+      html += `<div style="margin-top:2px">
+        <button class="kbtn" id="btn-rk">Rangekeeper</button>
+        <button class="kbtn" id="btn-ft">Flight time</button></div>`;
+    if (si === 3)   // the two C10 controls stay with the zoom tables
+      html += `<div style="margin-top:2px">
+        <button class="kbtn" id="btn-home">Home</button>
+        <button class="kbtn" id="btn-comp">Stroke comp</button></div>`;
+    html += `</div></details>`;
+  });
+  html += `<div style="margin-top:10px">
+    <button class="kbtn" id="btn-dye">splash dye</button>
+    <button class="kbtn" id="btn-reduced">reduced motion</button>
+    <button class="kbtn" id="btn-pause">pause</button></div>
+    <button id="reset-cfg">Reset C16 defaults</button>`;
+  body.innerHTML = html;
+  body.querySelectorAll("input[type=range]").forEach((el) => {
+    el.addEventListener("input", () => {
+      setPath(el.dataset.path, parseFloat(el.value));
+      if (REGEN_PATHS.has(el.dataset.path)) generateTerrain();   // counts/size reshape the field live
+      updateVals();
+    });
+  });
+  document.getElementById("in-terrain-seed").addEventListener("input", (e) => {
+    const v = parseInt(e.target.value, 10);
+    if (!Number.isFinite(v)) return;                 // mid-typing ("-", empty) — wait for a number
+    cfg.terrain.seed = v; generateTerrain(); updateVals();
+  });
+  document.getElementById("btn-regen").addEventListener("click", () => {
+    cfg.terrain.seed = (cfg.terrain.seed | 0) + 1;   // next archipelago — the seed stays visible/typeable
+    generateTerrain(); syncPanel();
+  });
+  // C16 — the war's controls: seed retype/± resets the war; the two gate buttons
+  document.getElementById("in-war-seed").addEventListener("input", (e) => {
+    const v = parseInt(e.target.value, 10);
+    if (!Number.isFinite(v)) return;                 // mid-typing ("-", empty) — wait for a number
+    cfg.war.wave_seed = v; resetWar(); updateVals();
+  });
+  document.getElementById("btn-war-regen").addEventListener("click", () => {
+    cfg.war.wave_seed = (cfg.war.wave_seed | 0) + 1; // the next war — the seed stays visible/typeable
+    resetWar(); syncPanel();
+  });
+  document.getElementById("btn-next").addEventListener("click", nextWaveNow);
+  document.getElementById("btn-replay").addEventListener("click", replayWave);
+  document.getElementById("btn-rk").addEventListener("click", () => { cfg.fire.rangekeeper = !cfg.fire.rangekeeper; syncPanel(); });
+  document.getElementById("btn-ft").addEventListener("click", () => { cfg.fire.show_time = !cfg.fire.show_time; syncPanel(); });
+  document.getElementById("btn-home").addEventListener("click", () => {
+    targetZoom = clamp(cfg.zoom.home, cfg.zoom.min, cfg.zoom.max); syncPanel();
+  });
+  document.getElementById("btn-comp").addEventListener("click", () => { compOn = !compOn; syncPanel(); });
+  document.getElementById("btn-dye").addEventListener("click", () => { cfg.splash.dye = !cfg.splash.dye; syncPanel(); });
+  document.getElementById("btn-reduced").addEventListener("click", () => { reducedMotion = !reducedMotion; syncPanel(); });
+  document.getElementById("btn-pause").addEventListener("click", togglePause);
+  document.getElementById("reset-cfg").addEventListener("click", () => {
+    applyPreset("B");                     // approved sea/zoom/fire + C15 terrain + C16 war defaults (all in DEFAULT_CFG)
+    targetZoom = cfg.zoom.home;
+    compOn = true;
+    generateTerrain();                    // seed 7 again — the default waters
+    resetWar();                           // wave seed 7 again — the default war, from the first breath
+    syncPanel();
+  });
+}
+function updateVals() {
+  for (const [, items] of SLIDERS)
+    for (const [path] of items) {
+      const el = document.getElementById(`val-${path.replace(".", "-")}`);
+      if (el) el.textContent = (+getPath(path)).toFixed(2).replace(/\.?0+$/, "") || "0";
+    }
+  const sv = document.getElementById("val-terrain-seed");   // the seed readouts ride along
+  if (sv) sv.textContent = String(cfg.terrain.seed | 0);
+  const wv = document.getElementById("val-war-seed");
+  if (wv) wv.textContent = String(cfg.war.wave_seed | 0);
+}
+function syncPanel() {
+  for (const [, items] of SLIDERS)
+    for (const [path] of items) {
+      const el = document.getElementById(`in-${path.replace(".", "-")}`);
+      if (el) el.value = getPath(path);
+    }
+  const seedIn = document.getElementById("in-terrain-seed");
+  if (seedIn) seedIn.value = cfg.terrain.seed;
+  const warIn = document.getElementById("in-war-seed");
+  if (warIn) warIn.value = cfg.war.wave_seed;
+  updateVals();
+  document.getElementById("btn-rk").classList.toggle("active", cfg.fire.rangekeeper);
+  document.getElementById("btn-ft").classList.toggle("active", cfg.fire.show_time);
+  document.getElementById("btn-comp").classList.toggle("active", compOn);
+  document.getElementById("btn-dye").classList.toggle("active", cfg.splash.dye);
+  document.getElementById("btn-reduced").classList.toggle("active", reducedMotion);
+}
+
+/* ════════════════════════════ ZOOM READOUT — plate at bottom-center ════════════════════════════
+   Current → target zoom + the visible world extent (viewport px / zoom). Canvas-drawn in the
+   .plate language (clipped corners, brass edge). HUD — its stroke stays OUT of lw(). Renders
+   every frame, paused or not: the camera stays live under pause so a frozen splash can be
+   judged across the whole zoom range. Arrow form is constant so the plate never reflows. */
+function drawZoomReadout() {
+  const z = cfg.view.zoom;
+  const text = `ZOOM ${z.toFixed(2)} → ${targetZoom.toFixed(2)}   ·   ${Math.round(W / z)} × ${Math.round(H / z)} u`;
+  ctx.font = "10.5px ui-monospace, Menlo, Consolas, monospace";
+  const bw = Math.ceil(ctx.measureText(text).width) + 26, bh = 26;
+  const bx = Math.round((W - bw) / 2), by = H - 16 - bh;
+  ctx.fillStyle = "rgba(13,32,40,0.88)";
+  ctx.beginPath();
+  ctx.moveTo(bx + 8, by); ctx.lineTo(bx + bw, by); ctx.lineTo(bx + bw, by + bh - 8);
+  ctx.lineTo(bx + bw - 8, by + bh); ctx.lineTo(bx, by + bh); ctx.lineTo(bx, by + 8);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = "rgba(205,186,142,0.5)"; ctx.lineWidth = 1; ctx.stroke();
+  ctx.fillStyle = "#CDBA8E";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(text, bx + bw / 2, by + bh / 2 + 0.5);
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+}
+
+/* ════════════════════════════ C16 — THE WAR PLATE · wave timeline strip ════════════════════════════
+   Bottom-left, fixed dimensions (dynamic UI reserves its max size — nothing reflows).
+   FIGHTING: the wave's echelons as brass ticks on a time ruler — dim until they land, a red
+   flash at the landing, foam after — with one line per echelon naming its formations.
+   QUIET: the plate breathes — a countdown and nothing else. Nothing trickles under it. */
+const WP = { w: 470, h: 92 };
+function trunc(s, n) { return s.length > n ? s.slice(0, n - 1) + "…" : s; }
+function drawWarPlate() {
+  const x = 18, y = H - 18 - WP.h, w = Math.min(WP.w, W - 220);
+  ctx.fillStyle = "rgba(13,32,40,0.88)";
+  ctx.beginPath();
+  ctx.moveTo(x + 10, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + WP.h - 10);
+  ctx.lineTo(x + w - 10, y + WP.h); ctx.lineTo(x, y + WP.h); ctx.lineTo(x, y + 10);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = "rgba(205,186,142,0.5)"; ctx.lineWidth = 1; ctx.stroke();
+  ctx.textBaseline = "alphabetic";
+  if (war.state === "quiet") {                       // THE BREATH
+    ctx.font = `10px ${MONO_FONT}`;
+    ctx.fillStyle = "#8E815F";
+    ctx.fillText("★ THE QUIET", x + 14, y + 20);
+    if (war.bag > 0) { ctx.textAlign = "right"; ctx.fillText(`BAG ${war.bag}`, x + w - 14, y + 20); ctx.textAlign = "left"; }
+    ctx.font = `700 15px ${MONO_FONT}`;
+    ctx.fillStyle = "#E4F0F2";
+    ctx.fillText(`WAVE ${war.wave + 1} — ${Math.max(0, war.until - simT).toFixed(1)} s`, x + 14, y + 47);
+    ctx.font = `10px ${MONO_FONT}`;
+    ctx.fillStyle = "#8E815F";
+    ctx.fillText("Nothing on the water. Nothing arrives early.", x + 14, y + 70);
+    return;
+  }
+  const plan = war.plan;
+  if (!plan) return;
+  let contacts = 0;
+  for (const e of enemies) if (e.active) contacts++;
+  ctx.font = `10px ${MONO_FONT}`;
+  ctx.fillStyle = "#CDBA8E";
+  ctx.fillText(`★ WAVE ${plan.wave} — THE WAR, REPACKED`, x + 14, y + 20);
+  ctx.textAlign = "right";
+  ctx.fillStyle = "#8E815F";
+  ctx.fillText(`CONTACTS ${contacts} · BAG ${war.bag}`, x + w - 14, y + 20);
+  ctx.textAlign = "left";
+  // the ruler — ticks at each purchase's landing time
+  let tmax = 6;
+  for (const t of plan.ticks) tmax = Math.max(tmax, t.rel);
+  tmax += 5;
+  const rx0 = x + 14, rx1 = x + w - 14, ry = y + 33;
+  ctx.strokeStyle = "rgba(205,186,142,0.35)"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(rx0, ry); ctx.lineTo(rx1, ry); ctx.stroke();
+  const nowX = rx0 + clamp((simT - war.startT) / tmax, 0, 1) * (rx1 - rx0);
+  ctx.strokeStyle = "rgba(228,240,242,0.5)";         // the war's clock hand
+  ctx.beginPath(); ctx.moveTo(nowX, ry - 7); ctx.lineTo(nowX, ry + 7); ctx.stroke();
+  for (const t of plan.ticks) {
+    const tx = rx0 + (t.rel / tmax) * (rx1 - rx0);
+    const landed = simT - war.startT >= t.rel - 0.01;
+    const flash = landed && simT - war.startT < t.rel + 0.8;
+    ctx.strokeStyle = flash ? "#D94F2B" : landed ? "#E4F0F2" : "rgba(142,129,95,0.8)";
+    ctx.lineWidth = flash ? 2.2 : 1.4;
+    ctx.beginPath(); ctx.moveTo(tx, ry - 5); ctx.lineTo(tx, ry + 5); ctx.stroke();
+  }
+  // one line per echelon — names light as the echelon lands
+  ctx.font = `9.5px ${MONO_FONT}`;
+  const rows = [["vanguard", "VANGUARD"], ["main", "MAIN BODY"], ["sting", "STING"]];
+  rows.forEach(([ech, label], i) => {
+    const yy = y + 52 + i * 13;
+    const names = plan.lines[ech];
+    let rel = null;
+    for (const t of plan.ticks) if (t.ech === ech) rel = rel === null ? t.rel : Math.min(rel, t.rel);
+    const landed = rel !== null && simT - war.startT >= rel - 0.01;
+    ctx.fillStyle = names.length ? (landed ? "#E4F0F2" : "#8E815F") : "rgba(142,129,95,0.35)";
+    ctx.fillText(trunc(`${label} — ${names.length ? names.join(" · ") : "—"}`, 66), x + 14, yy);
+  });
+}
+
+/* ════════════════════════════ C11 — FORCED RETICLE + FLIGHT TIME + RANGEKEEPER ════════════════════════════
+   The game's reticle language (HelmGauges._draw_reticle): faint foam ring at rest, red ring +
+   four ticks + battery label while an order is held. NEW under it: the mb16 flight time to the
+   burst point, live — dist/420 capped at 900/420 — or "MAX RANGE · BEARING" as the mode telltale
+   when the cursor is beyond the guns. HUD — nothing here routes through lw(). */
+const MONO_FONT = 'ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace';
+function rangekeeperSolve(cw) {
+  /* Advisory lead assist: the surface contact nearest the cursor, gated by the snap-radius
+     knob; two-pass intercept for an mb16 shell from the nearest L mount (flight time to the
+     contact now, then to where it will be by then). The shells still obey the CURSOR. */
+  if (!cfg.fire.rangekeeper) return null;
+  let tgt = null, bd = Infinity;
+  for (const c of enemies) {                        // C16: every gun-reachable contact (never the deep)
+    if (!c.active || c.layer === "sub") continue;
+    const d = Math.hypot(c.x - cw.x, c.y - cw.y);
+    if (d < bd) { bd = d; tgt = c; }
+  }
+  if (!tgt || bd > cfg.fire.snap_radius) return null;
+  const { mp } = nearestLMount(cw);
+  const cap = GUN.L.range / GUN.L.speed;
+  let t = Math.min(Math.hypot(tgt.x - mp.x, tgt.y - mp.y) / GUN.L.speed, cap);
+  let gx = tgt.x + tgt.vx * t, gy = tgt.y + tgt.vy * t;
+  t = Math.min(Math.hypot(gx - mp.x, gy - mp.y) / GUN.L.speed, cap);
+  gx = tgt.x + tgt.vx * t; gy = tgt.y + tgt.vy * t;
+  return { tgt, gx, gy };
+}
+function drawReticle() {
+  const held = rmbHeld;
+  const col = held ? "rgba(217,79,43,0.95)" : "rgba(228,240,242,0.35)";
+  const r = held ? 14 : 9;
+  ctx.strokeStyle = col; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.arc(mouse.x, mouse.y, r, 0, TAU); ctx.stroke();
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    ctx.beginPath();
+    ctx.moveTo(mouse.x + dx * (r - 4), mouse.y + dy * (r - 4));
+    ctx.lineTo(mouse.x + dx * (r + 5), mouse.y + dy * (r + 5));
+    ctx.stroke();
+  }
+  if (!held) return;
+  const cw = cursorWorld();
+  ctx.font = `10px ${MONO_FONT}`;
+  ctx.fillStyle = col;
+  ctx.fillText("MAIN BATTERY", mouse.x + 18, mouse.y - 12);
+  if (cfg.fire.show_time) {
+    const { dist } = nearestLMount(cw);
+    const inRange = dist <= GUN.L.range;
+    const text = inRange
+      ? `${(dist / GUN.L.speed).toFixed(1)} s · ${Math.round(dist)} u`
+      : "MAX RANGE · BEARING";
+    ctx.font = `10.5px ${MONO_FONT}`;
+    ctx.textAlign = "center";
+    ctx.fillStyle = inRange ? "rgba(228,240,242,0.9)" : "rgba(217,79,43,0.95)";
+    ctx.fillText(text, mouse.x, mouse.y + 30);
+    ctx.textAlign = "left";
+  }
+  const rk = rangekeeperSolve(cw);
+  if (rk) {   // ghost diamond + tether — advisory steel/foam, never the hostile red
+    const [gx, gy] = w2s(rk.gx, rk.gy);
+    const [tx, ty] = w2s(rk.tgt.x, rk.tgt.y);
+    ctx.strokeStyle = "rgba(147,167,174,0.55)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(gx, gy); ctx.stroke();
+    ctx.strokeStyle = "rgba(228,240,242,0.9)"; ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    ctx.moveTo(gx, gy - 6); ctx.lineTo(gx + 6, gy); ctx.lineTo(gx, gy + 6); ctx.lineTo(gx - 6, gy);
+    ctx.closePath(); ctx.stroke();
+    ctx.fillStyle = "rgba(147,167,174,0.9)";
+    ctx.font = `9px ${MONO_FONT}`;
+    ctx.fillText("RK", gx + 9, gy - 8);
+  }
+}
+
+/* ════════════════════════════ C11 — MINI RADAR SCOPE (HelmGauges language) ════════════════════════════
+   Bottom-right circular scope, north-up, ship-centered, 2200 u range — the game's radar
+   vocabulary: dark plate + brass edge, faint 500 u rings, dashed mb16 900 u ring, viewport
+   rect off the LIVE zoom, cosmetic sweep, red fire-control bearing line while forcing,
+   C16 blips per class — gunboats red squares, air red dots (bombers larger), subs red sonar
+   diamonds (outline), running torpedoes foam motes, hostile shells faint orange motes.
+   THE C11 POINT — fall of shot: own in-flight mb16 shells as foam dots, each burst a brief
+   expanding foam ring flash (life = the panel knob). HUD — no lw(), no zoom transform. */
+const SCOPE_R = 85, SCOPE_RANGE = 2200;
+function drawScope() {
+  const R = SCOPE_R, k = R / SCOPE_RANGE;
+  const cx = W - R - 26, cy = H - R - 26;
+  const rel = (wx, wy) => [(wx - ship.x) * k, (wy - ship.y) * k];   // world is already north-up
+  ctx.fillStyle = "rgba(13,32,40,0.9)";
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.fill();
+  ctx.strokeStyle = "rgba(205,186,142,0.5)"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.stroke();
+  ctx.strokeStyle = "rgba(205,186,142,0.16)";
+  for (let d = 500; d < SCOPE_RANGE; d += 500) {
+    ctx.beginPath(); ctx.arc(cx, cy, d * k, 0, TAU); ctx.stroke();
+  }
+  /* C15 — the land on the scope: dim solid brass-gray masses, unmistakably not blips (blips
+     are red squares/dots, shot is foam). Bodies only (no shoal), clipped to the scope face;
+     tiny reefs get a 1.5 px dot floor so a reef line still charts. */
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.clip();
+  ctx.fillStyle = "rgba(150,138,106,0.4)";
+  for (const F of TERRAIN) {
+    const [tox, toy] = rel(F.x, F.y);
+    if (Math.hypot(tox, toy) > R + F.r * k) continue;
+    for (const B of F.polys) {
+      if (B.r * k < 2) {
+        const [bx, by] = rel(B.x, B.y);
+        ctx.beginPath(); ctx.arc(cx + bx, cy + by, Math.max(B.r * k, 1.5), 0, TAU); ctx.fill();
+      } else {
+        ctx.beginPath();
+        const [m0x, m0y] = rel(B.pts[0][0], B.pts[0][1]);
+        ctx.moveTo(cx + m0x, cy + m0y);
+        for (let j = 1; j < B.pts.length; j++) {
+          const [mx, my] = rel(B.pts[j][0], B.pts[j][1]);
+          ctx.lineTo(cx + mx, cy + my);
+        }
+        ctx.closePath(); ctx.fill();
+      }
+    }
+  }
+  ctx.restore();
+  ctx.strokeStyle = "rgba(205,186,142,0.35)";        // main-battery reach, dashed (the game's ring)
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.arc(cx, cy, GUN.L.range * k, 0, TAU); ctx.stroke();
+  ctx.setLineDash([]);
+  const vw = (W / 2 / cfg.view.zoom) * k, vh = (H / 2 / cfg.view.zoom) * k;   // viewport extent, live zoom
+  ctx.strokeStyle = "rgba(228,240,242,0.14)";
+  ctx.strokeRect(cx - vw, cy - vh, vw * 2, vh * 2);
+  if (!reducedMotion) {                              // sweep — cosmetic, wall clock, never the sim's
+    const sw = (performance.now() * 0.0016) % TAU;
+    ctx.strokeStyle = "rgba(205,186,142,0.3)";
+    ctx.beginPath(); ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.sin(sw) * R, cy - Math.cos(sw) * R); ctx.stroke();
+  }
+  if (rmbHeld) {                                     // fire-control bearing line (gate rev 2 language)
+    const cw2 = cursorWorld();
+    const bd = dirOf(angleTo(ship, cw2));
+    const mr = GUN.L.range * k;
+    ctx.strokeStyle = "rgba(217,79,43,0.7)"; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + bd.x * mr, cy + bd.y * mr); ctx.stroke();
+    ctx.strokeStyle = "rgba(217,79,43,0.3)";
+    ctx.beginPath(); ctx.moveTo(cx + bd.x * mr, cy + bd.y * mr); ctx.lineTo(cx + bd.x * R, cy + bd.y * R); ctx.stroke();
+    ctx.strokeStyle = "rgba(217,79,43,0.9)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx + bd.x * mr, cy + bd.y * mr, 2.6, 0, TAU); ctx.stroke();
+  }
+  for (const e of enemies) {                         // C16 — the game's blip vocabulary, per class
+    if (!e.active) continue;
+    const [ox, oy] = rel(e.x, e.y);
+    if (Math.hypot(ox, oy) > R) continue;
+    ctx.fillStyle = "#D94F2B";
+    if (e.type === "gunboat") {                      // surface — red squares
+      ctx.fillRect(cx + ox - 2.8, cy + oy - 2.8, 5.6, 5.6);
+    } else if (e.type === "sub") {                   // the deep — sonar diamond, outline only
+      ctx.strokeStyle = "#D94F2B"; ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      ctx.moveTo(cx + ox, cy + oy - 3.4); ctx.lineTo(cx + ox + 3.4, cy + oy);
+      ctx.lineTo(cx + ox, cy + oy + 3.4); ctx.lineTo(cx + ox - 3.4, cy + oy);
+      ctx.closePath(); ctx.stroke();
+    } else {                                         // air — red dots, sized by airframe
+      ctx.beginPath();
+      ctx.arc(cx + ox, cy + oy, e.type === "bomber" ? 3.2 : 2.4, 0, TAU); ctx.fill();
+    }
+  }
+  for (const t of torps) {                           // running torpedoes — bright foam motes
+    const [ox, oy] = rel(t.x, t.y);
+    if (Math.hypot(ox, oy) > R) continue;
+    ctx.fillStyle = "rgba(228,240,242,0.9)";
+    ctx.fillRect(cx + ox - 1.2, cy + oy - 1.2, 2.4, 2.4);
+  }
+  for (const p of shells) {                          // FALL OF SHOT: own mb16 = foam dots; hostile = orange motes
+    const [ox, oy] = rel(p.x, p.y);
+    if (Math.hypot(ox, oy) > R) continue;
+    if (!p.hostile && p.kind === "mb16") {
+      ctx.fillStyle = "rgba(228,240,242,0.95)";
+      ctx.fillRect(cx + ox - 1, cy + oy - 1, 2, 2);
+    } else if (p.hostile) {
+      ctx.fillStyle = "rgba(233,103,66,0.8)";
+      ctx.fillRect(cx + ox - 0.8, cy + oy - 0.8, 1.6, 1.6);
+    }
+  }
+  for (let i = scopeFlashes.length - 1; i >= 0; i--) {   // burst flashes — brief expanding foam rings
+    const f = scopeFlashes[i], kk = (simT - f.t0) / Math.max(0.1, cfg.fire.flash_life);
+    if (kk >= 1) { scopeFlashes.splice(i, 1); continue; }
+    const [ox, oy] = rel(f.x, f.y);
+    if (Math.hypot(ox, oy) > R) continue;
+    ctx.strokeStyle = `rgba(228,240,242,${(0.9 * (1 - kk)).toFixed(3)})`;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.arc(cx + ox, cy + oy, 1.5 + kk * 6, 0, TAU); ctx.stroke();
+  }
+  const f = dirOf(ship.heading);                     // own ship + heading tick
+  ctx.strokeStyle = "#E4F0F2"; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(cx - f.x * 4, cy - f.y * 4); ctx.lineTo(cx + f.x * 7, cy + f.y * 7); ctx.stroke();
+  ctx.fillStyle = "#E4F0F2";
+  ctx.beginPath(); ctx.arc(cx, cy, 2, 0, TAU); ctx.fill();
+  ctx.fillStyle = "#8E815F";
+  ctx.font = `9px ${MONO_FONT}`;
+  ctx.textAlign = "center";
+  ctx.fillText("R A D A R", cx, cy - R - 8);
+  ctx.textAlign = "left";
+}
+
+/* ════════════════════════════ MAIN LOOP — fixed step, render decoupled ════════════════════════════ */
+function render() {
+  ctx.fillStyle = "#0A1E28";
+  ctx.fillRect(0, 0, W, H);
+  drawSwell(seaT);
+  drawGrid();
+  drawGlints(seaT);
+  drawFlecks(seaT, reducedMotion);
+  drawStreaks();
+  drawTerrain(seaT, reducedMotion);   // C15 — the waters live between the sea and the war
+  drawWake();
+  drawSplashWater(reducedMotion);
+  drawEnemies(reducedMotion);   // C16 — one draw, five classes (subs under, air shadowed)
+  drawShip(reducedMotion);
+  drawTracers();
+  drawSplashPlumes(reducedMotion);
+  drawFxAbove();
+  drawZoomReadout();
+  drawWarPlate();   // C16 — the wave timeline strip (or the quiet's countdown)
+  drawScope();      // C11 — fall of shot lives here
+  drawReticle();    // C11 — forced reticle + flight time + RANGEKEEPER ghost, topmost
+}
+let last = performance.now(), acc = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min((now - last) / 1000, 0.1);
+  last = now;
+  // the camera chases the wheel target every RENDER frame — pause freezes the war, not the
+  // camera, so a frozen moment can be judged at every zoom. Exponential smoothing: half the
+  // remaining distance every half_life seconds, frame-rate independent.
+  cfg.view.zoom += (targetZoom - cfg.view.zoom)
+                 * (1 - Math.pow(0.5, dt / Math.max(0.001, cfg.zoom.half_life)));
+  if (!paused) {
+    acc += dt;
+    while (acc >= SIM_DT) {
+      acc -= SIM_DT;
+      simT += SIM_DT;
+      if (!reducedMotion) seaT += SIM_DT;    // reduced motion: the war continues, the water holds still
+      const inp = readInput();
+      stepShip(inp, SIM_DT); collideShip(SIM_DT);   // C15 — the waters push back
+      stepWar(SIM_DT);                              // C16 — the director: echelons land, the quiet holds
+      stepEnemies(SIM_DT); stepMounts(SIM_DT); stepRacks();
+      stepShells(SIM_DT); stepOrdnance(SIM_DT); stepWake(SIM_DT); stepStreaks(SIM_DT, reducedMotion);
+    }
+  }
+  cam.x = ship.x; cam.y = ship.y;
+  render();
+}
+buildPanel();
+applyPreset("B");    // sea C9 · camera C10 · fire C11 · waters C15 — all locked. C16 judges the war
+generateTerrain();   // the archipelago, from cfg.terrain.seed — deterministic, scene rng untouched
+resetWar();          // wave 0's short breath, then WAVE 1 forms beyond the ring
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

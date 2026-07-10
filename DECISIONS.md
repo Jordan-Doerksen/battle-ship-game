@@ -245,6 +245,14 @@ treated as locked:
 ---
 
 ## Change Log
+- **2026-07-10 — C16 spec interview: pressure = ECHELONS + REAL QUIET.** Each wave lands in
+  2–3 echelons (vanguard → main body ~15 s behind → a sting), building to a crescendo; between
+  waves a genuinely longer quiet (the sonar-sweep breather). With the earlier C16 interview
+  (formations with shape; terrain-aware packing; domain mix KEPT), the director design is:
+  budget buys FORMATION TEMPLATES (screens, lines, wedges, flights, wolfpacks — data in the
+  waves config) assigned to echelons, bearings biased toward open water lanes, and an AMBUSH
+  placement that stages surface/sub groups behind terrain features between the ring and the
+  ship. Singles fill the remainder so the budget still spends exactly.
 - **2026-07-10 — C15 THE WATERS built.** Seeded archipelagos (`Terrain.generate` = the world's
   first rng draws; `TerrainConfig`/`terrain.tres` with the owner's recipe: islets 3, rocks 9,
   size ×1.35, shoal 1.54×), the full land-rule blocking matrix (segment-swept), sliding hull
