@@ -278,6 +278,29 @@ func _draw_radar() -> void:
 	while d < rng_u:
 		draw_arc(c, d * k, 0.0, TAU, 48, Color(BRASS.r, BRASS.g, BRASS.b, 0.12), 1.0, true)
 		d += 1000.0
+	# C15 — the land on the scope: dim solid brass-gray masses UNDER all blips, unmistakably
+	# not contacts (blips are red, shot is foam). Bodies only, no shoal. Control._draw has no
+	# shape clip, so the clip is cheap: features fully past the rim are skipped, and crossing
+	# coastlines have each point clamped to the scope radius (land flattens against the rim).
+	# Tiny reefs get a 1.5 px dot floor so a reef line still charts. Coast shapes come from
+	# TerrainRender.verts_local — the chart and the world agree on every coastline.
+	var terr: Variant = _world.get("terrain")   # .get() guard: no-ops on worlds predating world.terrain
+	if terr is Array:
+		var land := Color(0.588, 0.541, 0.416, 0.4)
+		for ti in range(terr.size()):
+			var tf: Dictionary = terr[ti]
+			var t_off: Vector2 = (tf["pos"] - _world.ship_pos) * k
+			var tr_px: float = tf["r"] * k
+			if t_off.length() - tr_px > RADAR_R:
+				continue
+			if tr_px < 2.0:   # the dot floor
+				draw_circle(c + t_off.limit_length(RADAR_R), maxf(tr_px, 1.5), land)
+			else:
+				var traw: PackedVector2Array = TerrainRender.verts_local(_world.world_seed, ti, tf["r"])
+				var tpts := PackedVector2Array()
+				for tp in traw:
+					tpts.append(c + (t_off + tp * k).limit_length(RADAR_R))
+				draw_colored_polygon(tpts, land)
 	var mb := _cfgs.weapons.by_id("mb16")
 	if mb != null:   # main-battery reach, dashed + named (play-test: nothing was named)
 		_dashed_arc(c, mb.range_u * k, Color(BRASS.r, BRASS.g, BRASS.b, 0.35))

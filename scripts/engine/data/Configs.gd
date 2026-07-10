@@ -15,6 +15,7 @@ var tech: TechConfig
 var sonar: SonarConfig
 var airwing: AirWingConfig
 var bosses: BossConfig
+var terrain: TerrainConfig
 
 # Class-default values (which mirror every .tres) — probes use this so they run without the
 # resource files; Main uses load_all() for the real tunables.
@@ -30,6 +31,7 @@ static func defaults() -> Configs:
 	c.sonar = SonarConfig.new()
 	c.airwing = AirWingConfig.new()
 	c.bosses = BossConfig.spec_defaults()
+	c.terrain = TerrainConfig.new()
 	return c
 
 static func load_all() -> Configs:
@@ -54,4 +56,6 @@ static func load_all() -> Configs:
 	if aw != null: c.airwing = aw
 	var bo := load("res://config/bosses.tres") as BossConfig
 	if bo != null and bo.defs.size() > 0: c.bosses = bo
+	var tr := load("res://config/terrain.tres") as TerrainConfig
+	if tr != null: c.terrain = tr
 	return c

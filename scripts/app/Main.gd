@@ -130,6 +130,7 @@ func _start_attract() -> void:
 	cfgs.waves.cluster_min = 3          # every bearing at once — the crowded ocean
 	cfgs.bosses.every_n = 2
 	world = GameWorld.new(int(Time.get_ticks_usec()))
+	Terrain.generate(world, cfgs)   # C15: the demo fights in real waters too (first rng draws, stable)
 	world.godmode = true
 	_accum = 0.0
 	_attract_wait = 0.0
@@ -170,6 +171,7 @@ func start_sortie() -> void:
 	if god_guns:
 		_apply_god_guns()
 	world = GameWorld.new(int(Time.get_ticks_usec()))
+	Terrain.generate(world, cfgs)   # C15: same seed = same archipelago (the world's first rng draws)
 	_accum = 0.0
 	_banked = false
 	paused = false

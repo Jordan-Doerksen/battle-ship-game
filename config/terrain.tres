@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="TerrainConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://config/TerrainConfig.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+islet_min = 3
+islet_max = 3
+rock_min = 9
+rock_max = 9
+islet_r_min = 60.0
+islet_r_max = 140.0
+rock_r_min = 10.0
+rock_r_max = 30.0
+size_scale = 1.35
+field_extent = 1500.0
+start_clear = 250.0
+gap_min = 180.0
+grind_speed_frac = 0.45
+grind_bleed = 0.65
+avoid_look = 200.0
+avoid_clear = 20.0

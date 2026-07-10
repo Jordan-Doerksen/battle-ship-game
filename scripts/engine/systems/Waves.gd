@@ -61,12 +61,28 @@ static func _spawn_wave(world: GameWorld, cfg: Configs) -> void:
 		var bearing: float = bearings[int(floor(world.rng.nextf() * float(clusters)))]
 		var ang: float = bearing + (world.rng.nextf() - 0.5) * 0.5
 		var dist: float = wc.spawn_ring_min + world.rng.nextf() * (wc.spawn_ring_max - wc.spawn_ring_min)
+		var pos: Vector2 = world.ship_pos + Vector2(sin(ang), -cos(ang)) * dist
+		# C15 — nothing arrives ON the rocks (or within 60 u of an edge): re-roll the along-ring
+		# jitter + ring distance up to 8 times (world.rng draws, stable order — open water never
+		# re-rolls, so pre-C15 streams are untouched), then nudge radially outward until clear
+		# (pure arithmetic, capped — the field ends at ±extent, so outward always opens up).
+		var rerolls: int = 0
+		while rerolls < 8 and not Terrain.clear_of(world, pos, 60.0):
+			rerolls += 1
+			ang = bearing + (world.rng.nextf() - 0.5) * 0.5
+			dist = wc.spawn_ring_min + world.rng.nextf() * (wc.spawn_ring_max - wc.spawn_ring_min)
+			pos = world.ship_pos + Vector2(sin(ang), -cos(ang)) * dist
+		var nudges: int = 0
+		while nudges < 80 and not Terrain.clear_of(world, pos, 60.0):
+			nudges += 1
+			dist += 40.0
+			pos = world.ship_pos + Vector2(sin(ang), -cos(ang)) * dist
 		var e := Enemy.new()
 		e.type_id = def.id
 		e.layer = def.layer
 		e.hp = def.hp
 		e.hp_max = def.hp
 		e.active = true
-		e.pos = world.ship_pos + Vector2(sin(ang), -cos(ang)) * dist
+		e.pos = pos
 		e.heading = atan2(world.ship_pos.x - e.pos.x, -(world.ship_pos.y - e.pos.y))
 		world.enemies.append(e)

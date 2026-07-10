@@ -19,6 +19,19 @@ const DYE := {   # per-battery splash rim tint (WWII spotting practice) — frie
 	"dp5":  Color(0.576, 0.655, 0.682, 0.6),    # steel
 }
 
+# C15 basalt dust tones (the mockup's rock puff) — gray-brown, emphatically NOT foam, NOT red
+const DUST := Color(0.494, 0.471, 0.424)     # rgba(126,120,108) — the puff
+const DUST_CORE := Color(0.227, 0.212, 0.180)  # rgba(58,54,46) — the darker heart
+const GRIT := Color(0.549, 0.525, 0.471)     # rgba(140,134,120) — flying specks
+
+# deterministic per-event cosmetic hash (keyed on the event's t0 + salt) — stable across the
+# frames of one effect without storing speck arrays on the event dict
+static func _gh(a: int, b: int) -> float:
+	var x: int = a + b * 668265263
+	x = (x ^ (x >> 13)) * 1274126177
+	x = x ^ (x >> 16)
+	return float(x & 0xFFFFFF) / 16777216.0
+
 # Called by FieldRenderer.consume_effects for splash/gunsplash events.
 static func spawn_splash(r: FieldRenderer, e: Dictionary, now: int) -> void:
 	var radius: float = e.get("r", 6.0)
@@ -223,6 +236,33 @@ static func draw_fx(r: FieldRenderer) -> void:
 					var rk: float = maxf(0.0, k - ring * 0.12)
 					r.draw_arc(e["pos"], 10.0 + 220.0 * rk, 0.0, TAU, 48,
 						Color(0.914, 0.404, 0.259, 0.9 * (1.0 - rk)), 4.0 - ring, true)
+			"rockhit":    # C15: a projectile/hull striking stone — gray-brown basalt dust,
+				# the mockup's rock puff: expanding puff + darker core + gritty arcs + specks
+				var rhr: float = 12.0 * (0.55 + 0.8 * k)
+				r.draw_circle(e["pos"], rhr, Color(DUST.r, DUST.g, DUST.b, 0.55 * (1.0 - k)))
+				r.draw_circle(e["pos"], rhr * 0.5, Color(DUST_CORE.r, DUST_CORE.g, DUST_CORE.b, 0.5 * (1.0 - k)))
+				for gi in range(3):   # gritty arcs biting outward at hashed bearings
+					var ga: float = _gh(e["t0"], gi) * TAU
+					r.draw_arc(e["pos"], rhr * (0.7 + 0.5 * k) + gi * 2.5, ga, ga + 1.6 - gi * 0.3, 10,
+						Color(GRIT.r, GRIT.g, GRIT.b, 0.6 * (1.0 - k)), r.lw(1.2), true)
+				var rhe: float = 1.0 - pow(1.0 - minf(k * 1.4, 1.0), 2.0)   # specks: fly out, stop
+				for si in range(5):
+					var sa: float = _gh(e["t0"], 10 + si) * TAU
+					var sd: float = 13.0 * (0.6 + _gh(e["t0"], 20 + si))
+					var sp2: Vector2 = e["pos"] + Vector2(sin(sa), -cos(sa)) * sd * rhe
+					r.draw_rect(Rect2(sp2.x - 0.9, sp2.y - 0.9, 1.8, 1.8),
+						Color(GRIT.r, GRIT.g, GRIT.b, 0.7 * (1.0 - k)))
+			"grind":      # C15: the hull scraping the coast — a brief foam-and-grit churn
+				# at the contact (the sim rate-limits emission; this stays small and cheap)
+				r.draw_circle(e["pos"], 5.0 + 9.0 * k,
+					Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.5 * (1.0 - k)))
+				r.draw_arc(e["pos"], 7.0 + 14.0 * k, 0.0, TAU, 20,
+					Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.45 * (1.0 - k)), r.lw(1.2), true)
+				for gsi in range(3):   # churned grit off the rock face
+					var gaa: float = _gh(e["t0"], 30 + gsi) * TAU
+					var gp: Vector2 = e["pos"] + Vector2(sin(gaa), -cos(gaa)) * (6.0 + 10.0 * k)
+					r.draw_rect(Rect2(gp.x - 0.8, gp.y - 0.8, 1.6, 1.6),
+						Color(GRIT.r, GRIT.g, GRIT.b, 0.6 * (1.0 - k)))
 			"hit":
 				r.draw_circle(e["pos"], 3.0, Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.8 * (1.0 - k)))
 		i -= 1

@@ -14,3 +14,6 @@ var splash: float = 0.0
 var life: float = 0.0
 var wid: String = ""           # weapon id ("hostile" for enemy shells), render reads it for style
 var hostile: bool = false      # true = enemy shell: tests the hull capsule, not enemies (C3)
+var aerial: bool = false       # C15 land rule: flying ordnance (air-layer shots, bay bombs) crosses
+                               # terrain; reset at the release site in Projectiles.gd — spawners
+                               # outside C15's reach (Turrets, AirWing) never write it

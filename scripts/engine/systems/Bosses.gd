@@ -22,10 +22,26 @@ static func make_boss(world: GameWorld, cfg: Configs, rung: int, lap: int) -> Bo
 	var ang: float = world.rng.nextf() * TAU
 	var dist: float = cfg.waves.spawn_ring_min \
 		+ world.rng.nextf() * (cfg.waves.spawn_ring_max - cfg.waves.spawn_ring_min)
+	var pos: Vector2 = world.ship_pos + Vector2(sin(ang), -cos(ang)) * dist
+	# C15 — machines never surface inside the rocks: the same re-roll + outward-nudge treatment
+	# as Waves' spawn placement (world.rng draws only when terrain forces them — stable order,
+	# open water byte-identical)
+	var rerolls: int = 0
+	while rerolls < 8 and not Terrain.clear_of(world, pos, 60.0):
+		rerolls += 1
+		ang = world.rng.nextf() * TAU
+		dist = cfg.waves.spawn_ring_min \
+			+ world.rng.nextf() * (cfg.waves.spawn_ring_max - cfg.waves.spawn_ring_min)
+		pos = world.ship_pos + Vector2(sin(ang), -cos(ang)) * dist
+	var nudges: int = 0
+	while nudges < 80 and not Terrain.clear_of(world, pos, 60.0):
+		nudges += 1
+		dist += 40.0
+		pos = world.ship_pos + Vector2(sin(ang), -cos(ang)) * dist
 	var b := Boss.new()
 	b.rung = rung
 	b.lap = lap
-	b.pos = world.ship_pos + Vector2(sin(ang), -cos(ang)) * dist
+	b.pos = pos
 	b.core = def.core_hp * mult
 	b.core_max = def.core_hp * mult
 	for pd in def.parts:
@@ -136,8 +152,18 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 	var dist_ship: float = b.pos.distance_to(world.ship_pos)
 	var desired: float = _angle_to(b.pos, world.ship_pos) \
 		+ (0.0 if dist_ship > def.standoff else PI / 2.0)
+	# C15 — waterborne machines route around land like every hull: the JUGGERNAUT on the surface
+	# and the MAW in BOTH states (the deep does NOT pass under — the land rule). The CANOPY flies
+	# over. Same tangent avoidance + sticky-side/inside-ring fixes as the escorts.
+	if def.layer != "air" and not world.terrain.is_empty():
+		var av: float = Terrain.avoid_heading(world, b.pos, b.heading,
+			cfg.terrain.avoid_look, def.radius + cfg.terrain.avoid_clear, b)
+		if av != INF:
+			desired = av
 	b.heading += clampf(angle_difference(b.heading, desired), -def.turn * dt, def.turn * dt)
 	b.pos += Vector2(sin(b.heading), -cos(b.heading)) * (def.speed + b.speed_bonus) * dt
+	if def.layer != "air" and not world.terrain.is_empty():
+		b.pos = Terrain.push_out(world, b.pos, def.radius)   # hard safety: never park in a rock
 	if def.id == "juggernaut":
 		var director_dead: bool = b.parts[2]["dead"]
 		for i in range(2):
@@ -159,6 +185,7 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 				p.splash = 0.0
 				p.hostile = true
 				p.wid = "hostile"
+				p.aerial = false   # C15: JUGGERNAUT shells are flat naval fire — rock stops them
 				p.life = 900.0 / def.shell_speed
 				world.effects.append({ "type": "gunflash", "pos": pp, "ang": ang })
 	elif def.id == "canopy":
@@ -181,6 +208,7 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 				p.splash = def.bomb_splash   # C7 fix: bays throw SPLASH bombs — the burst lives in Projectiles
 				p.hostile = true
 				p.wid = "hostile"
+				p.aerial = true   # C15: the CANOPY is an AIR machine — its bay bombs fall past terrain
 				p.life = minf(dist_ship, 800.0) / def.bomb_speed
 				world.effects.append({ "type": "gunflash", "pos": pp, "ang": ang })
 		if not b.parts[2]["dead"]:
@@ -219,6 +247,7 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 					p.splash = 0.0
 					p.hostile = true
 					p.wid = "torpedo"
+					p.aerial = false   # C15: MAW fish run in the water — they die on rock like all torpedoes
 					p.life = def.torp_run / def.torp_speed
 				if cfg.tech.helo:   # the bird heard the launch
 					world.helo_mark = b.pos

@@ -56,6 +56,34 @@ static func step(world: GameWorld, dt: float, cfgs: Configs) -> void:
 	world.ship_vel = fwd * along + right * lat
 	world.ship_pos += world.ship_vel * dt
 
+	# 7. C15 THE WATERS — the keel capsule vs the terrain circles (design/the-waters.html port).
+	#    On penetration: gentle push-out along the contact normal, slide (the into-rock velocity
+	#    component dies, she rides the coast), way bled while grinding, and a HARD hit — normal
+	#    speed above grind_speed_frac of full ahead — costs a pip through the normal grace window
+	#    (the C15 gate's speed-scaled grind rule: a brush is friction, plowing in costs). Pure
+	#    arithmetic, no rng; open water (empty terrain) never enters the loop.
+	for f in world.terrain:
+		var t: float = clampf((f["pos"] - world.ship_pos).dot(fwd), -Hull.HALF_LEN, Hull.HALF_LEN)
+		var away: Vector2 = (world.ship_pos + fwd * t) - f["pos"]
+		var dist: float = away.length()
+		var pen: float = Hull.RADIUS + f["r"] - dist
+		if pen <= 0.0:
+			continue
+		var n: Vector2 = away / dist if dist > 1e-4 else Vector2(1.0, 0.0)
+		var contact: Vector2 = f["pos"] + n * f["r"]
+		var vn: float = world.ship_vel.dot(n)     # PRE-contact normal speed (negative = into the rock)
+		world.ship_pos += n * pen                 # gentle push-out — a few u per frame at most
+		if vn < 0.0:
+			world.ship_vel -= n * vn              # slide: kill the into-rock component
+			if -vn > cfgs.terrain.grind_speed_frac * cfg.max_speed_ahead:
+				Hull.damage(world, 1, cfgs)       # grace applies naturally inside Hull.damage
+				world.effects.append({ "type": "rockhit", "pos": contact })
+		# the grind — she loses way on the rocks; per-second retention keeps it dt-independent
+		world.ship_vel *= pow(cfgs.terrain.grind_bleed, dt)
+		if world.elapsed >= world.grind_next:     # cosmetic churn at the waterline — rate-limited, no rng
+			world.grind_next = world.elapsed + 0.13
+			world.effects.append({ "type": "grind", "pos": contact })
+
 # Along-keel / cross-keel decomposition for read-only consumers (HUD gauges, probes). Pure function of
 # world state — deriving it here keeps GameWorld carrying only true state.
 static func keel_speeds(world: GameWorld) -> Vector2:

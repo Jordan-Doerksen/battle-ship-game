@@ -15,8 +15,27 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 		var p: Projectile = pool.items[i]
 		if not p.active:
 			continue
+		var prev: Vector2 = p.pos
 		p.pos += p.vel * dt
 		p.life -= dt
+		# C15 land rules (DECISIONS Change Log 2026-07-10, verbatim owner rule): terrain blocks
+		# everything that isn't flying. Torpedoes ALWAYS die on rock — whoever dropped them, even
+		# an air-dropped fish runs IN the water. Aerial ordnance (air-layer shots, bay bombs), the
+		# door gun (its AirWing spawner is outside this chunk — the wid stands in for the flag),
+		# and the AA guns pass. Depth charges dud at the THROW (DepthCharges.gd), never in flight.
+		# mb16 IS blocked — islands are hard cover against naval gunfire both ways (supersedes the
+		# earlier arc-over detail). Segment-swept so a fast shell can't tunnel a thin rock.
+		if not world.terrain.is_empty():
+			var flies: bool = (p.aerial or p.wid == "doorgun" or p.wid == "aa20") \
+				and p.wid != "torpedo"
+			if not flies and p.wid != "dc":
+				var rock: Vector2 = Terrain.hit(world, prev, p.pos)
+				if rock.x != INF:
+					world.effects.append({ "type": "rockhit", "pos": rock })
+					p.pos = rock
+					p.aerial = false   # pool-reset (see the release below)
+					pool.release(p)
+					continue
 		var dead: bool = p.life <= 0.0
 		if p.hostile:
 			if Hull.dist_to_hull(world, p.pos) <= Hull.RADIUS:
@@ -116,6 +135,10 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 				elif p.wid == "dp5":
 					world.effects.append({ "type": "splash", "pos": p.pos, "r": 16.0 })   # near-miss column
 		if dead:
+			# C15 pool-reset: every release routes through Projectiles.step, so clearing the flag
+			# HERE guarantees recycled slots never leak `aerial` into spawners that don't write it
+			# (Turrets' mb16/dp5/aa20 and AirWing's rounds are outside this chunk's files)
+			p.aerial = false
 			pool.release(p)
 
 # AoE strikes on the machine resolve at the BURST point, so part-first attribution and hit

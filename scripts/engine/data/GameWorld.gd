@@ -46,6 +46,10 @@ var helo_gun_cool: float = 0.0           # door-gun cadence (gate rev 2)
 var helo_mark: Vector2 = Vector2.ZERO    # last torpedo launch point (valid while elapsed < helo_mark_until)
 var helo_mark_until: float = -1.0
 var boss: Boss = null                    # C7: the single active war machine (Bosses.gd owns it)
+var terrain: Array = []                  # C15 THE WATERS: static features { "pos": Vector2, "r": float,
+                                         # "islet": bool } — Main calls Terrain.generate ONCE at world
+                                         # setup; empty = open water, every query no-ops (pre-C15 probes)
+var grind_next: float = 0.0              # next allowed cosmetic grind-effect time (Movement.gd rate limit, no rng)
 var godmode: bool = false                # DEV test kit only (debug builds); guards Hull.damage
 var freeze_waves: bool = false           # DEV test kit only (debug builds); pauses the director
 

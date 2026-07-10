@@ -29,6 +29,7 @@ const FX_LIFE := {
 	"muzzle": 0.12, "gunflash": 0.12, "hit": 0.12, "ignite": 0.3, "shiphit": 0.4,
 	"airburst": 0.45, "death": 0.5, "crashturn": 0.8, "shipdeath": 2.2,
 	"dcvolley": 0.3, "dcblast": 0.9, "contact": 1.2,
+	"rockhit": 0.4, "grind": 0.25,   # C15: fire dying on rock · hull scraping the coast
 	"helodrop": 0.35, "helodown": 0.5,
 	"partdown": 0.6, "bossdown": 2.0, "breach": 1.0, "dive": 0.8,
 	"klaxon": 0.0, "waveclear": 0.0,
@@ -43,6 +44,7 @@ var _wake: Array = []
 var _fx: Array = []                          # render-side animated effects
 var _splashes: Array = []                    # C9 splash columns (FxRender)
 var _streaks: Array = []                     # C9 crest-foam streaks (SeaRender)
+var _terrain_art: Array = []                 # C15 cached terrain cosmetics (TerrainRender builds)
 var _recoil: Array = []                      # per-mount barrel kick, fed by muzzle effects
 var _srng := RandomNumberGenerator.new()     # cosmetic-only randomness — never world.rng (D1.4)
 var _last_emit: float = -1.0
@@ -66,6 +68,7 @@ func bind(world: GameWorld, field_cfg: FieldConfig, cam_cfg: CameraConfig, cfgs:
 	_fx.clear()
 	_splashes.clear()
 	_streaks.clear()
+	_terrain_art.clear()   # C15: rebuilt lazily off the new world's terrain + seed
 	_wake.clear()
 	_last_emit = -1.0
 	_death_ms = -1
@@ -114,6 +117,9 @@ func _draw() -> void:
 	SeaRender.draw_flecks(self)
 	SeaRender.draw_streaks(self)
 	SeaRender.draw_wake(self)
+	TerrainRender.draw(self)   # C15: the waters are world furniture — land stays visible behind
+	                           # the menus/attract like the sea does, so it sits above the wake
+	                           # but BEFORE the show_ship gate
 	if not show_ship:   # open sea only behind the menus (C4/C8): no dead-run combat layers
 		return
 	FxRender.draw_splash_water(self)          # discs + column shadows — water level, under hulls

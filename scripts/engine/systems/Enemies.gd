@@ -27,8 +27,19 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 			desired = _angle_to(e.pos, world.ship_pos) + (0.0 if dist_ship > def.standoff else PI / 2.0)
 		else:
 			desired = _angle_to(e.pos, world.ship_pos)
+		# C15 — waterborne hulls (surf + sub) give way around terrain: the mockup's tangent
+		# avoidance with its sticky-side and inside-ring fixes (Terrain.avoid_heading), applied
+		# as a heading adjustment BEFORE the turn cap. Air crosses land freely; open water
+		# (empty terrain) skips the whole block, byte-identical to pre-C15.
+		if def.layer != "air" and not world.terrain.is_empty():
+			var av: float = Terrain.avoid_heading(world, e.pos, e.heading,
+				cfg.terrain.avoid_look, def.radius + cfg.terrain.avoid_clear, e)
+			if av != INF:
+				desired = av
 		e.heading += clampf(angle_difference(e.heading, desired), -def.turn * dt, def.turn * dt)
 		e.pos += Vector2(sin(e.heading), -cos(e.heading)) * def.speed * dt
+		if def.layer != "air" and not world.terrain.is_empty():
+			e.pos = Terrain.push_out(world, e.pos, def.radius)   # hard safety: never park in a rock
 		if def.standoff > 0.0:
 			e.cool -= dt
 			if dist_ship <= def.fire_range and e.cool <= 0.0:
@@ -48,6 +59,10 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 					p.splash = 0.0
 					p.hostile = true
 					p.wid = "torpedo" if torp else "hostile"
+					# C15 land rule: air-layer shots fly over terrain — except torpedoes, which run
+					# IN the water once dropped and die on rock whoever dropped them (Projectiles.gd's
+					# wid gate outranks this flag for them)
+					p.aerial = def.layer == "air"
 					p.life = (def.torp_run if torp else def.fire_range * 1.4) / def.shell_speed
 					if torp:   # C12 cosmetic-only append, no rng — the torpedo klaxon needs a trigger
 						world.effects.append({ "type": "torpwater", "pos": p.pos })

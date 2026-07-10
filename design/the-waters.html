@@ -3,36 +3,45 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>EDF Fire Control — C11 mockup gate</title>
+<title>EDF The Waters — C15 mockup gate</title>
 </head>
 <body>
 <!-- ================================================================================
-  Earth Defense Force (working title) — C11 LONG-RANGE FIRE CONTROL · mockup gate
-  Forked from design/tactical-zoom.html (the APPROVED C10 reference — untouched). C10
-  granted the camera sea room; C11 teaches the guns to use it. Hold RIGHT MOUSE and
-  the two main-battery (mb16) mounts answer to the cursor and nothing else:
-    · THE RULE — cursor within gun range (900 u of the firing mount): the shell's
-      flight ends AT the cursor's world point and bursts there (life = dist/speed;
-      the proximity-fuse splash machinery is unchanged, r = 36, mb16 class). Beyond
-      900: the shell flies the cursor BEARING the full 900 and bursts at the end —
-      exactly today's rule. The readout is the mode telltale.
-    · FLIGHT TIME — live mono readout under the forced reticle: seconds + distance
-      to the burst point (dist/420, capped at 900/420); beyond range it reads
-      "MAX RANGE · BEARING" instead. Panel toggle.
-    · FALL OF SHOT — a mini radar scope (bottom-right, HelmGauges language: north-up,
-      ship-centered, 2200 u, faint 500 u rings, viewport rect off the LIVE zoom,
-      dashed mb16 900 u ring, red fire-control bearing line while forcing) now paints
-      YOUR shells: in-flight mb16 rounds as foam dots, each burst as a brief expanding
-      foam ring flash (life knobbed, default 1.2 s). Your shots exist on the scope.
-    · RANGEKEEPER — advisory lead assist (tech toggle, default ON for the demo): for
-      the surface contact nearest the cursor within the snap-radius knob (default
-      120 u), a steel ghost diamond + thin tether marks the two-pass intercept from
-      the nearest L mount. Shells still go where the CURSOR points — it only advises.
-  The L mounts DO NOT auto-fire here — this gate is manual fire control. M mounts keep
-  their C10 auto behavior; gunboat return fire is slowed so the player's salvos read.
-  Sea locked to the approved C9 preset; camera is the approved C10 machinery
-  (wheel 0.40–0.85, home 0.51, lerp, stroke comp, min-size floor).
-  Keys: hold RMB force main battery · wheel zoom · H home · WASD helm · P pause.
+  Earth Defense Force (working title) — C15 THE WATERS · mockup gate
+  Forked from design/fire-control.html (the APPROVED C11 reference — untouched).
+  The ocean grew teeth: a seeded archipelago of rocks and small islands the ship
+  must steer around. Owner directive: ROCKS AND SMALL ISLANDS, per-run, static.
+    · TERRAIN — the SEED knob (integer, default 7; retype/± regenerates, REGENERATE
+      = next seed) drives its OWN mulberry32 stream — the scene rng never touches
+      it, so same seed = same archipelago regardless of the war. 2–4 blobby islets
+      (8–12 verts on a wobbled 60–140 u radius) + 8–16 rock/reef features (10–30 u,
+      singles and clusters of 2–3) over a ~3000×2200 u field around the origin.
+      Rejection sampling: nothing within 250 u of the ship start, 180 u of open
+      water between feature edges (the channels). The FIRST islet is staged
+      420–650 u out — inside the gun/orbit envelope — so the fire story shows.
+    · THE LOOK — per body, coast-out: a pale SHOAL HALO (the sea goes shallow-green
+      near land, extent knobbed ~1.5× r) · an animated FOAM FRINGE hugging the
+      coastline (splash-disc foam language, slow pulse on the sea clock) · a dark
+      basalt gray-brown BODY with a darker heart + facet lines — clearly NOT
+      hostile-red, NOT ship-steel. Islets carry 1–2 deadpan props: a scrubby bush,
+      a lone navigation light on a slow blink. Min-px art floors so it reads at 0.4.
+    · COLLISION — the hull (capsule, half-length 97 × radius 30 at the C14 scale)
+      SLIDES off terrain: velocity projected off the contact normal, gentle push-out,
+      churned foam + speed loss on the grind. No damage here — open gate question.
+      Gunboats give way (tangent avoidance, 200 u lookahead); swarmers are air and
+      cross everything; nothing spawns inside terrain.
+    · FIRE — mb16 splash shells ARC OVER terrain (ballistic, unchanged; a burst that
+      comes down ON land throws gray rock dust, not a water column). FLAT fire —
+      gunboat dp5 at the player, own dp5 direct rounds — TERMINATES on rock with a
+      gray puff. TORPEDOES die on rock with a full splash column, and the runner's
+      line is scripted to cross a rock half the time. Islands are cover both ways.
+    · SCOPE — terrain painted on the mini radar as dim solid brass-gray land-masses,
+      unmistakably not blips.
+    · C14 PARITY — hull art scale 2.4 → 2.75: the deck art is hand-tuned at 2.4, so
+      every hull-local transform rides HULL_ART = 2.75/2.4 (outline, deck, mounts,
+      bow wave, wake anchors, muzzle reach) — one multiplier, uniform growth.
+  Sea locked to C9 · camera to C10 · fire control to C11. Only the rocks are on trial.
+  Keys: WASD steer the channel · hold RMB main battery · wheel zoom · H home · P pause.
 ================================================================================= -->
 <style>
   :root {
@@ -92,6 +101,10 @@
   .tun .name { font-family: var(--mono); font-size: 10.5px; color: var(--brass); }
   .tun .val { font-family: var(--mono); font-size: 10.5px; color: var(--foam); font-variant-numeric: tabular-nums; }
   .tun input[type="range"] { width: 100%; accent-color: var(--signal-red); height: 13px; }
+  .tun input[type="number"] {
+    flex: 0 0 88px; font-family: var(--mono); font-size: 11px; color: var(--foam);
+    background: rgba(228,240,242,0.06); border: 1px solid var(--brass-dim); padding: 4px 6px;
+  }
   .kbtn {
     font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
     text-transform: uppercase; color: var(--brass); background: rgba(228,240,242,0.04);
@@ -115,14 +128,14 @@
 
 <section id="mission" class="plate">
   <div class="eyebrow"><span class="star">★</span> Earth Defense Force · Naval Trials Bureau</div>
-  <h1>C11 — Long-Range Fire Control</h1>
-  <div class="voice">The cursor has been taught distance. The battery is expected to use it.</div>
-  <div class="voice dim">Sea locked to C9 · camera locked to C10. Only the gunnery is on trial.</div>
-  <div class="hint"><kbd>hold RMB</kbd> force main battery · <kbd>wheel</kbd> zoom · <kbd>H</kbd> home · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> · <kbd>P</kbd> pause</div>
+  <h1>C15 — The Waters</h1>
+  <div class="voice">The ocean grew teeth. Navigation is now a weapon.</div>
+  <div class="voice dim">Sea C9 · camera C10 · guns C11 · hull C14 — all locked. Only the rocks are on trial.</div>
+  <div class="hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> steer the channel · <kbd>hold RMB</kbd> main battery · <kbd>wheel</kbd> zoom · <kbd>P</kbd> pause</div>
 </section>
 
 <details id="tuning" open>
-  <summary>Tuning — C11 fire-control tables</summary>
+  <summary>Tuning — C15 the-waters tables</summary>
   <div class="body" id="tuning-body"></div>
 </details>
 
@@ -130,8 +143,8 @@
 "use strict";
 /* ════════════════════════════ CONFIG — every knob the panel exposes ════════════════════════════
    The sea domains map 1:1 onto the planned config/field.tres additions (C9, locked); `zoom`
-   is the approved C10 table (CameraConfig.tres). NEW here: the `fire` domain — the C11
-   fire-control tables headed for the weapons/fire-control config. */
+   is the approved C10 table (CameraConfig.tres); `fire` is the approved C11 table. NEW here:
+   the `terrain` domain — the C15 waters tables headed for a TerrainConfig.tres. */
 const DEFAULT_CFG = {
   swell:  { amp: 0.55, speed: 1.0, scale: 1.0 },   // band opacity mult · drift mult · spatial mult
   glint:  { intensity: 0.5 },                       // 0 = today's dead sea
@@ -146,6 +159,9 @@ const DEFAULT_CFG = {
   // burst-flash life (s) · flight-time readout toggle · RANGEKEEPER advisory toggle
   // (default ON for the demo — in the game it's a tech-tree unlock)
   fire:   { snap_radius: 120, flash_life: 1.2, show_time: true, rangekeeper: true },
+  // C15 tables: THE WATERS — `seed` feeds a DEDICATED mulberry32 stream (the scene rng never
+  // touches it); islets/rocks/size regenerate the field on change; shoal/fringe are draw-time
+  terrain: { seed: 7, islets: 3, rocks: 9, size: 1.35, shoal: 1.54, fringe: 1.0 },   // islets 3 · rocks 9 · size 1.35 · shoal 1.54 = the owner's gate tunes (2026-07-10)
   view:   { zoom: 0.51 },                           // ANIMATED camera zoom — chases targetZoom each frame
 };
 let cfg = structuredClone(DEFAULT_CFG);
@@ -181,6 +197,182 @@ function vnoise(x, y) {   // smoothed value noise — the glint fields sample th
   const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
   return hash2(xi, yi) * (1 - u) * (1 - v) + hash2(xi + 1, yi) * u * (1 - v)
        + hash2(xi, yi + 1) * (1 - u) * v + hash2(xi + 1, yi + 1) * u * v;
+}
+
+/* ════════════════════════════ C15 — THE WATERS · seeded terrain ════════════════════════════
+   The heart of the gate. generateTerrain() draws from its OWN mulberry32(seed) stream — the
+   scene rng (0xC9A1) never feeds it, so the same seed always lays the same archipelago no
+   matter what the war is doing. 2–4 blobby islets (8–12 verts on a wobbled 60–140 u radius)
+   + 8–16 rock/reef features (10–30 u, singles and clusters of 2–3) over a ~3000×2200 u field
+   around the origin. Rejection sampling: nothing within 250 u of the ship start, 180 u of
+   open water between feature EDGES (those gaps are the channels the hint is about). The
+   FIRST islet is staged 420–650 u out — inside the gun/orbit envelope — so the fire story
+   (boats duelling through an islet, shells eating rock) shows without hunting for it.
+   Sim truth = per-BODY circles at the mean coast radius (the polygons are art); the
+   feature-level bounding circle serves the broad phase and the helmsmen's avoidance.
+   Static: terrain never moves, never despawns. */
+let TERRAIN = [];   // [{ kind, x, y, r:bounding, polys:[{x,y,r:mean,maxR,pts,facets}], props, ph }]
+function generateTerrain() {
+  const tr = mulberry32((cfg.terrain.seed | 0) >>> 0);   // the terrain stream — nothing else draws here
+  const S = cfg.terrain.size, HW = 1500, HH = 1100;
+  const feats = [];
+  const fits = (x, y, r) => {
+    if (Math.hypot(x, y) - r < 250) return false;        // the ship-start exclusion
+    for (const f of feats)
+      if (Math.hypot(x - f.x, y - f.y) - r - f.r < 180) return false;   // edge gap = the channel
+    return true;
+  };
+  const place = (r, ringLo, ringHi) => {                 // rejection sampling — deterministic order
+    for (let i = 0; i < 90; i++) {
+      let x, y;
+      if (ringLo !== undefined) {
+        const a = tr() * TAU, d = ringLo + tr() * (ringHi - ringLo);
+        x = Math.sin(a) * d; y = -Math.cos(a) * d;
+      } else { x = (tr() * 2 - 1) * HW; y = (tr() * 2 - 1) * HH; }
+      if (Math.abs(x) > HW || Math.abs(y) > HH) continue;
+      if (fits(x, y, r)) return { x, y };
+    }
+    return null;                                          // crowded seed — feature skipped, still deterministic
+  };
+  const blob = (cx, cy, R, nLo, nHi) => {                 // wobbled-radius polygon + relief facets
+    const n = nLo + Math.floor(tr() * (nHi - nLo + 1));
+    const pts = []; let mean = 0, maxR = 0;
+    for (let k = 0; k < n; k++) {
+      const a = (k / n) * TAU + (tr() - 0.5) * (TAU / n) * 0.6;
+      const rad = R * (0.72 + 0.42 * tr());
+      mean += rad; maxR = Math.max(maxR, rad);
+      pts.push([cx + Math.sin(a) * rad, cy - Math.cos(a) * rad]);
+    }
+    const facets = [];                                    // darker relief lines, coast toward heart
+    const nf = 2 + Math.floor(tr() * 2);
+    for (let k = 0; k < nf; k++) {
+      const p0 = pts[Math.floor(tr() * n)];
+      const ia = tr() * TAU, id = R * (0.10 + 0.30 * tr());
+      facets.push([cx + (p0[0] - cx) * 0.82, cy + (p0[1] - cy) * 0.82,
+                   cx + Math.sin(ia) * id, cy - Math.cos(ia) * id]);
+    }
+    return { x: cx, y: cy, r: mean / n, maxR, pts, facets };
+  };
+  // islets — 2–4, the first staged inside the engagement envelope
+  const nIslet = Math.round(cfg.terrain.islets);
+  for (let i = 0; i < nIslet; i++) {
+    const R = (60 + tr() * 80) * S;
+    const pos = i === 0 ? place(R, 420, 650) : place(R);
+    if (!pos) continue;
+    const body = blob(pos.x, pos.y, R, 8, 12);
+    const props = [];
+    const np = 1 + (tr() < 0.5 ? 1 : 0);                  // 1–2 deadpan props per islet
+    for (let k = 0; k < np; k++) {
+      const type = tr() < 0.55 ? "bush" : "light";
+      const a = tr() * TAU, d = body.r * (0.28 + 0.32 * tr());
+      const offs = [];                                    // bush dot scatter, fixed at gen time
+      for (let j = 0; j < 4; j++) offs.push([(tr() * 2 - 1) * 6, (tr() * 2 - 1) * 6]);
+      props.push({ type, x: pos.x + Math.sin(a) * d, y: pos.y - Math.cos(a) * d, ph: tr() * TAU, offs });
+    }
+    feats.push({ kind: "islet", x: pos.x, y: pos.y, r: body.maxR, polys: [body], props, ph: tr() * TAU });
+  }
+  // rocks/reefs — 8–16 features, singles and clusters of 2–3
+  const nRock = Math.round(cfg.terrain.rocks);
+  for (let i = 0; i < nRock; i++) {
+    const nSub = tr() < 0.55 ? 1 : (tr() < 0.6 ? 2 : 3);
+    const r0 = (10 + tr() * 20) * S;
+    const pos = place(nSub === 1 ? r0 * 1.2 : r0 * 2.6);
+    if (!pos) continue;
+    const polys = [blob(pos.x, pos.y, r0, 5, 8)];
+    for (let j = 1; j < nSub; j++) {
+      const rj = (10 + tr() * 20) * S;
+      const a = tr() * TAU, d = (polys[0].maxR + rj) * (0.85 + 0.5 * tr());
+      polys.push(blob(pos.x + Math.sin(a) * d, pos.y - Math.cos(a) * d, rj, 5, 8));
+    }
+    let bound = 0;
+    for (const B of polys) bound = Math.max(bound, Math.hypot(B.x - pos.x, B.y - pos.y) + B.maxR);
+    feats.push({ kind: "rock", x: pos.x, y: pos.y, r: bound, polys, props: [], ph: tr() * TAU });
+  }
+  TERRAIN = feats;
+}
+// ── sim queries ── per-BODY circles are the collision truth; feature circles are broad phase
+function terrainBodyAt(x, y, pad = 0) {
+  for (const F of TERRAIN) {
+    if (Math.hypot(x - F.x, y - F.y) > F.r + pad + 4) continue;
+    for (const B of F.polys)
+      if (Math.hypot(x - B.x, y - B.y) <= B.r + pad) return B;
+  }
+  return null;
+}
+/* Tangent avoidance — shared by the gunboats (200 u lookahead) and the autopilot. If the
+   forward ray passes within (bounding r + clearance) of a feature inside the lookahead,
+   answer the heading that grazes the tangent; null = channel clear. The tangent SIDE is
+   STICKY per agent (stored on the agent object): with a feature dead ahead the raw side
+   flips sign every frame, the two turn orders cancel, and the helmsman motors straight
+   into the rock and parks — the headless probe caught boats stalled 40 s at a time. */
+function avoidHeading(x, y, heading, look, clear, agent) {
+  const d = dirOf(heading);
+  let hit = null, ht = Infinity;
+  for (const F of TERRAIN) {
+    const rx = F.x - x, ry = F.y - y;
+    const t = rx * d.x + ry * d.y;
+    const rr = F.r + clear;
+    if (t < -rr || t - rr > look) continue;
+    const miss = Math.hypot(rx - d.x * t, ry - d.y * t);
+    if (miss >= rr) continue;
+    if (t < ht) { ht = t; hit = { F, rr, side: (d.x * ry - d.y * rx) >= 0 ? -1 : 1 }; }
+  }
+  if (!hit) { if (agent) agent.avF = null; return null; }
+  let side = hit.side;
+  if (agent) {
+    if (agent.avF === hit.F) side = agent.avSide;   // committed — keep rounding the same way
+    else { agent.avF = hit.F; agent.avSide = side; }
+  }
+  const dc = Math.hypot(hit.F.x - x, hit.F.y - y);
+  /* Outside the clearance ring: graze the tangent. INSIDE it, a capped asin points slightly
+     inward and becomes a stable limit cycle — the probe caught a gunboat doing donuts around
+     an islet forever while the ship sailed off. Inside, steer OUTWARD-tangential (>90°) so
+     the helmsman spirals back out of the ring, then the normal tangent takes over. */
+  const off = dc >= hit.rr
+    ? Math.asin(Math.min(1, hit.rr / dc))
+    : (Math.PI / 2) * (2 - dc / hit.rr);
+  return angleTo({ x, y }, hit.F) + side * off;
+}
+/* Player hull vs terrain — capsule (half-length 97 × radius 30, the C14 hull) against body
+   circles. Sliding response: gentle push-out along the contact normal, the into-rock velocity
+   component killed (she slides along the coast), speed bled while grinding, churned foam at
+   the waterline. NO damage in this mockup — whether grounding costs hull is a gate question. */
+const SHIP_CAPS = { half: 97, r: 30 };
+let nextGrind = 0;
+function collideShip(dt) {
+  const f = dirOf(ship.heading);
+  for (const F of TERRAIN) {
+    if (Math.hypot(F.x - ship.x, F.y - ship.y) > F.r + SHIP_CAPS.half + SHIP_CAPS.r + 24) continue;
+    for (const B of F.polys) {
+      const t = clamp((B.x - ship.x) * f.x + (B.y - ship.y) * f.y, -SHIP_CAPS.half, SHIP_CAPS.half);
+      const px = ship.x + f.x * t, py = ship.y + f.y * t;
+      let dx = px - B.x, dy = py - B.y, d = Math.hypot(dx, dy);
+      if (d < 1e-4) { dx = 1; dy = 0; d = 1; }
+      const pen = SHIP_CAPS.r + B.r - d;
+      if (pen <= 0) continue;
+      const nx = dx / d, ny = dy / d;                    // contact normal, off the rock
+      ship.x += nx * pen; ship.y += ny * pen;            // gentle push-out (a few u/frame at most)
+      const vn = ship.vx * nx + ship.vy * ny;
+      if (vn < 0) { ship.vx -= nx * vn; ship.vy -= ny * vn; }   // slide: kill the into-rock component
+      ship.vx *= 1 - 0.55 * dt; ship.vy *= 1 - 0.55 * dt;       // the grind — she loses way on the rocks
+      if (simT >= nextGrind) {                           // churned foam at the contact point
+        nextGrind = simT + 0.13;
+        spawnSplash(B.x + nx * B.r, B.y + ny * B.r, "gun", false);
+      }
+    }
+  }
+}
+function initBoats() {   // C15 — boats integrate velocity now; start them ON orbit, clear of the rocks
+  for (const b of boats) {
+    b.x = ship.x + Math.sin(b.orbA) * b.orbR;
+    b.y = ship.y - Math.cos(b.orbA) * b.orbR;
+    b.heading = b.orbA + b.dir * Math.PI / 2;
+    const B = terrainBodyAt(b.x, b.y, 40);
+    if (B) {   // nothing spawns inside terrain — shove the boat to open water
+      const dx = b.x - B.x, dy = b.y - B.y, dd = Math.max(1e-3, Math.hypot(dx, dy));
+      b.x = B.x + dx / dd * (B.r + 44); b.y = B.y + dy / dd * (B.r + 44);
+    }
+  }
 }
 
 /* ════════════════════════════ CANVAS / CAMERA ════════════════════════════ */
@@ -367,9 +559,26 @@ function stepBoats(dt) {
     b.orbA += (spd / b.orbR) * b.dir * dt;
     b.orbR = (b === boats[0] ? 380 : 430) + Math.sin(simT * 0.13 + b.orbA) * 45;
     const nx = ship.x + Math.sin(b.orbA) * b.orbR, ny = ship.y - Math.cos(b.orbA) * b.orbR;
-    b.heading = angleTo(b, { x: nx, y: ny });
-    b.vx = (nx - b.x) / dt; b.vy = (ny - b.y) / dt;   // C11: RANGEKEEPER reads contact velocity
-    b.x = nx; b.y = ny;
+    /* C15 — gunboats are surface craft now: they steer (turn-rate helm) FOR the orbit point
+       and give way around terrain (tangent avoidance, 200 u lookahead) instead of teleporting
+       along the orbit. Station-keeping on a moving carrier: their speed rides ON TOP of the
+       ship's own speed (the old glued-orbit boats implicitly did this), plus a chase term
+       when a detour leaves them behind the sweep — so they always regain station, then
+       settle back to the 55 u/s prowl. */
+    const chase = Math.hypot(nx - b.x, ny - b.y);
+    let want = angleTo(b, { x: nx, y: ny });
+    const av = avoidHeading(b.x, b.y, b.heading, 200, 34, b);
+    if (av !== null) want = av;
+    b.heading += clamp(angDiff(want, b.heading), -2.2 * dt, 2.2 * dt);
+    const v = Math.min(Math.hypot(ship.vx, ship.vy) + spd * clamp(chase / 120, 0.8, 3.0), 340);
+    const dh = dirOf(b.heading);
+    b.vx = dh.x * v; b.vy = dh.y * v;                 // real velocity — RANGEKEEPER reads this
+    b.x += b.vx * dt; b.y += b.vy * dt;
+    const B = terrainBodyAt(b.x, b.y, 14);            // hard safety: never park a boat inside a rock
+    if (B) {
+      const dx = b.x - B.x, dy = b.y - B.y, dd = Math.max(1e-3, Math.hypot(dx, dy));
+      b.x = B.x + dx / dd * (B.r + 14); b.y = B.y + dy / dd * (B.r + 14);
+    }
     b.cool -= dt;
     if (b.cool <= 0) {                              // straddle the ship — near-misses matter
       b.cool = 4.2 + rng() * 2.0;                   // C11: slowed from 2.4+ so the player's salvos read
@@ -389,7 +598,8 @@ function stepBoats(dt) {
    the ship fast (different radii, phases, directions, slight wobble) so the eye has to track them
    at every zoom. Their draw applies the MIN-APPARENT-SIZE FLOOR: boost = max(1, minPx / (len·zoom)),
    rendered at scale(zoom·boost) so they never fall below minPx apparent pixels. Slider to 0 = off.
-   Cosmetic demo — no contact, no damage; they exist to be judged at 0.4. */
+   Cosmetic demo — no contact, no damage; they exist to be judged at 0.4.
+   C15: swarmers (and bombers, when they come) are AIR — they cross terrain freely, no avoidance. */
 const SWARMER_LEN = 12, BOAT_LEN = 28;
 const swarmers = [
   { ang: 0.7, r0: 250, dir: 1,  spd: 96, wob: 0.9, x: 0, y: 0, vx: 0, vy: 0, heading: 0 },
@@ -444,7 +654,8 @@ const RECOIL = MOUNTS.map(() => 0);
 const FLASH_LEN = { L: 35, M: 22, S: 13 };
 function mountWorld(mc) {
   const c = Math.cos(ship.heading), s = Math.sin(ship.heading);
-  return { x: ship.x + mc.x * c - mc.y * s, y: ship.y + mc.x * s + mc.y * c };
+  const ax = mc.x * HULL_ART, ay = mc.y * HULL_ART;   // C14: mount offsets ride the hull scale
+  return { x: ship.x + ax * c - ay * s, y: ship.y + ax * s + ay * c };
 }
 function stepMounts(dt) {
   const cw = cursorWorld();
@@ -501,7 +712,23 @@ function stepShells(dt) {
   for (let i = shells.length - 1; i >= 0; i--) {
     const p = shells[i];
     p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
+    /* C15 — the rule of the waters: mb16 splash shells ARC OVER terrain (ballistic, flight
+       untouched); everything FLAT — gunboat dp5 at the player, own dp5 direct rounds —
+       TERMINATES on rock with a gray basalt puff, not foam. Islands are cover both ways. */
+    if (p.kind !== "mb16" && terrainBodyAt(p.x, p.y)) {
+      spawnRockHit(p.x, p.y, false);
+      shells.splice(i, 1);
+      continue;
+    }
     if (p.life > 0) continue;
+    if (p.kind === "mb16" && terrainBodyAt(p.x, p.y)) {
+      // a ballistic burst that comes DOWN on land: rock dust, not a water column — but it
+      // still marks the scope (fall of shot is fall of shot)
+      spawnRockHit(p.x, p.y, true);
+      if (!p.hostile) scopeFlashes.push({ x: p.x, y: p.y, t0: simT });
+      shells.splice(i, 1);
+      continue;
+    }
     spawnSplash(p.x, p.y, p.kind, p.hostile);
     if (!p.hostile && p.kind === "mb16")             // C11: your burst exists on the scope
       scopeFlashes.push({ x: p.x, y: p.y, t0: simT });
@@ -526,7 +753,11 @@ function stepEvents(dt) {
     for (let k = 0; k < 7; k++) {
       const px = b.x + ld.x * (70 - k * 17) + (rng() * 2 - 1) * 7;
       const py = b.y + ld.y * (70 - k * 17) + (rng() * 2 - 1) * 7;
-      pending.push({ t: simT + k * 0.055, fn: () => spawnSplash(px, py, "gun", true) });
+      pending.push({ t: simT + k * 0.055, fn: () => {
+        // C15 — a stitch round that walks onto a rock puffs gray instead of splashing
+        if (terrainBodyAt(px, py)) spawnRockHit(px, py, false);
+        else spawnSplash(px, py, "gun", true);
+      } });
     }
   }
   if (simT >= nextDC) {                              // the racks roll — 3 scattered stern charges
@@ -536,6 +767,7 @@ function stepEvents(dt) {
       const px = ship.x - aft.x * (150 + k * 45) + (rng() * 2 - 1) * 55;
       const py = ship.y - aft.y * (150 + k * 45) + (rng() * 2 - 1) * 55;
       pending.push({ t: simT + k * 0.35, fn: () => {
+        if (terrainBodyAt(px, py)) return;           // C15 — charges roll into water, never onto rock
         spawnSplash(px, py, "gun", true);            // the sink plop
         charges.push({ x: px, y: py, t0: simT, fuse: 1.6 });
       } });
@@ -543,12 +775,33 @@ function stepEvents(dt) {
   }
   if (simT >= nextTorp) {                            // one runner crosses close aboard
     nextTorp = simT + 20 + rng() * 6;
-    const side = rng() < 0.5 ? 1 : -1;
-    const f = dirOf(ship.heading), r = { x: -f.y * side, y: f.x * side };
-    const start = { x: ship.x + r.x * 700 + f.x * 250, y: ship.y + r.y * 700 + f.y * 250 };
-    const ang = angleTo(start, { x: ship.x - r.x * 90 - f.x * 60, y: ship.y - r.y * 90 - f.y * 60 });
-    const d = dirOf(ang);
-    torps.push({ x: start.x, y: start.y, vx: d.x * 120, vy: d.y * 120, life: 13, emit: 0 });
+    let launched = false;
+    if (rng() < 0.5 && TERRAIN.length) {
+      /* C15 staging — half the runs, the torpedo's line is drawn THROUGH a terrain feature
+         near the ship, so the gate gets to watch a torpedo die on rock without waiting. */
+      const cands = TERRAIN.filter((F) => {
+        const d = Math.hypot(F.x - ship.x, F.y - ship.y);
+        return d > 250 && d < 900;
+      });
+      if (cands.length) {
+        const F = cands[Math.floor(rng() * cands.length)];
+        const a = rng() * TAU, u = dirOf(a);
+        const sx = F.x + u.x * 700, sy = F.y + u.y * 700;
+        if (!terrainBodyAt(sx, sy)) {                // nothing spawns inside terrain
+          torps.push({ x: sx, y: sy, vx: -u.x * 120, vy: -u.y * 120, life: 13, emit: 0 });
+          launched = true;
+        }
+      }
+    }
+    if (!launched) {                                 // the classic close-aboard pass
+      const side = rng() < 0.5 ? 1 : -1;
+      const f = dirOf(ship.heading), r = { x: -f.y * side, y: f.x * side };
+      const start = { x: ship.x + r.x * 700 + f.x * 250, y: ship.y + r.y * 700 + f.y * 250 };
+      const ang = angleTo(start, { x: ship.x - r.x * 90 - f.x * 60, y: ship.y - r.y * 90 - f.y * 60 });
+      const d = dirOf(ang);
+      if (!terrainBodyAt(start.x, start.y))
+        torps.push({ x: start.x, y: start.y, vx: d.x * 120, vy: d.y * 120, life: 13, emit: 0 });
+    }
   }
   for (let i = pending.length - 1; i >= 0; i--)
     if (simT >= pending[i].t) { pending[i].fn(); pending.splice(i, 1); }
@@ -562,6 +815,11 @@ function stepEvents(dt) {
   for (let i = torps.length - 1; i >= 0; i--) {
     const t = torps[i];
     t.x += t.vx * dt; t.y += t.vy * dt; t.life -= dt; t.emit -= dt;
+    if (terrainBodyAt(t.x, t.y)) {                   // C15 — torpedoes die on rock, full column
+      spawnSplash(t.x, t.y, "mb16", true);
+      torps.splice(i, 1);
+      continue;
+    }
     if (t.emit <= 0) {                               // the bright bubbling line
       t.emit = 0.03;
       bubbles.push({ x: t.x + (rng() * 2 - 1) * 2, y: t.y + (rng() * 2 - 1) * 2, t0: simT });
@@ -580,12 +838,12 @@ function stepWake(dt) {
   if (wakeEmit > 0 || speed < 6) return;
   wakeEmit = 1 / 30;
   const f = dirOf(ship.heading), r = { x: -f.y, y: f.x };
-  const stern = { x: ship.x - f.x * 96, y: ship.y - f.y * 96 };
+  const stern = { x: ship.x - f.x * 96 * HULL_ART, y: ship.y - f.y * 96 * HULL_ART };   // C14: the stern moved aft
   const w = Math.min(1, speed / MOVE.max_speed_ahead);
   wakePts.push({ x: stern.x, y: stern.y, t0: simT, ang: ship.heading, w, sx: 0, sy: 0 });          // prop churn
   for (const side of [-1, 1])                        // shoulders drift outward → a widening V
-    wakePts.push({ x: stern.x + r.x * side * 14, y: stern.y + r.y * side * 14, t0: simT,
-                   ang: ship.heading, w: w * 0.7, sx: r.x * side * 7, sy: r.y * side * 7 });
+    wakePts.push({ x: stern.x + r.x * side * 14 * HULL_ART, y: stern.y + r.y * side * 14 * HULL_ART, t0: simT,
+                   ang: ship.heading, w: w * 0.7, sx: r.x * side * 7 * HULL_ART, sy: r.y * side * 7 * HULL_ART });
   if (wakePts.length > 900) wakePts.splice(0, wakePts.length - 900);
 }
 function drawWake() {
@@ -747,16 +1005,43 @@ function drawSplashPlumes(reduced) {   // (1) plume + (3) pop + (4) droplets —
   }
 }
 
-/* ════════════════════════════ ABOVE-SHIP FX — muzzle flashes (as today) ════════════════════════════ */
+/* ════════════════════════════ ABOVE-SHIP FX — muzzle flashes + C15 rock-hit dust ════════════════════════════ */
 const fxAbove = [], fxUnder = [];
+function spawnRockHit(x, y, big) {
+  // C15 — flat fire dying on rock: gray basalt dust, emphatically NOT foam. Speckle offsets
+  // come from the scene rng (cosmetic) — the terrain stream never draws here.
+  const specks = [];
+  const n = big ? 7 : 4;
+  for (let i = 0; i < n; i++) {
+    const a = rng() * TAU, d = (big ? 30 : 13) * (0.6 + rng());
+    specks.push([Math.sin(a) * d, -Math.cos(a) * d]);
+  }
+  fxAbove.push({ type: "rockhit", x, y, big: !!big, t0: simT, specks });
+}
 function drawFxAbove() {
   const z = cfg.view.zoom;
   for (let i = fxAbove.length - 1; i >= 0; i--) {
-    const e = fxAbove[i], age = simT - e.t0, life = 0.12;
+    const e = fxAbove[i], age = simT - e.t0;
+    const life = e.type === "rockhit" ? (e.big ? 0.7 : 0.45) : 0.12;
     if (age >= life) { fxAbove.splice(i, 1); continue; }
     const k = age / life;
+    if (e.type === "rockhit") {   // C15 — gray dust puff + darker core + flying grit
+      const [px, py] = w2s(e.x, e.y);
+      const R = Math.max((e.big ? 26 : 9) * (0.55 + 0.8 * k) * z, 3);
+      ctx.fillStyle = `rgba(126,120,108,${(0.55 * (1 - k)).toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(px, py, R, 0, TAU); ctx.fill();
+      ctx.fillStyle = `rgba(58,54,46,${(0.5 * (1 - k)).toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(px, py, R * 0.5, 0, TAU); ctx.fill();
+      const eased = 1 - (1 - Math.min(k * 1.4, 1)) ** 2;
+      ctx.fillStyle = `rgba(140,134,120,${(0.7 * (1 - k)).toFixed(3)})`;
+      for (const [ox, oy] of e.specks) {
+        const [qx, qy] = w2s(e.x + ox * eased, e.y + oy * eased);
+        ctx.fillRect(qx - 0.9, qy - 0.9, 1.8, 1.8);
+      }
+      continue;
+    }
     if (e.type === "muzzle") {
-      const d = dirOf(e.ang), len = FLASH_LEN[e.size];
+      const d = dirOf(e.ang), len = FLASH_LEN[e.size] * HULL_ART;   // C14: muzzle reach rides the hull scale
       const [px, py] = w2s(e.x + d.x * len, e.y + d.y * len);
       ctx.fillStyle = `rgba(232,180,110,${(0.9 * (1 - k)).toFixed(3)})`;
       ctx.beginPath();
@@ -806,12 +1091,112 @@ function drawStreaks() {
   }
 }
 
-/* ════════════════════════════ SHIP ART — the C2 LOOK-LOCKED hull, verbatim ════════════════════════════
-   Same silhouette, same turret classes, same line weights as design/hardpoint-hull.html —
-   at zoom 0.85. C10: every deck-art STROKE routes through lw() so the outlines survive the
-   pull-back; fills and geometry untouched. The sim underneath never sees any of it. */
-const HULL_SCALE = 2.4;   // owner feedback at the C2 gate (twice): a battleship-sized battleship
-const HULL_PTS = (() => {  // C1 silhouette proportions at the new scale (~150u overall)
+/* ════════════════════════════ C15 — TERRAIN ART · the waters' look ════════════════════════════
+   Each body, coast-out: (a) SHOAL HALO — pale shallow sea-green fading to nothing at ~shoal×
+   the coast radius (the sea gets pale near land); (b) FOAM FRINGE — two breathing foam rings
+   hugging the coastline (the splash-disc foam language, slow pulse on the sea clock; static
+   under reduced motion but KEPT — it carries gameplay info, where the coast is); (c) the
+   BODY — dark basalt gray-brown, blobby smoothed coast, darker heart + facet lines for
+   relief. Clearly NOT hostile-red, NOT ship-steel: warm dark grays. Islets carry their
+   deadpan props — scrubby bushes, a lone nav light on a slow blink. Rock bodies get a
+   min-px ART floor (same trick as the swarmers) so a 10 u reef still reads at 0.4; the SIM
+   circle stays honest at world size. World layer — strokes ride lw(). */
+function traceBlob(B, scale) {   // smoothed coast: quadratics through edge midpoints
+  const n = B.pts.length, sp = [];
+  for (const p of B.pts) sp.push(w2s(B.x + (p[0] - B.x) * scale, B.y + (p[1] - B.y) * scale));
+  ctx.beginPath();
+  ctx.moveTo((sp[n - 1][0] + sp[0][0]) / 2, (sp[n - 1][1] + sp[0][1]) / 2);
+  for (let i = 0; i < n; i++) {
+    const q = sp[(i + 1) % n];
+    ctx.quadraticCurveTo(sp[i][0], sp[i][1], (sp[i][0] + q[0]) / 2, (sp[i][1] + q[1]) / 2);
+  }
+  ctx.closePath();
+}
+const TONE = {   // 2–3 basalt tones inside the house value range — never red, never steel-blue
+  isletBody: "#4A443A", rockBody: "#3F3A32",
+  core: "rgba(22,19,15,0.30)", facet: "rgba(16,14,11,0.5)", coast: "rgba(15,13,10,0.55)",
+  shoal: "74,128,120", bush: "#2F4A33",
+};
+function drawTerrain(seaTNow, reduced) {
+  const z = cfg.view.zoom, fr = cfg.terrain.fringe, sh = cfg.terrain.shoal;
+  for (const F of TERRAIN) {
+    const [fx, fy] = w2s(F.x, F.y);
+    const cull = (F.r * Math.max(sh, 1.3) + 60) * z + 80;
+    if (fx < -cull || fx > W + cull || fy < -cull || fy > H + cull) continue;
+    const bodies = F.polys.map((B) => ({ B, boost: Math.max(1, 5 / Math.max(0.001, B.r * z)) }));
+    for (const { B, boost } of bodies) {              // (a) shoal halos first, under everything
+      const [bx, by] = w2s(B.x, B.y);
+      const Ro = Math.max(1, B.r * boost * sh * z);
+      const g = ctx.createRadialGradient(bx, by, Ro * 0.35, bx, by, Ro);
+      g.addColorStop(0, `rgba(${TONE.shoal},0.30)`);
+      g.addColorStop(0.55, `rgba(${TONE.shoal},0.15)`);
+      g.addColorStop(1, `rgba(${TONE.shoal},0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(bx, by, Ro, 0, TAU); ctx.fill();
+    }
+    for (const { B, boost } of bodies) {              // (b) foam fringe — breathing, coast-hugging
+      const pulse = reduced ? 0 : Math.sin(seaTNow * 0.7 + F.ph + B.x * 0.013);
+      const a1 = (0.30 + 0.10 * pulse) * fr, a2 = (0.13 + 0.05 * pulse) * fr;
+      if (a1 > 0.01) {
+        ctx.strokeStyle = `rgba(228,240,242,${a1.toFixed(3)})`;
+        ctx.lineWidth = Math.max(lw(1.6), 1.2);
+        traceBlob(B, boost * (1.05 + 0.013 * pulse)); ctx.stroke();
+      }
+      if (a2 > 0.01) {
+        ctx.strokeStyle = `rgba(228,240,242,${a2.toFixed(3)})`;
+        ctx.lineWidth = Math.max(lw(1.1), 1);
+        traceBlob(B, boost * (1.16 + 0.025 * pulse)); ctx.stroke();
+      }
+    }
+    for (const { B, boost } of bodies) {              // (c) the rock itself
+      traceBlob(B, boost);
+      ctx.fillStyle = F.kind === "islet" ? TONE.isletBody : TONE.rockBody;
+      ctx.fill();
+      ctx.strokeStyle = TONE.coast; ctx.lineWidth = Math.max(lw(1.2), 1);
+      ctx.stroke();
+      traceBlob(B, boost * 0.52);                     // darker heart — cheap relief
+      ctx.fillStyle = TONE.core; ctx.fill();
+      ctx.strokeStyle = TONE.facet; ctx.lineWidth = Math.max(lw(1), 0.8);
+      for (const [x0, y0, x1, y1] of B.facets) {
+        const [p0x, p0y] = w2s(B.x + (x0 - B.x) * boost, B.y + (y0 - B.y) * boost);
+        const [p1x, p1y] = w2s(B.x + (x1 - B.x) * boost, B.y + (y1 - B.y) * boost);
+        ctx.beginPath(); ctx.moveTo(p0x, p0y); ctx.lineTo(p1x, p1y); ctx.stroke();
+      }
+    }
+    for (const pr of F.props) {                       // (d) deadpan props — islets only
+      const [ppx, ppy] = w2s(pr.x, pr.y);
+      if (pr.type === "bush") {                       // scrubby bush: a dark-green dot cluster
+        ctx.fillStyle = TONE.bush;
+        for (const [ox, oy] of pr.offs) {
+          ctx.beginPath();
+          ctx.arc(ppx + ox * z, ppy + oy * z, Math.max(2.4 * z, 1.4), 0, TAU);
+          ctx.fill();
+        }
+      } else {                                        // the lone navigation light, blinking slowly
+        const on = reduced ? true : ((seaTNow * 0.45 + pr.ph) % 3) < 0.4;
+        const rr = Math.max(2 * z, 1.6);
+        if (on && !reduced) {                         // soft brass halo on the flash
+          ctx.fillStyle = "rgba(205,186,142,0.22)";
+          ctx.beginPath(); ctx.arc(ppx, ppy, rr * 3, 0, TAU); ctx.fill();
+        }
+        ctx.fillStyle = reduced ? "rgba(205,186,142,0.7)" : (on ? "#CDBA8E" : "rgba(205,186,142,0.28)");
+        ctx.beginPath(); ctx.arc(ppx, ppy, rr, 0, TAU); ctx.fill();
+      }
+    }
+  }
+}
+
+/* ════════════════════════════ SHIP ART — the C2 LOOK-LOCKED hull at the C14 SCALE ════════════════════════════
+   Same silhouette, turret classes and line weights as design/hardpoint-hull.html — but the
+   owner sized the hull up at C14: art scale 2.4 → 2.75. The deck furniture below is all
+   hand-tuned in 2.4-scale coordinates, so every hull-local transform (outline, deck, mounts,
+   bow wave) rides HULL_ART = 2.75/2.4 — one multiplier, uniform growth, strokes included.
+   C10: every deck-art STROKE routes through lw(). The sim's terrain capsule (97×30) matches
+   THIS hull; the sim underneath never sees any of the art. */
+const HULL_SCALE = 2.75;                       // C14 — the hull grew (was 2.4 from the C2 gate)
+const HULL_ART_BASE = 2.4;                     // the scale the C2 deck art was hand-tuned at
+const HULL_ART = HULL_SCALE / HULL_ART_BASE;   // ×1.146 — applied in every hull-local transform
+const HULL_PTS = (() => {  // C1 silhouette proportions at the ART-BASE scale (HULL_ART carries the rest)
   const pts = [[0, -50]];
   const quad = (p0, c, p1, n) => { for (let i = 1; i <= n; i++) { const t = i / n;
     const ax = p0[0] + (c[0] - p0[0]) * t, ay = p0[1] + (c[1] - p0[1]) * t;
@@ -821,7 +1206,7 @@ const HULL_PTS = (() => {  // C1 silhouette proportions at the new scale (~150u 
   quad([10, 20], [10, 32], [6, 35], 6); quad([6, 35], [0, 38], [-6, 35], 6);
   quad([-6, 35], [-10, 32], [-10, 20], 6); pts.push([-9.5, -24]);
   quad([-9.5, -24], [-8, -38], [0, -50], 8);
-  return pts.map(([x, y]) => [x * HULL_SCALE, y * HULL_SCALE]);
+  return pts.map(([x, y]) => [x * HULL_ART_BASE, y * HULL_ART_BASE]);
 })();
 function hullTrace() {
   ctx.beginPath();
@@ -845,13 +1230,14 @@ function drawShip(reduced) {
   if (off > 0.2) {
     ctx.save();
     ctx.translate(sx0 + SHADOW.x * off, sy0 + SHADOW.y * off);
-    ctx.scale(z, z); ctx.rotate(ship.heading + ride.roll);
+    ctx.scale(z * HULL_ART, z * HULL_ART); ctx.rotate(ship.heading + ride.roll);   // C14 scale
     hullTrace(); ctx.fillStyle = "rgba(2,10,14,0.38)"; ctx.fill();
     ctx.restore();
   }
   const sx = sx0 + SUN.x * ride.heave, sy = sy0 + SUN.y * ride.heave;   // lift toward the light
   ctx.save();
-  ctx.translate(sx, sy); ctx.scale(z, z); ctx.rotate(ship.heading + ride.roll);
+  ctx.translate(sx, sy); ctx.scale(z * HULL_ART, z * HULL_ART);   // C14: the whole deck grows with the hull
+  ctx.rotate(ship.heading + ride.roll);
   drawBowWave();
   hullTrace();
   ctx.fillStyle = "#3C4F57"; ctx.fill();
@@ -1033,8 +1419,16 @@ function nearestLMount(pt) {   // readout + RANGEKEEPER both fire "from the near
 function readInput() {
   if (simT < manualUntil)
     return { thrust: (keys.w ? 1 : 0) + (keys.s ? -1 : 0), rudder: (keys.d ? 1 : 0) + (keys.a ? -1 : 0) };
-  return { thrust: ship.along < MOVE.max_speed_ahead * 0.7 ? 1 : 0,   // autopilot: a wandering cruise,
-           rudder: Math.sin(simT * 0.07) * 0.3 + Math.sin(simT * 0.023 + 1.7) * 0.2 };   // not a circle
+  /* autopilot — C15: the fallback pilot knows the chart. Tangent avoidance overrides the
+     wandering cruise; past ~1100 u it also leans for home so the demo never drifts out of
+     the archipelago. Manual helm (WASD) gets NO assists — steering the channel is the
+     player's job, which is this gate. */
+  let rudder = Math.sin(simT * 0.07) * 0.3 + Math.sin(simT * 0.023 + 1.7) * 0.2;
+  if (Math.hypot(ship.x, ship.y) > 1100)
+    rudder = clamp(angDiff(angleTo(ship, { x: 0, y: 0 }), ship.heading) * 1.2, -0.8, 0.8);
+  const av = avoidHeading(ship.x, ship.y, ship.heading, 320, 110, ship);
+  if (av !== null) rudder = clamp(angDiff(av, ship.heading) * 2.5, -1, 1);
+  return { thrust: ship.along < MOVE.max_speed_ahead * 0.7 ? 1 : 0, rudder };
 }
 function togglePause() {
   paused = !paused;
@@ -1044,6 +1438,12 @@ function togglePause() {
 
 /* ════════════════════════════ KNOB PANEL ════════════════════════════ */
 const SLIDERS = [   // [section, [path, label, min, max, step]...] — first section = the gate, open; rest = approved reference, closed
+  ["The waters — C15 tables", [
+    ["terrain.islets", "islet count", 2, 4, 1],
+    ["terrain.rocks", "rock features", 8, 16, 1],
+    ["terrain.size", "feature size (×)", 0.6, 1.6, 0.01],
+    ["terrain.shoal", "shoal halo (× r)", 1.0, 2.5, 0.01],
+    ["terrain.fringe", "foam fringe", 0, 2, 0.01]]],
   ["Fire control — the C11 tables", [
     ["fire.snap_radius", "RK snap radius (u)", 40, 240, 1],
     ["fire.flash_life", "scope flash life (s)", 0.4, 3, 0.05]]],
@@ -1064,6 +1464,8 @@ const SLIDERS = [   // [section, [path, label, min, max, step]...] — first sec
   ["Splash columns", [["splash.scale", "column scale", 0.5, 1.8, 0.01], ["splash.foam_life", "foam disc life (s)", 1, 6, 0.1]]],
   ["Wake", [["wake.life", "foam life (s)", 2, 12, 0.1], ["wake.width", "width", 0.5, 2, 0.01]]],
 ];
+// knobs that reshape the field — they re-run the generator live (same seed + same knobs = same waters)
+const REGEN_PATHS = new Set(["terrain.islets", "terrain.rocks", "terrain.size"]);
 function getPath(path) {
   if (path === "view.zoom") return targetZoom;               // the View slider reads/drives the TARGET
   const [a, b] = path.split("."); return cfg[a][b];
@@ -1079,16 +1481,22 @@ function buildPanel() {
   let html = "";
   SLIDERS.forEach(([sect, items], si) => {
     html += `<details class="sect"${si === 0 ? " open" : ""}><summary>${sect}</summary><div class="body">`;
+    if (si === 0)   // the seed row — a typed integer, not a slider; REGENERATE = next archipelago
+      html += `<div class="tun"><div class="row"><span class="name">seed (retype/± regenerates)</span>
+        <span class="val" id="val-terrain-seed"></span></div>
+        <div style="display:flex;gap:6px;align-items:center">
+        <input type="number" id="in-terrain-seed" step="1" value="${cfg.terrain.seed}">
+        <button class="kbtn" id="btn-regen" style="margin:0">Regenerate</button></div></div>`;
     for (const [path, label, min, max, step] of items)
       html += `<div class="tun"><div class="row"><span class="name">${label}</span>
         <span class="val" id="val-${path.replace(".", "-")}"></span></div>
         <input type="range" id="in-${path.replace(".", "-")}" data-path="${path}"
                min="${min}" max="${max}" step="${step}"></div>`;
-    if (si === 0)   // the C11 gate toggles live with the gate tables
+    if (si === 1)   // the C11 toggles live with the fire-control tables
       html += `<div style="margin-top:2px">
         <button class="kbtn" id="btn-rk">Rangekeeper</button>
         <button class="kbtn" id="btn-ft">Flight time</button></div>`;
-    if (si === 1)   // the two C10 controls stay with the zoom tables
+    if (si === 2)   // the two C10 controls stay with the zoom tables
       html += `<div style="margin-top:2px">
         <button class="kbtn" id="btn-home">Home</button>
         <button class="kbtn" id="btn-comp">Stroke comp</button></div>`;
@@ -1098,13 +1506,23 @@ function buildPanel() {
     <button class="kbtn" id="btn-dye">splash dye</button>
     <button class="kbtn" id="btn-reduced">reduced motion</button>
     <button class="kbtn" id="btn-pause">pause</button></div>
-    <button id="reset-cfg">Reset C11 defaults</button>`;
+    <button id="reset-cfg">Reset C15 defaults</button>`;
   body.innerHTML = html;
   body.querySelectorAll("input[type=range]").forEach((el) => {
     el.addEventListener("input", () => {
       setPath(el.dataset.path, parseFloat(el.value));
+      if (REGEN_PATHS.has(el.dataset.path)) generateTerrain();   // counts/size reshape the field live
       updateVals();
     });
+  });
+  document.getElementById("in-terrain-seed").addEventListener("input", (e) => {
+    const v = parseInt(e.target.value, 10);
+    if (!Number.isFinite(v)) return;                 // mid-typing ("-", empty) — wait for a number
+    cfg.terrain.seed = v; generateTerrain(); updateVals();
+  });
+  document.getElementById("btn-regen").addEventListener("click", () => {
+    cfg.terrain.seed = (cfg.terrain.seed | 0) + 1;   // next archipelago — the seed stays visible/typeable
+    generateTerrain(); syncPanel();
   });
   document.getElementById("btn-rk").addEventListener("click", () => { cfg.fire.rangekeeper = !cfg.fire.rangekeeper; syncPanel(); });
   document.getElementById("btn-ft").addEventListener("click", () => { cfg.fire.show_time = !cfg.fire.show_time; syncPanel(); });
@@ -1116,9 +1534,10 @@ function buildPanel() {
   document.getElementById("btn-reduced").addEventListener("click", () => { reducedMotion = !reducedMotion; syncPanel(); });
   document.getElementById("btn-pause").addEventListener("click", togglePause);
   document.getElementById("reset-cfg").addEventListener("click", () => {
-    applyPreset("B");                     // approved sea + C10 zoom + C11 fire defaults (all live in DEFAULT_CFG)
+    applyPreset("B");                     // approved sea/zoom/fire + the C15 terrain defaults (all in DEFAULT_CFG)
     targetZoom = cfg.zoom.home;
     compOn = true;
+    generateTerrain();                    // seed 7 again — the default waters
     syncPanel();
   });
 }
@@ -1128,6 +1547,8 @@ function updateVals() {
       const el = document.getElementById(`val-${path.replace(".", "-")}`);
       if (el) el.textContent = (+getPath(path)).toFixed(2).replace(/\.?0+$/, "") || "0";
     }
+  const sv = document.getElementById("val-terrain-seed");   // the seed readout rides along
+  if (sv) sv.textContent = String(cfg.terrain.seed | 0);
 }
 function syncPanel() {
   for (const [, items] of SLIDERS)
@@ -1135,6 +1556,8 @@ function syncPanel() {
       const el = document.getElementById(`in-${path.replace(".", "-")}`);
       if (el) el.value = getPath(path);
     }
+  const seedIn = document.getElementById("in-terrain-seed");
+  if (seedIn) seedIn.value = cfg.terrain.seed;
   updateVals();
   document.getElementById("btn-rk").classList.toggle("active", cfg.fire.rangekeeper);
   document.getElementById("btn-ft").classList.toggle("active", cfg.fire.show_time);
@@ -1256,6 +1679,32 @@ function drawScope() {
   for (let d = 500; d < SCOPE_RANGE; d += 500) {
     ctx.beginPath(); ctx.arc(cx, cy, d * k, 0, TAU); ctx.stroke();
   }
+  /* C15 — the land on the scope: dim solid brass-gray masses, unmistakably not blips (blips
+     are red squares/dots, shot is foam). Bodies only (no shoal), clipped to the scope face;
+     tiny reefs get a 1.5 px dot floor so a reef line still charts. */
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.clip();
+  ctx.fillStyle = "rgba(150,138,106,0.4)";
+  for (const F of TERRAIN) {
+    const [tox, toy] = rel(F.x, F.y);
+    if (Math.hypot(tox, toy) > R + F.r * k) continue;
+    for (const B of F.polys) {
+      if (B.r * k < 2) {
+        const [bx, by] = rel(B.x, B.y);
+        ctx.beginPath(); ctx.arc(cx + bx, cy + by, Math.max(B.r * k, 1.5), 0, TAU); ctx.fill();
+      } else {
+        ctx.beginPath();
+        const [m0x, m0y] = rel(B.pts[0][0], B.pts[0][1]);
+        ctx.moveTo(cx + m0x, cy + m0y);
+        for (let j = 1; j < B.pts.length; j++) {
+          const [mx, my] = rel(B.pts[j][0], B.pts[j][1]);
+          ctx.lineTo(cx + mx, cy + my);
+        }
+        ctx.closePath(); ctx.fill();
+      }
+    }
+  }
+  ctx.restore();
   ctx.strokeStyle = "rgba(205,186,142,0.35)";        // main-battery reach, dashed (the game's ring)
   ctx.setLineDash([4, 4]);
   ctx.beginPath(); ctx.arc(cx, cy, GUN.L.range * k, 0, TAU); ctx.stroke();
@@ -1333,6 +1782,7 @@ function render() {
   drawGlints(seaT);
   drawFlecks(seaT, reducedMotion);
   drawStreaks();
+  drawTerrain(seaT, reducedMotion);   // C15 — the waters live between the sea and the war
   drawWake();
   drawSplashWater(reducedMotion);
   drawBoats(reducedMotion);
@@ -1362,7 +1812,8 @@ function frame(now) {
       simT += SIM_DT;
       if (!reducedMotion) seaT += SIM_DT;    // reduced motion: the war continues, the water holds still
       const inp = readInput();
-      stepShip(inp, SIM_DT); stepBoats(SIM_DT); stepSwarmers(SIM_DT); stepMounts(SIM_DT);
+      stepShip(inp, SIM_DT); collideShip(SIM_DT);   // C15 — the waters push back
+      stepBoats(SIM_DT); stepSwarmers(SIM_DT); stepMounts(SIM_DT);
       stepShells(SIM_DT); stepEvents(SIM_DT); stepWake(SIM_DT); stepStreaks(SIM_DT, reducedMotion);
     }
   }
@@ -1370,7 +1821,9 @@ function frame(now) {
   render();
 }
 buildPanel();
-applyPreset("B");   // sea locked to C9, camera locked to C10 — C11 judges the gunnery, nothing else
+applyPreset("B");    // sea C9 · camera C10 · fire C11 — all locked. C15 judges the waters, nothing else
+generateTerrain();   // the archipelago, from cfg.terrain.seed — deterministic, scene rng untouched
+initBoats();         // boats integrate velocity now; start them on-orbit, clear of the rocks
 requestAnimationFrame(frame);
 </script>
 </body>

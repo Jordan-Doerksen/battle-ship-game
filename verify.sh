@@ -64,6 +64,7 @@ godot_step "probe_tech (C4 levels & tech-tree spec acceptance)"   -s res://tests
 godot_step "probe_sonar (C5 sonar/subs/depth-charge spec acceptance)" -s res://tests/probe_sonar.gd
 godot_step "probe_airwing (C6 AIR WING helicopter spec acceptance)"   -s res://tests/probe_airwing.gd
 godot_step "probe_bosses (C7 boss ladder & naming spec acceptance)"   -s res://tests/probe_bosses.gd
+godot_step "probe_terrain (C15 the-waters land-rules acceptance)"     -s res://tests/probe_terrain.gd
 
 if [ "$FAIL" -eq 0 ]; then
   echo -e "\nALL VERIFY STEPS PASSED"

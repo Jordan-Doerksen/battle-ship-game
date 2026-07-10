@@ -245,6 +245,29 @@ treated as locked:
 ---
 
 ## Change Log
+- **2026-07-10 — C15 THE WATERS built.** Seeded archipelagos (`Terrain.generate` = the world's
+  first rng draws; `TerrainConfig`/`terrain.tres` with the owner's recipe: islets 3, rocks 9,
+  size ×1.35, shoal 1.54×), the full land-rule blocking matrix (segment-swept), sliding hull
+  collision with speed-scaled grind pips, tangent avoidance for every waterborne hull incl.
+  machines, spawn re-rolls, dud charges on land, terrain art + scope land masses from shared
+  verts, attract waters included. `probe_terrain` (14 checks) joins the gate; all pre-C15
+  probes pass untouched (open water byte-identical). Integration seam fixed at the gate run:
+  `Tech.apply` copies the terrain config like every system. Housekeeping flagged: HelmGauges
+  past the split guide — candidate CR post-arc. THE WORLD ARC now awaits only C16.
+- **2026-07-10 — C15 gate PASSED (approved as-is) + the land rules locked.** Grind cost:
+  **speed-scaled** — a brush is friction, plowing in at speed costs a pip through the normal
+  grace window. The owner's land rule, verbatim: **"terrain blocks all water vessels, no air
+  vessels, air weapons and aa weapons are unaffected, everything else is."** Reading: every
+  waterborne hull routes around land (ship, gunboats, SUBS, and the submerged MAW — the deep
+  does NOT pass under); air units and their ordnance (WASP rockets, bay bombs, door-gun fire)
+  plus the AA guns ignore terrain; ALL other projectiles die on rock — including mb16, which
+  **supersedes the earlier "main battery arcs over" detail from the directive interview**:
+  islands are hard cover against naval gunfire, both ways. dp5 rounds are blocked regardless
+  of what they're aimed at (the gun fires flat — one simple rule, no per-target physics).
+  Torpedoes always die on rock once running, whoever dropped them. **Gate tunes (owner,
+  mid-port): shoal halo 1.54× · feature size ×1.35 · islet count fixed at 3 · rock features
+  fixed at 9** — applied to the port configs (size as a `size_scale` dial; counts as
+  min = max so variance can return later) and back-ported into the approved mockup's defaults.
 - **2026-07-10 — AIR THREAT built (owner play-test directive, verbatim: "I can literally just
   go afk and make it to a boss, I want planes to drop torpedo pods or something once and a
   while to make them more than suicide bombers, or shoot unguided missles that miss often or

@@ -16,6 +16,7 @@ static func apply(base: Configs, unlocked: Array) -> Configs:
 	c.tech = base.tech.duplicate(true)
 	c.sonar = base.sonar.duplicate()
 	c.airwing = base.airwing.duplicate()
+	c.terrain = base.terrain.duplicate()   # C15: the waters ride the derivation like every system
 	c.bosses = base.bosses.duplicate(true)
 	for node in c.tech.catalog:
 		if node.locked or not unlocked.has(node.id):

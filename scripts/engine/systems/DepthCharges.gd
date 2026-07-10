@@ -36,12 +36,19 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 			+ Vector2(sin(arc), -cos(arc)).rotated(world.ship_heading) * cfg.sonar.dc_ring
 		var ox: float = (world.rng.nextf() * 2.0 - 1.0) * cfg.sonar.dc_scatter
 		var oy: float = (world.rng.nextf() * 2.0 - 1.0) * cfg.sonar.dc_scatter
+		var drop: Vector2 = station + Vector2(ox, oy)
+		# C15 — a throw that lands ON a rock is a DUD: the charge never spawns. Deterministic —
+		# the scatter draws above happen regardless, so the stream stays stable; a pure position
+		# check adds no rng. Open water: blocked() is always false, byte-identical to pre-C15.
+		if Terrain.blocked(world, drop):
+			continue
 		var p: Projectile = world.projectiles.obtain()
-		p.pos = station + Vector2(ox, oy)
+		p.pos = drop
 		p.vel = world.ship_vel * 0.3   # charges carry a little way with the ship, then sink
 		p.dmg = cfg.sonar.dc_dmg
 		p.splash = 0.0
 		p.hostile = false
 		p.wid = "dc"
+		p.aerial = false   # C15: charges live in the water; the dud rule above owns their land case
 		p.life = cfg.sonar.dc_fuse
 	world.effects.append({ "type": "dcvolley", "pos": stern })

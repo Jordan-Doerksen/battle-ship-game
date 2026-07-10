@@ -4,6 +4,35 @@ Chunk log, newest first. Each chunk ships only after it passes the cross-check a
 
 ---
 
+## C15 — THE WATERS · 2026-07-10 · Built
+
+The ocean grew teeth. Gate approved as-is with the owner's recipe (3 islets · 9 rocks ·
+size ×1.35 · shoal 1.54×); `design/the-waters.html` is the reference, tunes back-ported.
+
+- **Seeded archipelagos:** `Terrain.generate` draws the world's FIRST rng — same seed, same
+  waters, every run its own map. Rejection-sampled placement honors the ship's start clearing
+  and feature gaps. New `TerrainConfig`/`terrain.tres` owns every dial.
+- **The land rules (owner, verbatim in the Change Log):** terrain blocks all water vessels —
+  the ship (sliding collision, speed-scaled grind pip through the grace window), gunboats,
+  subs, and the MAW in both states (the deep does NOT pass under); air crosses freely.
+  Naval gunfire dies on rock — including the main battery (supersedes arc-over): islands are
+  hard cover both ways. Air ordnance, the door guns, and the AA pass. Torpedoes die on stone
+  whoever dropped them; depth charges thrown onto land are duds. Segment-swept blocking — no
+  tunneling.
+- **Waterborne AI gives way:** the mockup's tangent avoidance (with its sticky-side and
+  inside-ring fixes) steers gunboats, subs, and machines around the coast; spawns re-roll out
+  of rock; a hard push-out guarantees nothing ever parks in stone.
+- **The look:** shoal halos, breathing foam fringes, wobbled basalt bodies with facets, scrub
+  and blinking nav lights on islets, dust puffs where fire meets rock, a grind churn where the
+  hull does — and the coastlines on the scope as solid land, drawn from the same verts as the
+  world. The attract war fights in real waters too.
+- Integration seam caught at the gate run: `Tech.apply` (app-owned) needed the one-line
+  terrain-config copy every other system has. `probe_terrain` (14 checks across determinism /
+  placement / collision / the blocking matrix / avoidance / open-water no-op) joins verify.sh;
+  every pre-C15 probe passes untouched — open water is byte-identical.
+- Housekeeping flag: `HelmGauges.gd` is past the 500-line split guide (~619) — a candidate CR
+  after the arc.
+
 ## AIR THREAT · 2026-07-10 · Built
 
 Owner play-test verdict: "I can literally just go AFK and make it to a boss" — the flak was
