@@ -54,6 +54,10 @@ func _draw() -> void:
 		return
 	var cx := size.x * 0.5
 	var cy := size.y * 0.42
+	# C12 play-test: an attract battle runs behind this screen — a quiet scrim keeps the title
+	# legible while the war shows around it
+	draw_rect(Rect2(cx - 300.0, cy - 140.0, 600.0, 372.0), Color(0.02, 0.078, 0.102, 0.72))
+	draw_rect(Rect2(cx - 300.0, cy - 140.0, 600.0, 372.0), Color(0.804, 0.729, 0.557, 0.25), false, 1.0)
 	_spaced(cx, cy - 110.0, "★ NAVAL TRIALS BUREAU · RESTRICTED", 10, BRASS_DIM, 3.0)
 	_spaced(cx, cy - 62.0, "EARTH", 52, FOAM, 14.0)
 	_spaced(cx, cy - 6.0, "DEFENSE FORCE", 52, FOAM, 14.0)

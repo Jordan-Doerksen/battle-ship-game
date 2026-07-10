@@ -245,6 +245,15 @@ treated as locked:
 ---
 
 ## Change Log
+- **2026-07-10 — Play-test tune (owner feedback at the first C12 play-test; the K-GUN
+  owner-tune precedent):** rack state moved OFF the scope onto the gauge plate's instrument
+  line (`RACKS ARMED` / `RACKS · · ·`, fixed width — the on-scope dial read as a contact;
+  supersedes the feel board's panel-2 placement), scope ring diet (1000u marks only) +
+  micro-labels (`16-IN`/`SONAR`/`DC`/`VIEW` — "unclear what everything is," now named), and a
+  TITLE ATTRACT MODE ("the title screen needs some action"): a real auto-piloted sortie behind
+  a scrimmed title, player's unlocks, sound on, off-center camera, 3 s relaunch on demo death.
+  Nothing banks, no hints fire from attract. `view_rect()` culls around the camera now (the C9
+  audit's flagged trap, made real by the off-center attract cam). Render/app only; gate green.
 - **2026-07-10 — C12 READABILITY & FEEL built; THE POLISH ARC IS COMPLETE.** Gate approved
   as-is (`design/readability-feel.html`, the FEEL BOARD). Sound: 13 procedural WAVs baked
   offline (`tools/gen_sfx.py`, seeded/stdlib — the mockup's recipes verbatim) + `SfxPlayer` on

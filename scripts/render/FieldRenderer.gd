@@ -128,9 +128,11 @@ func _draw() -> void:
 	FxRender.draw_fx(self)
 
 func view_rect() -> Rect2:
+	# culls around the CAMERA, not the ship — identical in a sortie (the cam is ship-locked),
+	# but the C12 attract camera rides off-center and ship-centered culling would pop the edges
 	var cam := get_viewport().get_camera_2d()
 	var size: Vector2 = get_viewport_rect().size / (cam.zoom if cam != null else Vector2.ONE)
-	return Rect2(_world.ship_pos - size * 0.5, size)
+	return Rect2((cam.position if cam != null else _world.ship_pos) - size * 0.5, size)
 
 func zoom() -> float:
 	var cam := get_viewport().get_camera_2d()

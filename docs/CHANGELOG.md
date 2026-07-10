@@ -4,6 +4,26 @@ Chunk log, newest first. Each chunk ships only after it passes the cross-check a
 
 ---
 
+## PLAY-TEST TUNE — the scope, and a title with a pulse · 2026-07-10
+
+Owner feedback, first C12 play-test: the rack dial "looks so weird inside the minimap," the
+scope was "very unclear what everything is," and "the title screen needs some action."
+
+- **The rack dial left the scope** (it read as a contact floating in the water) — rack state
+  now lives on the gauge plate's instrument line: `RACKS ARMED` in foam / `RACKS · · ·` while
+  reloading. Same width both ways; the plate never reflows. This placement supersedes the feel
+  board's panel-2 on-scope dial.
+- **The scope got named and dieted:** 500u range rings thinned to 1000u marks; the three
+  meaning-bearing rings carry micro-labels — `16-IN` (dashed brass, gun reach), `SONAR` (solid
+  foam, your ears), `DC` (dashed foam, the racks' arm range) — and the viewport rectangle reads
+  `VIEW`.
+- **The title fights back:** an ATTRACT sortie runs behind the menu — real sim, the player's
+  own unlocks, synthetic helm on a lazy S-course, sound on; a lost demo ship relaunches after
+  3 s. The title text sits on a quiet scrim; the camera rides off-center so the demo battleship
+  stays visible beside the plate. `FieldRenderer.view_rect()` now culls around the CAMERA (the
+  C9 audit's noted trap — ship-centered culling would have popped the attract view's edges).
+- `ScreenshotC12` harness (attract title + labeled scope proofs).
+
 ## C12 — READABILITY & FEEL · 2026-07-10 · Built
 
 The instruments learn to speak. The polish arc's closer — zero sim changes beyond two

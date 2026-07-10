@@ -154,7 +154,7 @@ func _draw_gauge_plate() -> void:
 	draw_string(_mono, Vector2(right - _mono.get_string_size("STBD", HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x, y + 8.0),
 		"STBD", HORIZONTAL_ALIGNMENT_LEFT, -1, 8, BRASS_DIM)
 
-	# ── batteries + heading ──
+	# ── batteries + racks + heading ──
 	y += 24.0
 	var ol := _order_label()
 	draw_string(_mono, Vector2(x, y), "BATTERIES: " + (ol + " ON POINT" if ol != "" else "AUTO"),
@@ -162,6 +162,13 @@ func _draw_gauge_plate() -> void:
 	var hdg_txt := "HDG %03d°" % roundi(fposmod(_world.ship_heading * 180.0 / PI, 360.0))
 	draw_string(_mono, Vector2(right - _mono.get_string_size(hdg_txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x, y),
 		hdg_txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, BRASS)
+	# C12 rack state, relocated at the play-test (the on-scope dial read as a contact):
+	# center of the same instrument line — both states same width, the plate never reflows
+	var armed: bool = _world.dc_cool <= 0.0
+	var rack_txt := "RACKS ARMED" if armed else "RACKS · · ·"
+	var rack_w := _mono.get_string_size(rack_txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
+	draw_string(_mono, Vector2(x + (right - x - rack_w) * 0.56, y), rack_txt,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 12, FOAM if armed else BRASS_DIM)
 
 func _order_text(along: float, speed: float) -> String:
 	var t := _world.input.thrust
@@ -266,18 +273,22 @@ func _draw_radar() -> void:
 	var k: float = RADAR_R / rng_u
 	draw_circle(c, RADAR_R, Color(0.051, 0.125, 0.157, 0.9))
 	draw_arc(c, RADAR_R, 0.0, TAU, 64, PLATE_EDGE, 1.0, true)
-	var d := 500.0
+	# play-test tune: 500u rings made the center ring soup — 1000u marks only, fainter
+	var d := 1000.0
 	while d < rng_u:
-		draw_arc(c, d * k, 0.0, TAU, 48, Color(BRASS.r, BRASS.g, BRASS.b, 0.16), 1.0, true)
-		d += 500.0
+		draw_arc(c, d * k, 0.0, TAU, 48, Color(BRASS.r, BRASS.g, BRASS.b, 0.12), 1.0, true)
+		d += 1000.0
 	var mb := _cfgs.weapons.by_id("mb16")
-	if mb != null:   # main-battery reach, dashed
+	if mb != null:   # main-battery reach, dashed + named (play-test: nothing was named)
 		_dashed_arc(c, mb.range_u * k, Color(BRASS.r, BRASS.g, BRASS.b, 0.35))
+		_micro_label(Vector2(c.x, c.y - mb.range_u * k - 3.0), "16-IN", 0)
 	# C5: the sonar radius — a soft filled ring, the only part of the scope that hears the deep
 	draw_circle(c, _cfgs.sonar.radius * k, Color(FOAM.r, FOAM.g, FOAM.b, 0.045))
 	draw_arc(c, _cfgs.sonar.radius * k, 0.0, TAU, 48, Color(FOAM.r, FOAM.g, FOAM.b, 0.28), 1.0, true)
+	_micro_label(Vector2(c.x + _cfgs.sonar.radius * k + 4.0, c.y + 3.0), "SONAR", 1)
 	# C12: the depth-charge arm range — DASHED foam, unmistakably a weapon ring, not ears
 	_dashed_arc(c, _cfgs.sonar.dc_range * k, Color(FOAM.r, FOAM.g, FOAM.b, 0.6))
+	_micro_label(Vector2(c.x - _cfgs.sonar.dc_range * k - 4.0, c.y + 3.0), "DC", -1)
 	# viewport extent
 	var view: Vector2 = get_viewport_rect().size
 	var cam := get_viewport().get_camera_2d()
@@ -285,6 +296,7 @@ func _draw_radar() -> void:
 	var vw: float = view.x * 0.5 / zoom * k
 	var vh: float = view.y * 0.5 / zoom * k
 	draw_rect(Rect2(c.x - vw, c.y - vh, vw * 2.0, vh * 2.0), Color(FOAM.r, FOAM.g, FOAM.b, 0.14), false, 1.0)
+	_micro_label(Vector2(c.x - vw + 3.0, c.y - vh - 2.0), "VIEW", 1)
 	# sweep (cosmetic)
 	var sw: float = fmod(Time.get_ticks_msec() * 0.0016, TAU)
 	draw_line(c, c + Vector2(sin(sw), -cos(sw)) * RADAR_R, Color(BRASS.r, BRASS.g, BRASS.b, 0.3), 1.0)
@@ -381,19 +393,17 @@ func _draw_radar() -> void:
 	var f := Vector2(sin(_world.ship_heading), -cos(_world.ship_heading))
 	draw_line(c - f * 4.0, c + f * 7.0, FOAM, 1.6)
 	draw_circle(c, 2.0, FOAM)
-	# C12: rack state — a small cooldown dial below the own-ship blip. Fills over the volley
-	# cooldown in dim brass; blinks gently in foam when the racks are ready. Nothing labeled —
-	# the scope stays quiet (mockup panel 2).
-	var ac := c + Vector2(0.0, 26.0)
-	var rack_fill: float = 1.0 - clampf(_world.dc_cool / maxf(_cfgs.sonar.dc_cooldown, 0.001), 0.0, 1.0)
-	draw_arc(ac, 9.0, 0.0, TAU, 24, Color(FOAM.r, FOAM.g, FOAM.b, 0.15), 2.5, true)
-	if _world.dc_cool > 0.0:
-		if rack_fill > 0.0:
-			draw_arc(ac, 9.0, -PI / 2.0, -PI / 2.0 + TAU * rack_fill, 24, BRASS_DIM, 2.5, true)
-	else:
-		var blink: bool = (Time.get_ticks_msec() / 400) % 2 == 0
-		draw_arc(ac, 9.0, 0.0, TAU, 24, Color(FOAM.r, FOAM.g, FOAM.b, 0.95 if blink else 0.5), 2.5, true)
+	# (play-test tune: the C12 rack dial looked like a contact floating in the water —
+	#  the rack state moved to the gauge plate's batteries line, where instruments live)
 	_label(c.x - 26.0, c.y - RADAR_R - 8.0, "RADAR")
+
+# tiny on-scope ring name (play-test tune: nothing on the scope was named).
+# align: -1 = text ends at pos, 0 = centered on pos, 1 = text starts at pos.
+func _micro_label(pos: Vector2, text: String, align: int) -> void:
+	var w: float = _mono.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x
+	var x: float = pos.x - (w if align < 0 else (w * 0.5 if align == 0 else 0.0))
+	draw_string(_mono, Vector2(x, pos.y), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 8,
+		Color(BRASS_DIM.r, BRASS_DIM.g, BRASS_DIM.b, 0.75))
 
 func _dashed_arc(c: Vector2, r: float, col: Color) -> void:
 	var segs := 36

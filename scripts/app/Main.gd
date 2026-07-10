@@ -36,6 +36,7 @@ var _level_before_bank: int = 1   # career level when this run's banking began (
 var _sea_t: float = 0.0           # the C9 sea clock — cosmetic, frozen under reduced motion
 var _target_zoom: float = 0.51    # C10: the wheel drives this; the camera lerps toward it
 var _lost_ms: int = -1            # C12: tick when run_over was first observed (-1 = alive)
+var _attract_wait: float = 0.0    # C12 attract: seconds since the demo ship died (relaunch timer)
 var _hint_id: String = ""         # C12: the one active drip hint ("" = none)
 var _hint_ms: int = 0             # C12: tick the active hint went up
 @onready var _field: FieldRenderer = $Field
@@ -82,11 +83,9 @@ func _ready() -> void:
 		_devkit.bind(self)
 	else:
 		_devkit.queue_free()
-	# a quiet world idles behind the menus (never stepped until a sortie starts)
-	cfgs = Tech.apply(base_cfgs, profile.unlocked)
-	world = GameWorld.new(0)
-	_field.bind(world, field_cfg, cam_cfg, cfgs)
-	_gauges.bind(world, cfgs)
+	# C12 play-test tune: the title needed some action — an auto-piloted ATTRACT sortie runs
+	# behind the menus (real sim, synthetic helm, the player's own unlocks; nothing banks)
+	_start_attract()
 	show_screen("title")
 
 func show_screen(next: String) -> void:
@@ -94,12 +93,48 @@ func show_screen(next: String) -> void:
 	_title.visible = next == "title"
 	_tree.visible = next == "tree"
 	_gauges.visible = next == "game"
-	_field.show_ship = next == "game"   # open sea behind the menus, no ghost hull under the title
+	_field.show_ship = next != "tree"   # the attract war shows under the title; the tree keeps open sea
 	_field.queue_redraw()
 	if next == "title":
 		_title.queue_redraw()
 	if next == "tree":
 		_tree.queue_redraw()
+
+# C12 attract: a fresh demo world with the player's own unlocks — the fleet fights itself a
+# little while nobody's driving. Real sim, real waves; never banked, never hinted.
+func _start_attract() -> void:
+	cfgs = Tech.apply(base_cfgs, profile.unlocked)
+	world = GameWorld.new(int(Time.get_ticks_usec()))
+	_accum = 0.0
+	_attract_wait = 0.0
+	_field.bind(world, field_cfg, cam_cfg, cfgs)
+	_gauges.bind(world, cfgs)
+
+func _step_attract(delta: float) -> void:
+	if world.run_over:
+		_attract_wait += delta   # let the death play out, then quietly relaunch
+		if _attract_wait > 3.0:
+			_start_attract()
+			return
+	else:
+		world.input.thrust = 1.0 if Movement.keel_speeds(world).x < cfgs.movement.max_speed_ahead * 0.75 else 0.0
+		world.input.rudder = sin(world.elapsed * 0.07) * 0.35 + sin(world.elapsed * 0.023 + 1.7) * 0.2
+		world.input.force_all = false
+		world.input.force_large = false
+		world.input.force_medium = false
+	_accum += delta
+	var steps: int = 0
+	while _accum >= _step and steps < sim_cfg.max_frame_catchup:
+		Sim.step(world, _step, cfgs)
+		_accum -= _step
+		steps += 1
+	if steps >= sim_cfg.max_frame_catchup:
+		_accum = 0.0
+	_field.consume_effects(world.effects)
+	_sfx.consume_effects(world.effects, world.elapsed)
+	world.effects.clear()
+	# off-center follow: the title plate owns screen center — the demo ship rides beside it
+	_cam.position = world.ship_pos - Vector2(700.0, 250.0)
 
 func start_sortie() -> void:
 	cfgs = Tech.apply(base_cfgs, profile.unlocked)   # tech derives config BEFORE the run
@@ -223,7 +258,9 @@ func _process(delta: float) -> void:
 	_update_camera(delta)
 	_update_sea(delta)
 	if state != "game":
-		_field.queue_redraw()   # foam keeps drifting under the title/tree screens
+		if state == "title":
+			_step_attract(delta)   # C12: the attract war fights on under the title
+		_field.queue_redraw()      # foam keeps drifting under the title/tree screens
 		return
 	if OS.is_debug_build() and Input.is_action_just_pressed("dev_toggle"):
 		_devkit.visible = not _devkit.visible
