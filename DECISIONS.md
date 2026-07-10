@@ -245,6 +245,17 @@ treated as locked:
 ---
 
 ## Change Log
+- **2026-07-10 — Housekeeping CR: HelmGauges split (no behavior change).** `HelmGauges.gd`
+  (623 lines, past the 500 split guide since the C11/C12/C16 HUD growth) reduced to a slim
+  orchestrator over render-domain helpers, exactly the C9 FieldRenderer precedent (static funcs
+  taking the host `g: HelmGauges`, reaching its state/primitives; underscore access is the
+  established house pattern). Domains: `GaugePanel` (the gauge plate + way/rudder bars + order
+  text), `StatusPlates` (wave plate + PRIORITY TARGET boss plate), `RadarScope` (the scope:
+  rings/labels/terrain/blips/fall-of-shot/rack dial + micro-label/dashed-arc), `HudOverlays`
+  (reticle + flight time + RANGEKEEPER, pause plate, hint plate, lost card). The orchestrator
+  keeps the color/dim consts, shared state, `bind`/`consume_effects`, `_draw` dispatch, and the
+  shared plate/label/centering primitives. Every draw call preserved in order — verified by the
+  full gate (boot-clean) + a HUD screenshot matching the pre-split render.
 - **2026-07-10 — C16 THE WAR, REPACKED built; THE WORLD ARC (C14 hull · C15 waters · C16 war)
   IS COMPLETE.** Gate approved as-is. The C3 greedy director superseded (formal CR) by the
   formation/echelon composer: six templates as `WaveConfig.templates()` config data, echelons
