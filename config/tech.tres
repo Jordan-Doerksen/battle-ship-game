@@ -287,6 +287,18 @@ mods = Array[Dictionary]([{
 "set": true
 }])
 
+[sub_resource type="Resource" id="Resource_ord7rk"]
+script = ExtResource("1_gcto0")
+id = "ord7"
+branch = "ORDNANCE"
+display_name = "RANGEKEEPER"
+desc = "the plotting room advises: intercept ghost while force-firing"
+cost = 2
+mods = Array[Dictionary]([{
+"p": "tech.rangekeeper",
+"set": true
+}])
+
 [sub_resource type="Resource" id="Resource_aka05"]
 script = ExtResource("1_gcto0")
 id = "son1"
@@ -437,4 +449,4 @@ mods = Array[Dictionary]([{
 
 [resource]
 script = ExtResource("2_n0pvy")
-catalog = Array[ExtResource("1_gcto0")]([SubResource("Resource_k3wib"), SubResource("Resource_tg8uf"), SubResource("Resource_tuatf"), SubResource("Resource_mhskq"), SubResource("Resource_vdybs"), SubResource("Resource_in0hg"), SubResource("Resource_8361b"), SubResource("Resource_uyo7l"), SubResource("Resource_fowl1"), SubResource("Resource_xy7h2"), SubResource("Resource_vnhlp"), SubResource("Resource_7nwas"), SubResource("Resource_qvjyu"), SubResource("Resource_kedte"), SubResource("Resource_mjofs"), SubResource("Resource_suowr"), SubResource("Resource_hpbgi"), SubResource("Resource_fm37p"), SubResource("Resource_aj21l"), SubResource("Resource_tbkku"), SubResource("Resource_ua7wp"), SubResource("Resource_sexst"), SubResource("Resource_6lsth"), SubResource("Resource_xpps6"), SubResource("Resource_aka05"), SubResource("Resource_7j78k"), SubResource("Resource_fefhr"), SubResource("Resource_e3wcl"), SubResource("Resource_j4e2c"), SubResource("Resource_57pep"), SubResource("Resource_pgufl"), SubResource("Resource_ooh54"), SubResource("Resource_0rpu0"), SubResource("Resource_ulvqt"), SubResource("Resource_jdve6"), SubResource("Resource_e72jv")])
+catalog = Array[ExtResource("1_gcto0")]([SubResource("Resource_k3wib"), SubResource("Resource_tg8uf"), SubResource("Resource_tuatf"), SubResource("Resource_mhskq"), SubResource("Resource_vdybs"), SubResource("Resource_in0hg"), SubResource("Resource_8361b"), SubResource("Resource_uyo7l"), SubResource("Resource_fowl1"), SubResource("Resource_xy7h2"), SubResource("Resource_vnhlp"), SubResource("Resource_7nwas"), SubResource("Resource_qvjyu"), SubResource("Resource_kedte"), SubResource("Resource_mjofs"), SubResource("Resource_suowr"), SubResource("Resource_hpbgi"), SubResource("Resource_fm37p"), SubResource("Resource_aj21l"), SubResource("Resource_tbkku"), SubResource("Resource_ua7wp"), SubResource("Resource_sexst"), SubResource("Resource_6lsth"), SubResource("Resource_xpps6"), SubResource("Resource_ord7rk"), SubResource("Resource_aka05"), SubResource("Resource_7j78k"), SubResource("Resource_fefhr"), SubResource("Resource_e3wcl"), SubResource("Resource_j4e2c"), SubResource("Resource_57pep"), SubResource("Resource_pgufl"), SubResource("Resource_ooh54"), SubResource("Resource_0rpu0"), SubResource("Resource_ulvqt"), SubResource("Resource_jdve6"), SubResource("Resource_e72jv")])

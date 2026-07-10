@@ -235,15 +235,28 @@ treated as locked:
   home 0.51, camera in config, sim camera-blind.
 - **CREWED GUNS.** BUILT 2026-07-09 (see Change Log): burst-fire person-manned MGs on the S
   mounts, reach-roll stitching, air+surface; the AA nerf the owner asked for.
-- **Next — the rest of the arc (owner-approved 2026-07-09):** C11 LONG-RANGE FIRE CONTROL
-  (burst-at-cursor + fall-of-shot feedback; formal CR; deaf-deep law untouched) → C12
-  READABILITY & FEEL (scope legibility, pause, onboarding, minimal SFX). Each chunk still gets
-  its own spec interview + gate. Remaining founding threads are narrative/naming only
-  (#1 water-mystery, #4 working title).
+- **C11 — LONG-RANGE FIRE CONTROL.** BUILT 2026-07-10 (see Change Log): burst-at-cursor within
+  range, fall-of-shot on the scope, flight-time readout, RANGEKEEPER as ord7.
+- **Next — the arc's last chunk (owner-approved 2026-07-09):** C12 READABILITY & FEEL — torpedo
+  blip distinction, DC arm-ring + rack cooldown on the scope, pause, lost-card misclick guard,
+  onboarding hints, wounded-enemy tells, minimal procedural SFX on the existing effect events
+  (klaxon/waveclear are still emitted-and-dropped). Spec interview + gate first, as always.
+  Remaining founding threads are narrative/naming only (#1 water-mystery, #4 working title).
 
 ---
 
 ## Change Log
+- **2026-07-10 — C11 LONG-RANGE FIRE CONTROL built; the C3 gate-rev-2 rule formally superseded
+  WITHIN GUN RANGE (CR complete).** Gate approved as-is (`design/fire-control.html`). Forced
+  splash shells burst AT the cursor when it's within reach (`Turrets._fire`: the `not forced`
+  guard died — one condition); beyond range the C3 bearing shot survives via the same `minf`.
+  Proximity fuse untouched; deaf-deep law untouched; no rng — probes byte-identical. HUD:
+  flight-time readout + MAX RANGE · BEARING telltale at the reticle; fall-of-shot on the scope
+  (own mb16 shells as foam dots + burst flashes; Main plumbs the same one-way effect batch to
+  HelmGauges); **RANGEKEEPER shipped as ord7** (cost 2, behind FULL SALVO; advisory steel ghost
+  at the computed intercept, 120u snap via `tech.rangekeeper_snap`; shells still obey the
+  cursor). Tree 37 nodes / 65 points (level 66 = everything; dev-kit tracks). `probe_tech`
+  totals + `probe_hardpoints` check 5 re-targeted; full gate green.
 - **2026-07-10 — C11 spec interview: LEAD-ASSIST is IN, as a tech node.** Owner chose the
   advisory version over deferral: a late-tree fire-control node (working name **RANGEKEEPER**,
   the USN's actual gun computer) — while force-firing, a ghost marker shows the computed

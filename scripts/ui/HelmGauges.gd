@@ -25,15 +25,28 @@ var _world: GameWorld
 var _cfgs: Configs
 var _mono: Font
 var _sans: Font
+var _shot_flashes: Array = []   # C11 fall-of-shot: own main-battery bursts flash on the scope
+const FLASH_LIFE := 1.2         # seconds a burst flash lives on the scope
 
 func bind(world: GameWorld, cfgs: Configs) -> void:
 	_world = world
 	_cfgs = cfgs
+	_shot_flashes.clear()
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var mono := SystemFont.new()
 	mono.font_names = PackedStringArray(["DejaVu Sans Mono", "Cascadia Mono", "Menlo", "Consolas", "monospace"])
 	_mono = mono
 	_sans = ThemeDB.fallback_font
+
+# C11: Main hands the sim's effect batch here too (same one-way channel as FieldRenderer) —
+# the scope keeps only what it paints: friendly main-battery bursts, as fall-of-shot flashes.
+func consume_effects(events: Array) -> void:
+	var now: int = Time.get_ticks_msec()
+	for e in events:
+		if e["type"] == "splash" and not e.get("hostile", false) and e.get("r", 0.0) >= 28.0:
+			_shot_flashes.append({ "pos": e["pos"], "t0": now })
+	while _shot_flashes.size() > 24:
+		_shot_flashes.pop_front()
 
 func _order_label() -> String:
 	if _world.input.force_all:
@@ -287,11 +300,31 @@ func _draw_radar() -> void:
 			draw_circle(b, 3.6 if e.type_id == "bomber" else 2.4, RED if e.type_id == "bomber" else ORANGE)
 	for i in range(_world.projectiles.items.size()):
 		var p: Projectile = _world.projectiles.items[i]
-		if not p.active or not p.hostile:
+		if not p.active:
 			continue
 		var off: Vector2 = (p.pos - _world.ship_pos) * k
-		if off.length() <= RADAR_R:
+		if off.length() > RADAR_R:
+			continue
+		if p.hostile:
 			draw_rect(Rect2(c.x + off.x - 0.8, c.y + off.y - 0.8, 1.6, 1.6), Color(ORANGE.r, ORANGE.g, ORANGE.b, 0.8))
+		elif p.wid == "mb16":   # C11 fall-of-shot: your own salvo exists on the scope
+			draw_rect(Rect2(c.x + off.x - 0.8, c.y + off.y - 0.8, 1.6, 1.6), Color(FOAM.r, FOAM.g, FOAM.b, 0.85))
+	# C11: burst flashes — each main-battery splash blooms briefly where it landed
+	var fnow: int = Time.get_ticks_msec()
+	var fi: int = _shot_flashes.size() - 1
+	while fi >= 0:
+		var fl: Dictionary = _shot_flashes[fi]
+		var age: float = (fnow - fl["t0"]) / 1000.0
+		if age >= FLASH_LIFE:
+			_shot_flashes.remove_at(fi)
+			fi -= 1
+			continue
+		var foff: Vector2 = (Vector2(fl["pos"]) - _world.ship_pos) * k
+		if foff.length() <= RADAR_R:
+			var fk: float = age / FLASH_LIFE
+			draw_arc(c + foff, 1.5 + 5.0 * fk, 0.0, TAU, 16,
+				Color(FOAM.r, FOAM.g, FOAM.b, 0.9 * (1.0 - fk)), 1.2, true)
+		fi -= 1
 	# C7: the machine on the scope — oversized blip, sonar-gated while it stalks under
 	if _world.boss != null:
 		var boff: Vector2 = (_world.boss.pos - _world.ship_pos) * k
@@ -361,7 +394,7 @@ func _centered_spaced(cx: float, y: float, text: String, px: int, col: Color, tr
 		draw_string(_sans, Vector2(x, y), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px, col)
 		x += _sans.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x + tracking
 
-# ── force-fire reticle ──
+# ── force-fire reticle (+ C11: flight time, the MAX RANGE telltale, the RANGEKEEPER ghost) ──
 func _draw_reticle() -> void:
 	var mp := get_viewport().get_mouse_position()
 	var label := _order_label()
@@ -372,6 +405,69 @@ func _draw_reticle() -> void:
 		draw_line(mp + dv * (r - 4.0), mp + dv * (r + 5.0), col, 1.4)
 	if label != "":
 		draw_string(_sans, mp + Vector2(18, -12), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, col)
+	# C11: while the MAIN battery is ordered, the reticle reads the shot — flight time to the
+	# burst point, or the mode telltale when the cursor is past reach (the C3 bearing shot).
+	if _world.input.force_all or _world.input.force_large:
+		var mb: WeaponDef = _cfgs.weapons.by_id("mb16")
+		if mb != null:
+			var origin: Vector2 = _nearest_l_mount(_world.input.aim_world)
+			var dist: float = origin.distance_to(_world.input.aim_world)
+			var line: String = "%.1f s · %d u" % [dist / mb.speed, int(dist)] if dist <= mb.range_u \
+				else "MAX RANGE · BEARING"
+			draw_string(_mono, mp + Vector2(-34, 28), line, HORIZONTAL_ALIGNMENT_LEFT, -1, 10,
+				Color(FOAM.r, FOAM.g, FOAM.b, 0.85))
+			_draw_rangekeeper(mb, origin)
+
+# C11 ord7 — the plotting room advises: a ghost diamond at the computed intercept for the surface
+# contact nearest the cursor (within the snap radius). Advisory only: shells obey the cursor.
+# HUD-side one-way read; enemy velocity derived exactly as Turrets leads (heading × def speed).
+func _draw_rangekeeper(mb: WeaponDef, origin: Vector2) -> void:
+	if not _cfgs.tech.rangekeeper:
+		return
+	var best: Enemy = null
+	var bd: float = _cfgs.tech.rangekeeper_snap
+	for e in _world.enemies:
+		if not e.active or e.layer != "surf":
+			continue
+		var d: float = e.pos.distance_to(_world.input.aim_world)
+		if d <= bd:
+			bd = d
+			best = e
+	if best == null:
+		return
+	var tdef: EnemyDef = _cfgs.enemies.by_id(best.type_id)
+	var tvel := Vector2(sin(best.heading), -cos(best.heading)) * (tdef.speed if tdef != null else 0.0)
+	var cap: float = mb.range_u / mb.speed
+	var t: float = minf(origin.distance_to(best.pos) / mb.speed, cap)
+	var ghost: Vector2 = best.pos + tvel * t
+	t = minf(origin.distance_to(ghost) / mb.speed, cap)
+	ghost = best.pos + tvel * t
+	var cam := get_viewport().get_camera_2d()
+	var zoom: float = cam.zoom.x if cam != null else 1.0
+	var half: Vector2 = get_viewport_rect().size * 0.5
+	var gs: Vector2 = (ghost - _world.ship_pos) * zoom + half
+	var ts: Vector2 = (best.pos - _world.ship_pos) * zoom + half
+	draw_line(ts, gs, Color(STEEL.r, STEEL.g, STEEL.b, 0.5), 1.0)
+	var dia := PackedVector2Array([
+		gs + Vector2(0, -6), gs + Vector2(6, 0), gs + Vector2(0, 6), gs + Vector2(-6, 0), gs + Vector2(0, -6),
+	])
+	draw_polyline(dia, Color(STEEL.r, STEEL.g, STEEL.b, 0.9), 1.4, true)
+	draw_string(_mono, gs + Vector2(9, -6), "RK", HORIZONTAL_ALIGNMENT_LEFT, -1, 9,
+		Color(STEEL.r, STEEL.g, STEEL.b, 0.8))
+
+func _nearest_l_mount(pt: Vector2) -> Vector2:
+	var hp: HardpointConfig = _cfgs.hardpoints
+	var best: Vector2 = _world.ship_pos
+	var bd: float = INF
+	for i in range(hp.mount_pos.size()):
+		if hp.mount_size[i] != "L":
+			continue
+		var mpos: Vector2 = Turrets.mount_world(_world, hp.mount_pos[i])
+		var d: float = mpos.distance_to(pt)
+		if d < bd:
+			bd = d
+			best = mpos
+	return best
 
 # ── shared plate/label helpers ──
 func _draw_plate(pos: Vector2, sz: Vector2) -> void:

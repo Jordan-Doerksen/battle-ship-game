@@ -133,13 +133,22 @@ stitching the water, air+surface targets (the deep stays deaf). Planes are more 
 by owner directive. `probe_hardpoints` re-targeted (checks 2/6/7); spec:
 `docs/specs/crewed-guns.md`; `ScreenshotCG` proof.
 
-**The founding brief is SYSTEMS-COMPLETE; the rest of the arc (owner-approved 2026-07-09):**
-C11 LONG-RANGE FIRE CONTROL (burst-at-cursor + fall-of-shot feedback; formal CR; the deaf-deep
-law is explicitly untouched) → C12 READABILITY & FEEL (scope legibility, pause, onboarding,
-minimal procedural SFX on the existing effect events). Each chunk still runs interview → spec →
-gate → port. Remaining open threads are narrative/naming only: #1 water-mystery payoff,
-#4 working-title trademark check. New systems beyond the arc (a win mode? new hulls? D1.12 says
-one hull until revisited) start with fresh `/spec-feature` interviews.
+**C11 — LONG-RANGE FIRE CONTROL is BUILT (2026-07-10):** gate approved as-is
+(`design/fire-control.html`). Forced main-battery shells burst AT the cursor within range (the
+C3 bearing rule survives beyond — its fixed-camera premise died with C10); flight-time readout +
+MAX RANGE telltale at the reticle; fall-of-shot on the scope (own shells + burst flashes, Main
+plumbs the effect batch to HelmGauges too); RANGEKEEPER shipped as ord7 (advisory intercept
+ghost, 120u snap; tree now 37 nodes / 65 pts / level 66 = everything). Probes re-targeted
+(`probe_tech` totals, `probe_hardpoints` check 5); deaf-deep untouched; no rng. Spec:
+`docs/specs/fire-control.md`.
+
+**The founding brief is SYSTEMS-COMPLETE; the arc's last chunk (owner-approved 2026-07-09):**
+C12 READABILITY & FEEL — torpedo blip distinction, DC arm-ring + rack cooldown on the scope,
+pause, lost-card misclick guard, onboarding hints, wounded-enemy tells, minimal procedural SFX
+on the existing effect events. Interview → spec → gate → port, as always. Remaining open
+threads are narrative/naming only: #1 water-mystery payoff, #4 working-title trademark check.
+New systems beyond the arc (a win mode? new hulls? D1.12 says one hull until revisited) start
+with fresh `/spec-feature` interviews.
 
 ## 3. Tree layout
 

@@ -79,8 +79,10 @@ static func _fire(world: GameWorld, mpos: Vector2, barrel_ang: float, shot_ang: 
 	p.hostile = false
 	p.wid = wpn.id
 	p.life = wpn.range_u / wpn.speed
-	# AUTO splash shells burst at their computed intercept; FORCED ones fly full range (C3 rev 2)
-	if wpn.splash > 0.0 and not forced:
+	# Splash shells burst at their aim point when it reaches (C11 CR): auto at the computed
+	# intercept (C3), FORCED at the CURSOR — the C10 zoom taught the cursor distance, so the
+	# C3 bearing-only rule survives only BEYOND range (the minf: far cursor = full-range flight).
+	if wpn.splash > 0.0:
 		p.life = minf(origin.distance_to(aim), wpn.range_u) / wpn.speed
 	# CREWED GUNS: each crewed round rolls its reach — short rounds slap the sea and the burst
 	# stitches a walking line toward the target. Guarded so precision weapons draw no extra rng.

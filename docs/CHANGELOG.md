@@ -4,6 +4,30 @@ Chunk log, newest first. Each chunk ships only after it passes the cross-check a
 
 ---
 
+## C11 — LONG-RANGE FIRE CONTROL · 2026-07-10 · Built
+
+The cursor was taught distance; the battery is expected to use it. Formal CR: the C3 "cursor
+sets bearing, not burst point" rule is superseded *within gun range* — its premise (a fixed
+camera) died with C10. Beyond range the bearing shot survives untouched. Gate:
+`design/fire-control.html` approved as-is.
+
+- **Point burst (the whole sim change is one condition):** a forced splash shell whose aim point
+  is within reach ends its flight AT the cursor and bursts there — `life = minf(dist, range)/speed`
+  for all splash shells; the `not forced` guard died. Proximity fuse untouched; the deep stays deaf.
+- **Flight time at the reticle:** while the main battery is ordered, the reticle reads the shot —
+  "2.1 s · 880 u" live, or **MAX RANGE · BEARING** when the cursor is past reach (the mode telltale).
+- **Fall-of-shot on the scope:** own main-battery shells cross the radar as foam dots and every
+  burst blooms a brief flash where it landed — your salvos finally exist on the scope. Plumbing:
+  Main hands the same one-way effect batch to HelmGauges (a 24-entry render-side flash buffer).
+- **RANGEKEEPER (ord7, cost 2, behind FULL SALVO — owner interview: lead-assist IN, advisory):**
+  the plotting room draws a steel ghost diamond at the computed intercept for the surface contact
+  nearest the cursor (120u snap, `tech.rangekeeper_snap`), tethered to the target. Shells still
+  obey the cursor. HUD-side one-way read; velocity derived exactly as the turrets lead.
+- Tree: 36 → 37 nodes, 63 → 65 points (level 66 buys everything; dev-kit MAX LVL tracks
+  automatically). `probe_tech` totals re-targeted; `probe_hardpoints` check 5 re-targeted
+  (cursor at 200u → burst at ~200u; cursor beyond → bearing shot to ~900u).
+- Full gate green; two-world determinism byte-identical (no rng anywhere in this chunk).
+
 ## CREWED GUNS · 2026-07-09 · Built
 
 The owner saw the door gunners stitch the water and wanted it aboard: "whatever that little

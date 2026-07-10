@@ -21,6 +21,8 @@ extends Resource
 @export var airburst_radius: float = 20.0
 @export var salvo: bool = false
 @export var salvo_offset: float = 0.015
+@export var rangekeeper: bool = false      # C11 ord7: advisory intercept ghost while force-firing
+@export var rangekeeper_snap: float = 120.0   # contact-to-cursor snap radius, world units
 @export var helo: bool = false             # C6 AIR WING: the bird itself (air1 WHIRLYBIRD)
 @export var mad_gear: bool = false         # C6 marquee: bird-made contacts never decay
 
@@ -68,6 +70,7 @@ static func spec_defaults() -> TechConfig:
 		_node("ord4", "ORDNANCE", "Fire Control", "−50% 16-in spread", 2, [{ "p": "weapons.mb16.spread", "mul": 0.50 }]),
 		_node("ord5", "ORDNANCE", "Fast Reload", "+30% 16-in fire rate", 2, [{ "p": "weapons.mb16.rate", "mul": 1.30 }]),
 		_node("ord6", "ORDNANCE", "FULL SALVO", "both barrels: 2 shells per trigger", 3, [{ "p": "tech.salvo", "set": true }], true),
+		_node("ord7", "ORDNANCE", "RANGEKEEPER", "the plotting room advises: intercept ghost while force-firing", 2, [{ "p": "tech.rangekeeper", "set": true }]),
 		_node("son1", "SONAR", "Hydrophones", "+25% sonar radius", 1, [{ "p": "sonar.radius", "mul": 1.25 }]),
 		_node("son2", "SONAR", "Trained Ears", "+2.0s contact hold", 1, [{ "p": "sonar.contact_hold", "add": 2.0 }]),
 		_node("son3", "SONAR", "Deep Pattern", "+2 charges per volley", 2, [{ "p": "sonar.dc_count", "add": 2 }]),

@@ -202,7 +202,8 @@ func _process(delta: float) -> void:
 	if steps >= sim_cfg.max_frame_catchup:
 		_accum = 0.0   # don't spiral-of-death catch up past the cap
 	_field.consume_effects(world.effects)   # one-way effect plumbing: sim wrote, render consumes,
-	world.effects.clear()                   # the app layer clears — renderer never touches the world
+	_gauges.consume_effects(world.effects)  # the scope takes the same batch (C11 fall-of-shot),
+	world.effects.clear()                   # and the app layer clears — render never touches the world
 	_cam.position = world.ship_pos
 	_field.queue_redraw()
 	_gauges.queue_redraw()

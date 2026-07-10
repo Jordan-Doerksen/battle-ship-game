@@ -146,10 +146,12 @@ func _initialize() -> void:
 		w5.effects.clear()
 		if killed:
 			break
+	# C11 re-target: a forced shell aimed INSIDE range bursts AT the cursor point (the C10 zoom
+	# taught the cursor distance); aimed BEYOND range, the C3 full-range bearing shot survives.
 	var w5b := GameWorld.new(29)
 	Sim.step(w5b, DT, c5)
 	w5b.input.force_large = true
-	w5b.input.aim_world = Vector2(0, -200)           # cursor only 200u out — shell must overfly it
+	w5b.input.aim_world = Vector2(0, -200)           # cursor 200u out — the burst lands THERE now
 	var burst_dist: float = -1.0
 	for i in range(480):
 		Sim.step(w5b, DT, c5)
@@ -160,8 +162,23 @@ func _initialize() -> void:
 		if burst_dist > 0.0:
 			break
 	var mb_range: float = c5.weapons.by_id("mb16").range_u
-	fails += _check(killed and not direct_hit and burst_dist > mb_range * 0.9,
-		"splash+trajectory: fuse kill at 10u bearing offset, no direct hits; near-aimed shell burst at %.0fu (range %.0f)" % [burst_dist, mb_range])
+	var w5c := GameWorld.new(37)
+	Sim.step(w5c, DT, c5)
+	w5c.input.force_large = true
+	w5c.input.aim_world = Vector2(0, -1400)          # beyond reach — bearing mode, full-range flight
+	var far_dist: float = -1.0
+	for i in range(480):
+		Sim.step(w5c, DT, c5)
+		for e in w5c.effects:
+			if e["type"] == "splash":
+				far_dist = e["pos"].length()
+		w5c.effects.clear()
+		if far_dist > 0.0:
+			break
+	fails += _check(killed and not direct_hit \
+			and absf(burst_dist - 200.0) < 40.0 and far_dist > mb_range * 0.9,
+		"splash+trajectory (C11): fuse kill, no direct hits; cursor at 200u -> burst %.0fu; cursor beyond -> bearing shot to %.0fu (range %.0f)"
+		% [burst_dist, far_dist, mb_range])
 
 	# 6 — bloom: sustained aa20 fire widens toward bloom_max; resting decays it to zero
 	var c6 := _quiet()

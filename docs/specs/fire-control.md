@@ -1,6 +1,7 @@
-# C11 — LONG-RANGE FIRE CONTROL (spec — AT THE GATE)
+# C11 — LONG-RANGE FIRE CONTROL (spec)
 
-> Status: mockup gate (`design/fire-control.html`, forked from the approved C10 machinery).
+> Status: BUILT 2026-07-10 — gate passed "approved as-is", defaults shipped.
+> Gate artifact: `design/fire-control.html` (forked from the approved C10 machinery).
 > **Formal CR**: supersedes the C3 gate-rev-2 *mechanism within gun range* — "the cursor sets the
 > bearing, not the burst point" existed because the fixed camera meant the cursor could only
 > express a screen's worth of distance. C10 removed that premise. Beyond gun range the bearing
