@@ -242,6 +242,25 @@ treated as locked:
 ---
 
 ## Change Log
+- **2026-07-09 — Owner directive (mid-C10, recorded verbatim per the C4 CR template): CREWED
+  GUNS.** "Whatever that little strafe fire is we need to add that into the game, it looks so
+  good — let's find an excuse to use it. The AA guns feel a little powerful 'cause there's so
+  many; I was thinking of having them be more like person-manned machine guns so we get the
+  strafing effect when it hits the water, and they can also shoot at planes, though planes
+  would become more dangerous. I do like that anyways." Reading: the door-gunner firing model
+  (C6 — wild spread, per-round 40–100% reach rolls, gunsplash stitching) comes aboard the four
+  S mounts, replacing aa20's clinical 12/s hose; the air threat rising is an accepted,
+  desired consequence. Specifics deferred to the spec interview; slots into the arc as its own
+  small chunk immediately after C10 (visual language already shipped/approved — door-gun tracers
+  + gunsplash + C9 columns — so this is a sim-behavior CR with mockup parity updates, the K-GUN
+  precedent). Touches: `weapons.tres`/`Turrets`/`Projectiles`, FLAK tech branch reads,
+  `probe_hardpoints` (the C8 cadence checks will need re-targeting to the new model).
+  **Spec interview held same day, two decisions locked:** (1) firing model = **BURSTS WITH REST
+  GAPS** — ~8–12 rounds at ~12/s then a 1–2 s re-lay pause, wild spread, per-round 40–100% reach
+  rolls (each burst walks a stitch-line toward the target; the biggest honest AA nerf);
+  (2) domains = **air + surface, never sub** (the door-gunner envelope — the guns always have
+  something to strafe; gunboats get chip damage). Air threat increase accepted by the owner in
+  the directive itself.
 - **2026-07-09 — C9 THE LIVING SEA built; the C2 LOOK-LOCK superseded FOR THE WATER AND RIDE
   ONLY, through the lawful gate.** Two directions built as live presets on one interactive
   mockup; the owner approved **direction B "HEAVY WEATHER"** with gate tunes (splash column
