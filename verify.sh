@@ -48,7 +48,7 @@ godot_step() { # name, args...
   out="$("$GODOT" --headless --path . "$@" 2>&1)"
   local code=$?
   echo "$out" | tail -25
-  if [ $code -ne 0 ] || echo "$out" | grep -q "SCRIPT ERROR"; then
+  if [ $code -ne 0 ] || echo "$out" | grep -qE "SCRIPT ERROR|SHADER ERROR"; then
     echo "STEP FAILED: $name (exit $code)"
     FAIL=1
   fi

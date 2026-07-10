@@ -4,11 +4,25 @@
 
 [resource]
 script = ExtResource("1")
-fleck_count = 110
+fleck_count = 210
 fleck_min_len = 3.0
 fleck_max_len = 12.0
 field_tile = 1600.0
 grid_minor = 200.0
 grid_major = 1000.0
-wake_life = 4.5
-wake_max_points = 700
+wake_life = 9.0
+wake_max_points = 900
+wake_width = 1.35
+sea_amp = 0.95
+sea_drift = 1.4
+sea_scale = 1.15
+glint_intensity = 0.75
+crest_bias = 0.85
+crest_streaks = 0.8
+heave_px = 3.0
+roll_deg = 2.6
+shadow_px = 5.0
+splash_scale = 1.4
+splash_foam_life = 3.4
+splash_dye = true
+reduced_motion = false

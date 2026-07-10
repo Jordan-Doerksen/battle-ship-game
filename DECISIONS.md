@@ -229,9 +229,11 @@ treated as locked:
   #2. The founding brief is systems-complete. Spec: `docs/specs/boss-ladder.md`.
 - **C8 — Bug batch.** BUILT 2026-07-09 (see Change Log): nine fixes from the adversarial sweep,
   probe-gated, no design changes.
-- **C9–C12 — the polish arc (owner-approved 2026-07-09, see Change Log for the directive):**
-  C9 THE LIVING SEA (render-only; new mockup supersedes the C2 LOOK-LOCK) → C10 TACTICAL ZOOM
-  (~2× out, camera config; formal CR) → C11 LONG-RANGE FIRE CONTROL (burst-at-cursor +
+- **C9 — THE LIVING SEA.** BUILT 2026-07-09 (see Change Log): HEAVY WEATHER approved at the
+  mockup gate; sea shader + ride + splash columns, render-only, probes byte-identical.
+- **C10–C12 — the rest of the polish arc (owner-approved 2026-07-09, see Change Log for the
+  directive):** C10 TACTICAL ZOOM (~2× out, camera config; formal CR; owner judged the sea at
+  zoom 0.51 — make the wide view home) → C11 LONG-RANGE FIRE CONTROL (burst-at-cursor +
   fall-of-shot feedback; formal CR; deaf-deep law untouched) → C12 READABILITY & FEEL (scope
   legibility, pause, onboarding, minimal SFX). Each chunk still gets its own spec interview +
   mockup gate before port. Remaining founding threads are narrative/naming only (#1
@@ -240,6 +242,25 @@ treated as locked:
 ---
 
 ## Change Log
+- **2026-07-09 — C9 THE LIVING SEA built; the C2 LOOK-LOCK superseded FOR THE WATER AND RIDE
+  ONLY, through the lawful gate.** Two directions built as live presets on one interactive
+  mockup; the owner approved **direction B "HEAVY WEATHER"** with gate tunes (splash column
+  scale 1.4, foam disc life 3.4 s, wake foam life 9.0 s; judged at zoom 0.51 — recorded for
+  C10). `design/living-sea.html` is the new water/ride reference; hull/turret art, palette, and
+  line weights stay C2-verbatim and LOOK-LOCKED. Spec: `docs/specs/living-sea.md`. Built: sea
+  shader on a `SeaLayer` (CanvasLayer −1) fed one-way by Main; crest-biased flecks + crest-foam
+  streaks; heave/roll/hull-shadow ride (render-only); churned prop+V wake; splash COLUMNS with
+  per-battery dye; DC subsurface glow; air-enemy shadows + gunboat bob (the shipped C6/C7 shadow
+  language). **Cosmetic-only sim change (no CR needed, noted per the effects-channel rule):**
+  `Projectiles.gd` now APPENDS splash/gunsplash effects for shells that miss into the sea
+  (hostile misses, spent dp5/aa20, unburst flak) — append-only, no rng, no behavior change;
+  two-world determinism probes stay byte-identical. **Config:** `field.tres` gained the C9 sea
+  tables incl. `reduced_motion` (the law: sea/ride/column animation freezes, foam discs stay).
+  **Refactor (house 500-line rule):** `FieldRenderer` split into `SeaRender`/`ShipRender`/
+  `HostileRender`/`FxRender` helpers under a ~150-line orchestrator — one CanvasItem, draw order
+  unchanged. **Gate hardening:** `verify.sh` fails on `SHADER ERROR` (one escaped the
+  SCRIPT-ERROR-only grep during this build). `ScreenshotC9` harness added (sea / 0.4× zoom
+  floor / reduced motion).
 - **2026-07-09 — Owner direction (research-pass interview): the polish arc C8–C12 is approved.**
   Recorded verbatim from the interview, specifics deferred to per-chunk spec/mockup gates per the
   C4 CR template: **C8** bug batch (built — see below). **C9** THE LIVING SEA — render-only sea

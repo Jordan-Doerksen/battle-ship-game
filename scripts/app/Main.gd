@@ -18,8 +18,10 @@ var _step: float = 1.0 / 60.0
 var _banked: bool = false
 var _banked_xp: int = 0           # this run's XP already in the profile (posthumous kills bank the delta)
 var _level_before_bank: int = 1   # career level when this run's banking began (for the LEVEL UP line)
+var _sea_t: float = 0.0           # the C9 sea clock — cosmetic, frozen under reduced motion
 @onready var _field: FieldRenderer = $Field
 @onready var _cam: Camera2D = $Cam
+@onready var _sea: ColorRect = $SeaLayer/Sea
 @onready var _gauges: HelmGauges = $HUD/Gauges
 @onready var _title: TitleScreen = $HUD/Title
 @onready var _tree: TechTreeScreen = $HUD/Tree
@@ -36,6 +38,12 @@ func _ready() -> void:
 	profile = Profile.load_profile()
 	_step = 1.0 / float(sim_cfg.sim_hz)
 	_cam.make_current()
+	# C9: the sea shader's tables come from field.tres once; per-frame uniforms in _update_sea
+	var sea_mat: ShaderMaterial = _sea.material
+	sea_mat.set_shader_parameter("amp", field_cfg.sea_amp)
+	sea_mat.set_shader_parameter("drift", field_cfg.sea_drift)
+	sea_mat.set_shader_parameter("band_scale", field_cfg.sea_scale)
+	sea_mat.set_shader_parameter("glint", field_cfg.glint_intensity)
 	_title.bind(profile, base_cfgs.progress)
 	_tree.bind(profile, base_cfgs.tech, base_cfgs.progress)
 	_title.sortie_requested.connect(start_sortie)
@@ -129,8 +137,21 @@ func _unhandled_input(event: InputEvent) -> void:
 				if event.is_action("ui_cancel"):
 					show_screen("title")
 
+func _update_sea(delta: float) -> void:   # C9: one-way render plumbing, runs in every state —
+	if not field_cfg.reduced_motion:       # the water lives behind the menus too
+		_sea_t += delta
+	_field.sea_t = _sea_t
+	var mat: ShaderMaterial = _sea.material
+	mat.set_shader_parameter("sea_time", _sea_t)
+	mat.set_shader_parameter("cam_pos", world.ship_pos if world != null else Vector2.ZERO)
+	mat.set_shader_parameter("zoom", _cam.zoom.x)
+	mat.set_shader_parameter("viewport_size", get_viewport_rect().size)
+	mat.set_shader_parameter("hf_fade", SeaRender.hf_fade(_cam.zoom.x))
+
 func _process(delta: float) -> void:
+	_update_sea(delta)
 	if state != "game":
+		_field.queue_redraw()   # foam keeps drifting under the title/tree screens
 		return
 	if OS.is_debug_build() and Input.is_action_just_pressed("dev_toggle"):
 		_devkit.visible = not _devkit.visible

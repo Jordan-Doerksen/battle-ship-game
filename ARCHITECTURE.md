@@ -54,7 +54,7 @@ hardcoded (DECISIONS Non-Negotiable Constraints).
 | engine/systems | sim systems — static funcs that mutate `GameWorld` | `scripts/engine/systems/` | each reads its own config | `Movement` (C1); `Turrets`/`Projectiles` (C2: `hardpoint`/`weapons.tres`); `Waves`/`Enemies`/`Hull` (C3: `waves`/`enemies.tres`); `Sonar`/`DepthCharges` (C5: `sonar.tres`); `AirWing` (C6: `airwing.tres`); `Bosses` (C7: `bosses.tres`) |
 | engine/entities | plain pooled data classes | `scripts/engine/entities/` | — | `Enemy`, `Projectile` (pooled), `Mount` — data only, no engine coupling |
 | engine/util | determinism primitives | `scripts/engine/util/` | — | `Rng`, `Pool` (feeds projectiles) |
-| render | draw the world (hybrid), read-only | `scripts/render/FieldRenderer.gd` | `config/field.tres` (sea/wake cosmetics) | one-way sim → view; turret art ON the hull per D1.5, LOOK-LOCKED to mockup rev 3; `patina.gdshader` |
+| render | draw the world (hybrid), read-only | `scripts/render/FieldRenderer.gd` (orchestrator) → `SeaRender`/`ShipRender`/`HostileRender`/`FxRender` | `config/field.tres` (sea/ride/splash/wake cosmetics incl. `reduced_motion`) | one-way sim → view; turret art ON the hull per D1.5 (C2 art LOOK-LOCKED); C9 living sea: `sea.gdshader` on Main's `SeaLayer` (world-anchored, uniforms fed by Main), splash columns, render-only ride; `patina.gdshader` |
 | ui | screens + HUD | `scripts/ui/` | — | `HelmGauges` (gauges/pips/wave plate/radar/reticle/lost card), `TitleScreen`, `TechTreeScreen`, `DevKit` (debug builds only) |
 | config | typed tunables | `config/*.tres` | — | `Resource` subclasses |
 | design | approved HTML mockups = the visual spec | `design/` | — | mock → approve → port |

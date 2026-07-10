@@ -4,6 +4,41 @@ Chunk log, newest first. Each chunk ships only after it passes the cross-check a
 
 ---
 
+## C9 — THE LIVING SEA · 2026-07-09 · Built
+
+The water learned to move. Owner gate: two directions built as live presets on one mockup
+(`design/living-sea.html`) — **HEAVY WEATHER approved** with tunes at the gate (column scale 1.4,
+foam disc life 3.4 s, wake foam life 9 s; judged at zoom 0.51, noted for C10). Spec:
+`docs/specs/living-sea.md`. Render-only: the two-world determinism probes stay byte-identical.
+
+- **The sea:** one fullscreen canvas_item shader (`sea.gdshader` on Main's new `SeaLayer`,
+  behind the world) — two swell-band layers over the C1 `#0A1E28`, a glint field (slow envelope
+  picks where the sea catches light, high-frequency grain keeps the catches tiny), all
+  world-anchored from cam/zoom/sea-time uniforms. Crest-biased flecks and breaking crest-foam
+  streaks ride the analytic swell twin.
+- **The ride:** heave + a whisper of roll on the hull draw (render-only — the sim's
+  ship_pos/heading untouched), a hull shadow that breathes with the heave, a bow wave, and a
+  churned wake: prop churn + V shoulders drifting outboard, 9 s foam. Gunboats bob on the same
+  swell; air enemies cast slide-off shadows (the C6/C7 shadow language).
+- **Splash columns — the owner's ask.** Shell impacts read as vertical water columns from above:
+  occluding white plume, sun-opposite shadow tracking column height, overshoot pop, droplets
+  flying out then stopping, a pale foam disc lingering seconds. Per-battery dye rims (mb16 brass,
+  dp5 steel — WWII spotting practice; hostiles never dyed). Depth-charge blasts got their
+  subsurface glow.
+- **Misses hit the sea now** (cosmetic-only sim appends, no rng): hostile shells that miss the
+  hull, spent dp5/aa20 rounds, and unburst flak all splash where they fall — near-miss straddles
+  read as water, not nothing.
+- **Reduced motion is law:** `field.tres` `reduced_motion` freezes the sea and ride and
+  de-animates columns — foam discs stay (they carry gameplay information).
+- **The split (house 500-line rule):** `FieldRenderer` (556 lines) became a ~150-line
+  orchestrator over four render-domain helpers — `SeaRender` / `ShipRender` / `HostileRender` /
+  `FxRender` — one CanvasItem, draw order unchanged, C2 art verbatim.
+- **Gate hardening:** `verify.sh` now fails on `SHADER ERROR` too (a broken sea shader slipped
+  through the SCRIPT-ERROR-only grep once — never again). `ScreenshotC9` harness proves the sea,
+  the 0.4× zoom floor (hf layers fade, splash px clamp), and reduced motion.
+- New `field.tres` tables: sea_amp/drift/scale, glint_intensity, crest_bias/streaks,
+  heave/roll/shadow, splash scale/foam-life/dye, wake width — values are the approved preset.
+
 ## C8 — BUG BATCH · 2026-07-09 · Built
 
 Nine bugs from the first full-code adversarial sweep (research pass, owner-approved plan). No new

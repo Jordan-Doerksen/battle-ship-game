@@ -109,16 +109,26 @@ posthumous XP banks, dev-kit MAX LVL covers the 63-point tree, menus draw over o
 three boss fixes are parity-ported into `design/boss-ladder.html`. Probes: bosses 11 / sonar 9 /
 hardpoints 8 / tech 10.
 
-**The founding brief is SYSTEMS-COMPLETE, and the polish arc C9–C12 is owner-approved
-(2026-07-09 interview — the directive is recorded verbatim in the DECISIONS Change Log):**
-C9 THE LIVING SEA (render-only sea/splash pass; new mockup revision supersedes the C2 LOOK-LOCK)
-→ C10 TACTICAL ZOOM (~2× out; camera goes to config; formal CR) → C11 LONG-RANGE FIRE CONTROL
-(burst-at-cursor + fall-of-shot feedback; formal CR; the deaf-deep law is explicitly untouched)
-→ C12 READABILITY & FEEL (scope legibility, pause, onboarding, minimal procedural SFX on the
-existing effect events). Each chunk still runs interview → spec → mockup → port. Remaining open
-threads are narrative/naming only: #1 water-mystery payoff, #4 working-title trademark check.
-New systems beyond the arc (a win mode? new hulls? D1.12 says one hull until revisited) start
-with fresh `/spec-feature` interviews.
+**C9 — THE LIVING SEA is BUILT (2026-07-09):** the owner approved direction B "HEAVY WEATHER"
+at the mockup gate (`design/living-sea.html`, two live-preset directions; gate tunes: column 1.4,
+disc 3.4 s, wake 9 s; judged at zoom 0.51 — noted for C10). Render-only: sea shader on Main's
+`SeaLayer` (bands + glints, world-anchored), crest flecks/streaks, heave/roll/hull-shadow ride,
+churned wake + bow wave, SPLASH COLUMNS with per-battery dye, DC subsurface glow, air-enemy
+shadows. Misses now splash (cosmetic-only `Projectiles.gd` appends). `field.tres` gained the sea
+tables incl. `reduced_motion` (the law). **`FieldRenderer` split** into `SeaRender`/`ShipRender`/
+`HostileRender`/`FxRender` under a slim orchestrator (house 500-line rule). `verify.sh` now
+fails on SHADER ERROR too; `ScreenshotC9` proves sea / zoom floor / reduced motion. Spec:
+`docs/specs/living-sea.md`. Probes stay byte-identical — the render-only proof.
+
+**The founding brief is SYSTEMS-COMPLETE; the rest of the polish arc (owner-approved 2026-07-09,
+directive recorded verbatim in the DECISIONS Change Log):**
+C10 TACTICAL ZOOM (~2× out; camera goes to config; formal CR; the owner already lives at ~0.51)
+→ C11 LONG-RANGE FIRE CONTROL (burst-at-cursor + fall-of-shot feedback; formal CR; the deaf-deep
+law is explicitly untouched) → C12 READABILITY & FEEL (scope legibility, pause, onboarding,
+minimal procedural SFX on the existing effect events). Each chunk still runs interview → spec →
+mockup → port. Remaining open threads are narrative/naming only: #1 water-mystery payoff,
+#4 working-title trademark check. New systems beyond the arc (a win mode? new hulls? D1.12 says
+one hull until revisited) start with fresh `/spec-feature` interviews.
 
 ## 3. Tree layout
 

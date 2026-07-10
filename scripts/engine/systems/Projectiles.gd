@@ -28,9 +28,13 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 				# bursts where its flight expires (it was lobbed AT a point) and the hull takes
 				# the hit if the blast reaches the capsule: same capsule idiom as the contact
 				# test above, widened by the blast radius. Grace still applies via Hull.damage.
-				world.effects.append({ "type": "splash", "pos": p.pos, "r": p.splash })
+				world.effects.append({ "type": "splash", "pos": p.pos, "r": p.splash, "hostile": true })
 				if Hull.dist_to_hull(world, p.pos) <= Hull.RADIUS + p.splash:
 					Hull.damage(world, p.dmg, cfg)
+			elif dead and p.wid != "torpedo":
+				# C9 (cosmetic-only append, no rng): a hostile shell that misses still hits the SEA —
+				# near-miss columns around the hull are the straddle read. Spent torpedoes sink silent.
+				world.effects.append({ "type": "splash", "pos": p.pos, "r": 12.0, "hostile": true })
 		elif p.splash > 0.0:
 			if not dead:   # proximity fuse: detonate on a close flyby of a surface enemy
 				for e in world.enemies:
@@ -88,6 +92,9 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 						and world.boss.pos.distance_to(p.pos) <= cfg.tech.airburst_radius + Bosses.def_of(world, cfg).radius:
 					Bosses.strike(world, cfg, _boss_burst_point(world, cfg, p.pos), p.dmg, ["air", "surface"])
 				dead = true
+			elif dead:
+				# C9 (cosmetic-only): an unburst flak shell falls into the sea at flight's end
+				world.effects.append({ "type": "splash", "pos": p.pos, "r": 16.0 })
 		else:
 			var struck: bool = false
 			for e in world.enemies:
@@ -102,8 +109,12 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 			if not struck and Bosses.strike(world, cfg, p.pos, p.dmg, Bosses.WPN_DOMAINS.get(p.wid, ["air", "surface"])):
 				struck = true
 				dead = true
-			if not struck and p.life <= 0.0 and p.wid == "doorgun":
-				world.effects.append({ "type": "gunsplash", "pos": p.pos })   # the round slaps the sea (C6)
+			if not struck and p.life <= 0.0:
+				# C9 (cosmetic-only appends, no rng): spent rounds hit the SEA — misses read as water
+				if p.wid == "doorgun" or p.wid == "aa20":
+					world.effects.append({ "type": "gunsplash", "pos": p.pos })   # the round slaps the sea (C6/C9)
+				elif p.wid == "dp5":
+					world.effects.append({ "type": "splash", "pos": p.pos, "r": 16.0 })   # near-miss column
 		if dead:
 			pool.release(p)
 
