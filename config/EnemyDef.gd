@@ -22,4 +22,5 @@ extends Resource
 @export var shell_dmg: int = 0             # gunboat: pips per shell hit
 @export var lead: float = 0.0              # gunboat: fraction of full target lead
 @export var spread: float = 0.0            # gunboat: per-shot spread, rad (world.rng draw)
-@export var torp_run: float = 0.0          # sub only (C5): torpedo run distance, u (0 = fires shells)
+@export var torp_run: float = 0.0          # torpedo carrier (C5 sub; AIR THREAT bomber): run distance, u
+@export var salvo: int = 1                 # shots per trigger (AIR THREAT: the WASP's rocket ripple)

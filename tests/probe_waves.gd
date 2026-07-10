@@ -136,6 +136,44 @@ func _initialize() -> void:
 	fails += _check(w6.run_over and w6.hull == 0 and frozen and not w6b.run_over and w6b.wave >= 1,
 		"run end: run_over, hull 0, war frozen; fresh seed reaches wave %d" % w6b.wave)
 
+	# 7 — AIR THREAT: the VULTURE is a torpedo bomber (standoff drop, wake-drawing torpedo with
+	#     the klaxon trigger), and the WASP ripples its full rocket salvo in one trigger
+	var c7 := _disarmed()
+	var w7 := GameWorld.new(41)
+	Sim.step(w7, DT, c7)
+	_place(w7, "bomber", Vector2(0, -400), 999999, c7)
+	var torps7: int = 0      # peak live torpedoes seen (they expire in ~5s — sample, don't post-count)
+	var klaxon7: int = 0
+	for i in range(int(round(14.0 / DT))):
+		Sim.step(w7, DT, c7)
+		for e in w7.effects:
+			if e["type"] == "torpwater":
+				klaxon7 += 1
+		w7.effects.clear()
+		var live7: int = 0
+		for j in range(w7.projectiles.items.size()):
+			var p7: Projectile = w7.projectiles.items[j]
+			if p7.active and p7.hostile and p7.wid == "torpedo":
+				live7 += 1
+		torps7 = maxi(torps7, live7)
+	var w7b := GameWorld.new(43)
+	Sim.step(w7b, DT, c7)
+	_place(w7b, "wasp", Vector2(0, -400), 999999, c7)
+	var rockets7: int = 0    # peak live rockets = one full ripple in the air at once
+	for i in range(int(round(3.0 / DT))):
+		Sim.step(w7b, DT, c7)
+		w7b.effects.clear()
+		var live7b: int = 0
+		for j in range(w7b.projectiles.items.size()):
+			var p7b: Projectile = w7b.projectiles.items[j]
+			if p7b.active and p7b.hostile and p7b.wid == "hostile":
+				live7b += 1
+		rockets7 = maxi(rockets7, live7b)
+	var wasp_def: EnemyDef = c7.enemies.by_id("wasp")
+	fails += _check(torps7 >= 1 and klaxon7 >= 1 and rockets7 == wasp_def.salvo,
+		"AIR THREAT: VULTURE dropped %d torpedo(s) (%d klaxon); WASP rippled %d rocket(s) (salvo %d)"
+		% [torps7, klaxon7, rockets7, wasp_def.salvo])
+
 	if fails == 0:
 		print("PROBE_WAVES PASSED")
 	else:

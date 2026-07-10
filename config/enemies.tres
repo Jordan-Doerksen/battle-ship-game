@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="EnemyConfig" load_steps=7 format=3]
+[gd_resource type="Resource" script_class="EnemyConfig" load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://config/EnemyConfig.gd" id="1"]
 [ext_resource type="Script" path="res://config/EnemyDef.gd" id="2"]
@@ -51,17 +51,39 @@ layer = "air"
 hp = 8
 speed = 45.0
 turn = 0.5
-dmg = 2
+dmg = 0
 radius = 16.0
 cost = 5
 unlock = 5
-standoff = 0.0
-fire_range = 0.0
-fire_period = 0.0
-shell_speed = 0.0
-shell_dmg = 0
-lead = 0.0
-spread = 0.0
+standoff = 380.0
+fire_range = 520.0
+fire_period = 12.0
+shell_speed = 130.0
+shell_dmg = 2
+lead = 0.6
+spread = 0.05
+torp_run = 650.0
+
+[sub_resource type="Resource" id="wasp"]
+script = ExtResource("2")
+id = "wasp"
+rep = "WASP"
+layer = "air"
+hp = 2
+speed = 130.0
+turn = 1.4
+dmg = 0
+radius = 7.0
+cost = 4
+unlock = 4
+standoff = 460.0
+fire_range = 560.0
+fire_period = 6.0
+shell_speed = 320.0
+shell_dmg = 1
+lead = 0.4
+spread = 0.16
+salvo = 4
 
 [sub_resource type="Resource" id="sub"]
 script = ExtResource("2")
@@ -86,4 +108,4 @@ torp_run = 900.0
 
 [resource]
 script = ExtResource("1")
-roster = [SubResource("swarmer"), SubResource("gunboat"), SubResource("bomber"), SubResource("sub")]
+roster = [SubResource("swarmer"), SubResource("gunboat"), SubResource("bomber"), SubResource("wasp"), SubResource("sub")]

@@ -4,6 +4,25 @@ Chunk log, newest first. Each chunk ships only after it passes the cross-check a
 
 ---
 
+## AIR THREAT · 2026-07-10 · Built
+
+Owner play-test verdict: "I can literally just go AFK and make it to a boss" — the flak was
+still auto-solving an air war flown by commuters. Interview locked BOTH fixes:
+
+- **The VULTURE is a torpedo bomber now, not a suicide diver.** It orbits at 380u standoff and
+  drops a running torpedo (~every 12 s, 650u run) — inheriting the ENTIRE torpedo kit for free:
+  the wake, the klaxon, the turn-into-it counterplay, the bird's investigate mark, and (come
+  C15) rocks to hide behind. Its dead contact-damage field zeroed with the identity change.
+- **The WASP enlisted** (new roster plane, cost 4, unlock wave 4): fast, flimsy (hp 2), and
+  rude — ripples FOUR unguided rockets per pass with a wide cone; misses straddle the water
+  around you (the C9 splash kit sells every one) and overshoots sail right overtop (the 1.4×
+  overfly). XP 40; slim-dart silhouette with rocket rails; newsreel tally speaks its name.
+- Engine: one `EnemyDef.salvo` field + a salvo loop in `Enemies.step` (per-rocket spread from
+  `world.rng`, stable order — determinism intact); GNATs stay the suicide swarm untouched.
+- `probe_waves` check 7 (peak-sampled: the drop + the full ripple); `probe_bosses` roster-name
+  pin re-targeted. Manual TORPEDOES page now credits the sky. Mockup parity for the roster
+  rides with C16's wave-director rework.
+
 ## C14 — THE HULL · 2026-07-10 · Built
 
 The world arc opens (owner directives + interview: C14 hull → C15 waters → C16 the war,

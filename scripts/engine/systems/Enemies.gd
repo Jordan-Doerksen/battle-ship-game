@@ -35,20 +35,24 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 				e.cool = def.fire_period
 				var flight: float = dist_ship / def.shell_speed
 				var aim: Vector2 = world.ship_pos + world.ship_vel * flight * def.lead
-				var ang: float = _angle_to(e.pos, aim) + (world.rng.nextf() * 2.0 - 1.0) * def.spread
-				var torp: bool = def.torp_run > 0.0   # C5: a sub launches wake-drawing torpedoes
-				var p: Projectile = world.projectiles.obtain()
-				p.pos = e.pos + Vector2(sin(ang), -cos(ang)) * 14.0   # muzzle/tube, not hull center
-				p.vel = Vector2(sin(ang), -cos(ang)) * def.shell_speed
-				p.dmg = def.shell_dmg
-				p.splash = 0.0
-				p.hostile = true
-				p.wid = "torpedo" if torp else "hostile"
-				p.life = (def.torp_run if torp else def.fire_range * 1.4) / def.shell_speed
-				if not torp:   # no gunflash from under the water
-					world.effects.append({ "type": "gunflash", "pos": e.pos, "ang": ang })
-				else:   # C12 cosmetic-only append, no rng — the torpedo klaxon needs a trigger (precedent: the C9 miss splashes)
-					world.effects.append({ "type": "torpwater", "pos": p.pos })
+				var torp: bool = def.torp_run > 0.0   # torpedo carrier: the C5 sub, the AIR THREAT bomber
+				# AIR THREAT: salvo > 1 is the WASP's unguided rocket ripple — every rocket draws its
+				# own spread (world.rng, stable order); the wide cone + the 1.4× overfly life mean
+				# misses straddle the water around you and overshoots sail right overtop
+				for k in range(maxi(def.salvo, 1)):
+					var ang: float = _angle_to(e.pos, aim) + (world.rng.nextf() * 2.0 - 1.0) * def.spread
+					var p: Projectile = world.projectiles.obtain()
+					p.pos = e.pos + Vector2(sin(ang), -cos(ang)) * 14.0   # muzzle/tube, not hull center
+					p.vel = Vector2(sin(ang), -cos(ang)) * def.shell_speed
+					p.dmg = def.shell_dmg
+					p.splash = 0.0
+					p.hostile = true
+					p.wid = "torpedo" if torp else "hostile"
+					p.life = (def.torp_run if torp else def.fire_range * 1.4) / def.shell_speed
+					if torp:   # C12 cosmetic-only append, no rng — the torpedo klaxon needs a trigger
+						world.effects.append({ "type": "torpwater", "pos": p.pos })
+				if not torp:   # no gunflash from under the water; one flash per salvo
+					world.effects.append({ "type": "gunflash", "pos": e.pos, "ang": _angle_to(e.pos, aim) })
 				if torp and cfg.tech.helo:   # C6: the bird heard the launch — worth investigating
 					world.helo_mark = e.pos
 					world.helo_mark_until = world.elapsed + cfg.airwing.investigate_hold

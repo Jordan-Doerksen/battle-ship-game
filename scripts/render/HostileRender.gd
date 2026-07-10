@@ -20,7 +20,7 @@ static func draw_enemies(r: FieldRenderer) -> void:
 		var draw_pos: Vector2 = e.pos
 		var rock: float = 0.0
 		# C10 minimum-apparent-size floor: the smallest hostiles stay targetable at the zoom floor
-		var boost: float = r.size_floor(14.0 if e.type_id == "swarmer" else (28.0 if e.type_id == "gunboat" else 30.0))
+		var boost: float = r.size_floor(14.0 if e.type_id == "swarmer" else (12.0 if e.type_id == "wasp" else (28.0 if e.type_id == "gunboat" else 30.0)))
 		if e.layer == "air":
 			# the shadow slips off the airframe — same language as the canopy/bird (C9)
 			var soff := Vector2(6, 8) if e.type_id == "swarmer" else Vector2(9, 12)
@@ -43,6 +43,12 @@ static func draw_enemies(r: FieldRenderer) -> void:
 			r.draw_colored_polygon(PackedVector2Array([Vector2(0, -8), Vector2(6, 6), Vector2(0, 3), Vector2(-6, 6)]),
 				Color(0.851, 0.310, 0.169, 0.95))
 			r.draw_circle(Vector2(0, -1), 1.4, FieldRenderer.FOAM)
+		elif e.type_id == "wasp":   # AIR THREAT: the rocket plane — a slim dart with rails
+			r.draw_colored_polygon(PackedVector2Array([Vector2(0, -10), Vector2(4, 7), Vector2(0, 4), Vector2(-4, 7)]),
+				Color(0.851, 0.310, 0.169, 0.95))
+			r.draw_rect(Rect2(-6.0, 0.0, 1.6, 5.0), FieldRenderer.STEEL)
+			r.draw_rect(Rect2(4.4, 0.0, 1.6, 5.0), FieldRenderer.STEEL)
+			r.draw_circle(Vector2(0, -2), 1.2, FieldRenderer.FOAM)
 		elif e.type_id == "gunboat":
 			var boat := PackedVector2Array([Vector2(0, -16), Vector2(8, -6), Vector2(8, 12), Vector2(-8, 12), Vector2(-8, -6)])
 			var hull_col := Color(0.118, 0.180, 0.212)

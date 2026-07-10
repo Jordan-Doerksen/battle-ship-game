@@ -245,6 +245,18 @@ treated as locked:
 ---
 
 ## Change Log
+- **2026-07-10 — AIR THREAT built (owner play-test directive, verbatim: "I can literally just
+  go afk and make it to a boss, I want planes to drop torpedo pods or something once and a
+  while to make them more than suicide bombers, or shoot unguided missles that miss often or
+  can fly overtop of you"; interview: BOTH).** VULTURE reworked into a standoff TORPEDO BOMBER
+  (drops running torpedoes on a 12 s period — full C5 torpedo kit inherited: wake, klaxon,
+  counterplay, helo mark; contact-dmg field zeroed with the identity); NEW roster plane **WASP**
+  (rep in the newsreel tally; cost 4 / unlock 4 / hp 2 / xp 40) ripples 4 unguided rockets per
+  pass — wide spread, misses straddle via the C9 splash kit, overshoots overfly on the 1.4×
+  life. New `EnemyDef.salvo` (default 1 — every other shooter byte-identical) + salvo loop in
+  `Enemies.step` (per-rocket world.rng draws, stable order). GNATs stay the suicide swarm.
+  `probe_waves` +1 (peak-sampled drop + full ripple), `probe_bosses` name pin re-targeted,
+  manual TORPEDOES copy credits the sky. Roster mockup parity rides with C16. Gate green.
 - **2026-07-10 — Owner directive (post-C13 play-test): THE WORLD ARC — C14/C15/C16 approved
   and interviewed.** Verbatim: "the player ship needs to be a bit larger to give things more
   space on the ship itself"; "I want to do a rework of the wave packing"; "add like rocks and

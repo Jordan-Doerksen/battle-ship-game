@@ -7,6 +7,7 @@ script = ExtResource("1")
 xp_swarmer = 10
 xp_gunboat = 30
 xp_bomber = 50
+xp_wasp = 40
 xp_sub = 80
 xp_wave_bonus = 25
 level_xp_base = 150

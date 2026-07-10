@@ -196,7 +196,7 @@ func _initialize() -> void:
 	var reps: Array[String] = []
 	for d in c8.enemies.roster:
 		reps.append(d.rep)
-	var names_ok: bool = "/".join(reps) == "GNAT/JACKAL/VULTURE/LAMPREY"
+	var names_ok: bool = "/".join(reps) == "GNAT/JACKAL/VULTURE/WASP/LAMPREY"   # AIR THREAT: the WASP enlisted
 	for d in c8.bosses.defs:
 		names_ok = names_ok and d.display_name.begins_with("THE ")
 	fails += _check(names_ok, "names: %s; machines %s, %s, %s" \

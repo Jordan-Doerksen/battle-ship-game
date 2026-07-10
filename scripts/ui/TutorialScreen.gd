@@ -47,8 +47,8 @@ const PAGES := [
 		"a latched contact arms the stern racks.",
 		"Drive over the diamond — the charges do the rest." ] },
 	{ "title": "TORPEDOES", "copy": [
-		"A LAMPREY fires from beyond your ears. The wake is the warning.",
-		"Turn into it, or outrun it." ] },
+		"A LAMPREY fires from beyond your ears. A VULTURE drops them",
+		"from the sky. The wake is the warning. Turn into it, or outrun it." ] },
 	{ "title": "THE AIR WING", "copy": [
 		"The bird flies itself: dips its ears, marks the deep,",
 		"softens what it finds. Your stern racks finish what it starts." ] },
