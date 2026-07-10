@@ -4,6 +4,18 @@ Chunk log, newest first. Each chunk ships only after it passes the cross-check a
 
 ---
 
+## C14 — THE HULL · 2026-07-10 · Built
+
+The world arc opens (owner directives + interview: C14 hull → C15 waters → C16 the war,
+repacked). The battleship grew ~15% — art and hit capsule TOGETHER (`HULL_SCALE` 2.4 → 2.75;
+`Hull.HALF_LEN` 85 → 97, `RADIUS` 26 → 30) — a visual-only bump would have let shells ghost
+through the bow. Deck furniture and mounts deliberately DON'T scale: the grown hull around
+them is the requested deck room. Bow-anchored details ride the new stem (jack line, bow wave,
+wake emission point); the K-gun throw ring follows the hull (`dc_ring` 85 → 97). The owner
+accepts being a larger target — C16 retunes the war against it. Probes tracked automatically
+(they read the Hull symbols); full gate green. Mockup parity for the scale rides with C15's
+terrain mockup.
+
 ## C13 — FIELD MANUAL & THE SHOW-OFF TITLE · 2026-07-10 · Built
 
 Owner directives at the play-test: "a tutorial page that explains a function in text then

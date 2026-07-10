@@ -245,6 +245,22 @@ treated as locked:
 ---
 
 ## Change Log
+- **2026-07-10 — Owner directive (post-C13 play-test): THE WORLD ARC — C14/C15/C16 approved
+  and interviewed.** Verbatim: "the player ship needs to be a bit larger to give things more
+  space on the ship itself"; "I want to do a rework of the wave packing"; "add like rocks and
+  small islands that we have to go around, static, loaded each run." Interview locked:
+  **C14 THE HULL** — ~15% resize (HULL_SCALE 2.4 → 2.75), art + hit capsule TOGETHER (owner
+  accepts becoming a larger target); the capsule consts scale in place — Hull.gd's header
+  already rules them ship geometry, not balance tunables, and that stance stands. Deck
+  furniture and mounts DON'T scale: the grown hull around them IS the requested deck space.
+  Bow-anchored details (jack line, bow wave, wake stern point, the K-gun ring) ride the new
+  hull. Mockup parity for the scale rides with C15's terrain mockup (which shows the new hull). **C15 THE WATERS** — scattered rocks + 2–4 islets per run,
+  seeded from world.rng (same seed = same archipelago); ballistic splash shells ARC OVER,
+  flat fire and torpedoes DIE on rock (islands are cover both ways); hull collision, enemy
+  steering avoidance, spawn exclusion, terrain on the scope; full mockup gate (new look).
+  **C16 THE WAR, REPACKED** — formations with shape (not blobs), pressure-rhythm rework, and
+  terrain-aware packing (lanes/ambushes); domain mix explicitly KEPT; builds after C15 so the
+  director tunes against real waters. Order: C14 → C15 → C16.
 - **2026-07-10 — C13 FIELD MANUAL + show-off title built (owner directives at the play-test,
   verbatim: "needs a tutorial page that explains a function in text then underneath has a live
   example of all the mechanics"; "make the ship on the title screen invulnerable but have tons

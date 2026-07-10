@@ -112,7 +112,7 @@ static func emit_wake(r: FieldRenderer) -> void:
 	var fwd := Vector2(sin(r._world.ship_heading), -cos(r._world.ship_heading))
 	var rgt := Vector2(-fwd.y, fwd.x)
 	var w: float = minf(1.0, speed / r._cfgs.movement.max_speed_ahead) + (0.7 if braking else 0.0)
-	var stern: Vector2 = r._world.ship_pos - fwd * 100.0
+	var stern: Vector2 = r._world.ship_pos - fwd * 115.0   # just aft of the C14 hull
 	r._wake.append({ "pos": stern, "t": r._world.elapsed, "w": w,
 		"ang": r._world.ship_heading, "drift": Vector2.ZERO })            # prop churn
 	for side in [-1.0, 1.0]:                                              # shoulders widen the V

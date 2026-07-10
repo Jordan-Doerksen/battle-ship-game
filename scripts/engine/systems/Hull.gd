@@ -2,11 +2,12 @@ class_name Hull
 extends RefCounted
 # C3 hull damage intake (docs/specs/wave-director.md): one pip pool (D1.8), a post-hit grace window
 # (owner interview decision #4 — a refinement of the pool's behavior, not a second health layer),
-# and the run end. The contact shape is a CAPSULE along the keel, matching the ×2.4 silhouette —
-# ship geometry constants, not balance tunables (pips/grace live in WaveConfig).
+# and the run end. The contact shape is a CAPSULE along the keel, matching the ×2.75 silhouette
+# (C14: art + capsule grew ~15% together — a visual-only bump would let shells ghost through the
+# bow) — ship geometry constants, not balance tunables (pips/grace live in WaveConfig).
 
-const HALF_LEN: float = 85.0   # keel segment half-length
-const RADIUS: float = 26.0     # beam radius
+const HALF_LEN: float = 97.0   # keel segment half-length
+const RADIUS: float = 30.0     # beam radius
 
 static func dist_to_hull(world: GameWorld, p: Vector2) -> float:
 	var fwd := Vector2(sin(world.ship_heading), -cos(world.ship_heading))

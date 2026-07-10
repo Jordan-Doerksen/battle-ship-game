@@ -72,7 +72,7 @@ static func draw_hull(r: FieldRenderer, rd: Dictionary) -> void:
 	r.draw_rect(Rect2(-4, -18, 8, 8), r.wreck_fade(Color(0.290, 0.373, 0.408), fade))
 	r.draw_arc(Vector2(0, 65), 14.0, 0.0, TAU, 32, r.wreck_fade(FieldRenderer.STEEL, fade), r.lw(1.0), true)
 	r.draw_line(Vector2(-8, 65), Vector2(8, 65), r.wreck_fade(FieldRenderer.STEEL, fade), r.lw(1.0))
-	r.draw_line(Vector2(0, -120), Vector2(0, -90), r.wreck_fade(FieldRenderer.STEEL, fade), r.lw(1.0))
+	r.draw_line(Vector2(0, -137.5), Vector2(0, -103.0), r.wreck_fade(FieldRenderer.STEEL, fade), r.lw(1.0))   # bow jack rides the C14 stem
 	r.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 # Bow wave (C9) — two speed-scaled strokes at the stem, drawn inside the hull transform BEFORE
@@ -84,8 +84,8 @@ static func draw_bow_wave(r: FieldRenderer) -> void:
 	var col := Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.12 + 0.5 * spd01)
 	for s in [-1.0, 1.0]:
 		var pts := PackedVector2Array()
-		pts.append(Vector2(s * 3.0, -118.0))
-		quad(pts, Vector2(s * 3.0, -118.0), Vector2(s * 12.0, -112.0), Vector2(s * (14.0 + spd01 * 5.0), -94.0), 6)
+		pts.append(Vector2(s * 3.4, -135.2))
+		quad(pts, Vector2(s * 3.4, -135.2), Vector2(s * 13.8, -128.3), Vector2(s * (16.0 + spd01 * 5.7), -107.7), 6)
 		r.draw_polyline(pts, col, r.lw(2.0), true)
 
 # Class-distinct turret art (LOOK-LOCK): L twin-barrel armored turret, M single-gun angular house,
