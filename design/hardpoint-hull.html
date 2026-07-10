@@ -184,7 +184,8 @@ const DEFAULT_CFG = {
   weapons: {   // == config/weapons.tres — the 3-starter catalog (spec table)
     // bloom: sustained fire widens the spread (+bloom_add per shot, capped at bloom_max),
     // and the cone tightens again at bloom_decay rad/s while the gun rests. AA texture only.
-    aa20: { size: "S", name: "VIGILANT 20MM",  domains: ["air"],            policy: "CLOSE",  range: 420, rate: 12.0, traverse: 4.0, dmg: 1, speed: 700, spread: 0.045, splash: 0,  bloom_add: 0.01, bloom_max: 0.10, bloom_decay: 0.06 },
+    // CREWED GUNS parity: aa20 is a crewed MG — dual-domain, wide cone, 10-round bursts, reach roll
+    aa20: { size: "S", name: "VIGILANT 20MM",  domains: ["air", "surface"], policy: "CLOSE",  range: 420, rate: 12.0, traverse: 4.0, dmg: 1, speed: 700, spread: 0.14,  splash: 0,  bloom_add: 0.01, bloom_max: 0.10, bloom_decay: 0.06, burst_rounds: 10, burst_rest: 1.5, reach_min: 0.4 },
     dp5:  { size: "M", name: "SENTINEL 5-IN",  domains: ["air", "surface"], policy: "CLOSE",  range: 560, rate: 1.2,  traverse: 2.2, dmg: 2, speed: 620, spread: 0.02,  splash: 0,  bloom_add: 0,    bloom_max: 0,    bloom_decay: 0 },
     mb16: { size: "L", name: "JUDGEMENT 16-IN", domains: ["surface"],       policy: "STRONG", range: 900, rate: 0.33, traverse: 0.9, dmg: 4, speed: 420, spread: 0.012, splash: 36, bloom_add: 0,    bloom_max: 0,    bloom_decay: 0 },
   },
@@ -219,7 +220,7 @@ function makeSim(seed, cfg) {
   const sim = {
     rand: mulberry32(seed), rngCalls: 0, t: 0, kills: 0,
     ship: { x: 0, y: 0, vx: 0, vy: 0, heading: 0, along: 0, lat: 0 },
-    mounts: cfg.mounts.map(() => ({ ang: 0, cool: 0, bloom: 0, mode: "stow" })),
+    mounts: cfg.mounts.map(() => ({ ang: 0, cool: 0, bloom: 0, burst_left: 0, mode: "stow" })),   // CREWED GUNS parity: burst_left
     drones: [], projectiles: [], effects: [],
   };
   return sim;
@@ -320,6 +321,12 @@ function stepTurrets(sim, inp, cfg, dt) {
     m.bloom = Math.max(0, m.bloom - wpn.bloom_decay * dt);   // cone tightens while the gun rests
     if (aim && m.cool <= 0 && Math.abs(angDiff(desired, m.ang)) <= cfg.aim_tol) {
       m.cool = 1 / wpn.rate;
+      // CREWED GUNS parity: burst weapons fire burst_rounds at `rate`, then the crew re-lays
+      // for burst_rest s before the next burst (aa20 only; guns without burst fields run continuous)
+      if (wpn.burst_rounds > 0) {
+        if (m.burst_left <= 0) m.burst_left = wpn.burst_rounds;
+        if (--m.burst_left <= 0) m.cool += wpn.burst_rest;
+      }
       const shotAng = m.ang + (draw(sim) * 2 - 1) * (wpn.spread + m.bloom);
       m.bloom = Math.min(wpn.bloom_max, m.bloom + wpn.bloom_add);
       const dir = dirOf(shotAng);
@@ -329,6 +336,9 @@ function stepTurrets(sim, inp, cfg, dt) {
         const dist = Math.min(Math.hypot(aim.x - mpos.x, aim.y - mpos.y), wpn.range);
         p.life = dist / wpn.speed;   // heavy shells burst AT the aim point (area denial)
       }
+      // CREWED GUNS parity: each crewed round rolls its reach — short rounds expire over the water
+      // and the burst stitches a walking line toward the target (reach_min set on aa20 only)
+      if (wpn.reach_min < 1.0) p.life *= wpn.reach_min + draw(sim) * (1 - wpn.reach_min);
       sim.projectiles.push(p);
       sim.effects.push({ type: "muzzle", idx: i, x: mpos.x, y: mpos.y, ang: m.ang, size: mcfg.size });
     }
@@ -718,7 +728,7 @@ function buildTuning() {
     syncs.push(slider(s, w, "range", 100, 1400, 10, "range"));
     syncs.push(slider(s, w, "rate", 0.1, 12, 0.05, "fire rate /s"));
     syncs.push(slider(s, w, "traverse", 0.2, 8, 0.05, "traverse rad/s"));
-    syncs.push(slider(s, w, "spread", 0, 0.12, 0.002, "spread rad"));
+    syncs.push(slider(s, w, "spread", 0, 0.2, 0.002, "spread rad"));   // CREWED GUNS parity: range covers aa20's 0.14
     syncs.push(slider(s, w, "speed", 150, 1200, 10, "shell speed"));
     if (wid === "mb16") syncs.push(slider(s, w, "splash", 0, 120, 2, "splash radius"));
     if (wid === "aa20") {

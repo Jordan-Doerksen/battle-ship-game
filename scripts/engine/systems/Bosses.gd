@@ -12,7 +12,7 @@ extends RefCounted
 # No "dc" entry: depth charges detonate in their own Projectiles branch and never reach
 # strike() (which early-returns for sub-domain machines anyway) — a dead entry otherwise.
 const WPN_DOMAINS := {
-	"aa20": ["air"], "dp5": ["air", "surface"], "mb16": ["surface"],
+	"aa20": ["air", "surface"], "dp5": ["air", "surface"], "mb16": ["surface"],
 	"doorgun": ["air", "surface"],
 }
 

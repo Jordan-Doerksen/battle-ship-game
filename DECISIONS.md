@@ -233,16 +233,28 @@ treated as locked:
   mockup gate; sea shader + ride + splash columns, render-only, probes byte-identical.
 - **C10 — TACTICAL ZOOM.** BUILT 2026-07-09 (see Change Log): approved as-is; wheel 0.40–0.85,
   home 0.51, camera in config, sim camera-blind.
-- **Next — the rest of the arc (owner-approved 2026-07-09):** CREWED GUNS (owner directive +
-  locked interview, see Change Log — burst-fire crewed MGs on the S mounts, air+surface) →
-  C11 LONG-RANGE FIRE CONTROL (burst-at-cursor + fall-of-shot feedback; formal CR; deaf-deep
-  law untouched) → C12 READABILITY & FEEL (scope legibility, pause, onboarding, minimal SFX).
-  Each chunk still gets its own spec interview + gate. Remaining founding threads are
-  narrative/naming only (#1 water-mystery, #4 working title).
+- **CREWED GUNS.** BUILT 2026-07-09 (see Change Log): burst-fire person-manned MGs on the S
+  mounts, reach-roll stitching, air+surface; the AA nerf the owner asked for.
+- **Next — the rest of the arc (owner-approved 2026-07-09):** C11 LONG-RANGE FIRE CONTROL
+  (burst-at-cursor + fall-of-shot feedback; formal CR; deaf-deep law untouched) → C12
+  READABILITY & FEEL (scope legibility, pause, onboarding, minimal SFX). Each chunk still gets
+  its own spec interview + gate. Remaining founding threads are narrative/naming only
+  (#1 water-mystery, #4 working title).
 
 ---
 
 ## Change Log
+- **2026-07-09 — CREWED GUNS built (the mid-C10 directive, CR complete): the S mounts are
+  person-manned machine guns.** Bursts with rest gaps (10 rounds at 12/s, 1.5 s re-lay), wild
+  0.14 spread, per-round 40–100% reach rolls through `world.rng` (short rounds stitch the water
+  via the C9 splash kit), domains air+surface (`weapons.tres` + `spec_defaults()` +
+  `Bosses.WPN_DOMAINS`); the deep stays deaf. New config-generic `WeaponDef`
+  `burst_rounds`/`burst_rest`/`reach_min` (0/0/1.0 defaults — dp5/mb16 byte-identical) +
+  `Mount.burst_left`. AA sustained output 12/s → ≈4.3/s: planes more dangerous, accepted in the
+  directive verbatim. All six FLAK nodes live (flk4's bloom re-targeted in probe: accumulation,
+  not the hose ceiling). `probe_hardpoints` re-targeted (checks 2/6/7); full gate green;
+  parity ported into the mockup sims that model aa20 (K-GUN precedent). Spec:
+  `docs/specs/crewed-guns.md`; `ScreenshotCG` proof harness.
 - **2026-07-09 — C10 TACTICAL ZOOM built; the C1 fixed camera formally superseded (CR complete).**
   Gate: `design/tactical-zoom.html` approved as-is, defaults shipped. New `CameraConfig.gd`/
   `camera.tres` (zoom 0.40–0.85, home 0.51, wheel step 1.18, lerp half-life 0.12 s, enemy floor

@@ -127,10 +127,13 @@ superseded with rationale, spec §2); stroke compensation through all render hel
 LOOK-LOCK intact); 10 px min-size floor on hostiles; sim camera-blind, probes byte-identical.
 Spec: `docs/specs/tactical-zoom.md`; `ScreenshotC10` harness.
 
-**The founding brief is SYSTEMS-COMPLETE; the rest of the arc (owner-approved 2026-07-09,
-directives recorded verbatim in the DECISIONS Change Log):**
-CREWED GUNS (owner directive + locked interview: the S mounts become burst-fire person-manned
-MGs with the door-gunner reach-roll stitching, air+surface, planes get scarier by design) →
+**CREWED GUNS is BUILT (2026-07-09):** the S mounts are person-manned machine guns — bursts
+with rest gaps (10 rounds @ 12/s, 1.5 s re-lay), wild spread, per-round 40–100% reach rolls
+stitching the water, air+surface targets (the deep stays deaf). Planes are more dangerous now
+by owner directive. `probe_hardpoints` re-targeted (checks 2/6/7); spec:
+`docs/specs/crewed-guns.md`; `ScreenshotCG` proof.
+
+**The founding brief is SYSTEMS-COMPLETE; the rest of the arc (owner-approved 2026-07-09):**
 C11 LONG-RANGE FIRE CONTROL (burst-at-cursor + fall-of-shot feedback; formal CR; the deaf-deep
 law is explicitly untouched) → C12 READABILITY & FEEL (scope legibility, pause, onboarding,
 minimal procedural SFX on the existing effect events). Each chunk still runs interview → spec →

@@ -20,3 +20,10 @@ extends Resource
 @export var bloom_add: float = 0.0
 @export var bloom_max: float = 0.0
 @export var bloom_decay: float = 0.0
+# Crewed-MG texture (CREWED GUNS CR, 2026-07-09): burst_rounds > 0 makes the weapon fire in human
+# bursts — burst_rounds shots at `rate`, then burst_rest seconds while the crew re-lays. reach_min
+# rolls each round's flight to reach_min…1.0 of the gun's reach (world.rng) — short rounds stitch the
+# water walking toward the target. 0 / 0 / 1.0 = continuous precision fire (non-crewed weapons).
+@export var burst_rounds: int = 0
+@export var burst_rest: float = 0.0
+@export var reach_min: float = 1.0

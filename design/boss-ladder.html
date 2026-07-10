@@ -332,7 +332,8 @@ const DEFAULT_CFG = {
     drag_forward: 0.08, drag_lateral: 1.8, turn_rate_max: 0.55, turn_speed_floor: 0.25,
   },
   weapons: {
-    aa20: { size: "S", name: "VIGILANT 20MM",  domains: ["air"],            policy: "CLOSE",  range: 420, rate: 12.0, traverse: 4.0, dmg: 1, speed: 700, spread: 0.045, splash: 0,  bloom_add: 0.01, bloom_max: 0.10, bloom_decay: 0.06 },
+    // CREWED GUNS parity: aa20 is a crewed MG — dual-domain, wide cone, 10-round bursts, reach roll
+    aa20: { size: "S", name: "VIGILANT 20MM",  domains: ["air", "surface"], policy: "CLOSE",  range: 420, rate: 12.0, traverse: 4.0, dmg: 1, speed: 700, spread: 0.14,  splash: 0,  bloom_add: 0.01, bloom_max: 0.10, bloom_decay: 0.06, burst_rounds: 10, burst_rest: 1.5, reach_min: 0.4 },
     dp5:  { size: "M", name: "SENTINEL 5-IN",  domains: ["air", "surface"], policy: "CLOSE",  range: 560, rate: 1.2,  traverse: 2.2, dmg: 2, speed: 620, spread: 0.02,  splash: 0,  bloom_add: 0,    bloom_max: 0,    bloom_decay: 0 },
     mb16: { size: "L", name: "JUDGEMENT 16-IN", domains: ["surface"],       policy: "STRONG", range: 900, rate: 0.33, traverse: 0.9, dmg: 4, speed: 420, spread: 0.012, splash: 36, bloom_add: 0,    bloom_max: 0,    bloom_decay: 0 },
   },
@@ -520,7 +521,7 @@ function makeSim(seed, cfg) {
   return {
     rand: mulberry32(seed), rngCalls: 0, t: 0, kills: 0, xp: 0,
     ship: { x: 0, y: 0, vx: 0, vy: 0, heading: 0, along: 0, lat: 0 },
-    mounts: cfg.mounts.map(() => ({ ang: 0, cool: 0, bloom: 0, mode: "stow" })),
+    mounts: cfg.mounts.map(() => ({ ang: 0, cool: 0, bloom: 0, burst_left: 0, mode: "stow" })),   // CREWED GUNS parity: burst_left
     enemies: [], projectiles: [], effects: [],
     hull: cfg.waves.hull_pips, grace_until: 0, run_over: false, dc_cool: 0,
     helo: { state: "pad", x: 0, y: 65, heading: 0, fuel: 0, rearm: 0, drop_cool: 0, phase: 0, gun_cool: 0 },
@@ -990,7 +991,7 @@ function bossBurstPoint(sim, cfg, bx, by) {
   const s = d > r ? r / d : 1;
   return { x: b.x + dx * s, y: b.y + dy * s };
 }
-const WPN_DOMAINS = { aa20: ["air"], dp5: ["air", "surface"], mb16: ["surface"],
+const WPN_DOMAINS = { aa20: ["air", "surface"], dp5: ["air", "surface"], mb16: ["surface"],   // CREWED GUNS parity: aa20 dual-domain
   doorgun: ["air", "surface"], dc: ["sub"] };
 
 function stepBoss(sim, cfg, dt) {
@@ -1123,6 +1124,9 @@ function fireShell(sim, cfg, mpos, barrelAng, ang, wpn, wid, aim, forced, size) 
   const p = { x: ox, y: oy, vx: dir.x * wpn.speed, vy: dir.y * wpn.speed,
     dmg: wpn.dmg, splash: wpn.splash, life: wpn.range / wpn.speed, wid, hostile: false };
   if (wpn.splash > 0 && !forced) p.life = Math.min(Math.hypot(aim.x - ox, aim.y - oy), wpn.range) / wpn.speed;
+  // CREWED GUNS parity: each crewed round rolls its reach — short rounds expire over the water
+  // and the burst stitches a walking line toward the target (reach_min set on aa20 only)
+  if (wpn.reach_min < 1.0) p.life *= wpn.reach_min + draw(sim) * (1 - wpn.reach_min);
   sim.projectiles.push(p);
 }
 function stepTurrets(sim, inp, cfg, dt) {
@@ -1152,6 +1156,12 @@ function stepTurrets(sim, inp, cfg, dt) {
     m.bloom = Math.max(0, m.bloom - wpn.bloom_decay * dt);
     if (aim && m.cool <= 0 && Math.abs(angDiff(desired, m.ang)) <= cfg.aim_tol) {
       m.cool = 1 / wpn.rate;
+      // CREWED GUNS parity: burst weapons fire burst_rounds at `rate`, then the crew re-lays
+      // for burst_rest s before the next burst (aa20 only; guns without burst fields run continuous)
+      if (wpn.burst_rounds > 0) {
+        if (m.burst_left <= 0) m.burst_left = wpn.burst_rounds;
+        if (--m.burst_left <= 0) m.cool += wpn.burst_rest;
+      }
       const shotAng = m.ang + (draw(sim) * 2 - 1) * (wpn.spread + m.bloom);
       m.bloom = Math.min(wpn.bloom_max, m.bloom + wpn.bloom_add);
       if (wid === "mb16" && cfg.tech.salvo) {   // FULL SALVO: both barrels, one spread draw
@@ -1283,7 +1293,7 @@ function stepProjectiles(sim, cfg, dt) {
         struck = true;
         dead = true;
       }
-      if (!struck && p.life <= 0 && p.wid === "doorgun") {
+      if (!struck && p.life <= 0 && (p.wid === "doorgun" || p.wid === "aa20")) {   // CREWED GUNS parity: short-reach aa20 rounds splash too
         sim.effects.push({ type: "gunsplash", x: p.x, y: p.y });   // the round slaps the sea
       }
     }

@@ -46,9 +46,17 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 			m.cool -= dt
 		m.bloom = maxf(0.0, m.bloom - wpn.bloom_decay * dt)   # cone tightens while the gun rests
 		if has_aim and m.cool <= 0.0 and absf(angle_difference(m.ang, desired)) <= hp_cfg.aim_tol:
+			# CREWED GUNS: burst weapons fire in a human rhythm — burst_rounds at `rate`, then the
+			# crew re-lays for burst_rest. Config-generic; 0 = continuous (dp5/mb16 unchanged).
+			if wpn.burst_rounds > 0 and m.burst_left <= 0:
+				m.burst_left = wpn.burst_rounds
 			# += (not =) carries the sub-tick remainder: a plain reset quantizes every period UP to whole
 			# ticks (a ~1e-17 float residue made aa20's 5-tick period take 6 — 10/s from a 12/s gun)
 			m.cool += 1.0 / wpn.rate
+			if wpn.burst_rounds > 0:
+				m.burst_left -= 1
+				if m.burst_left <= 0:
+					m.cool += wpn.burst_rest
 			var shot_ang: float = m.ang + (world.rng.nextf() * 2.0 - 1.0) * (wpn.spread + m.bloom)
 			m.bloom = minf(wpn.bloom_max, m.bloom + wpn.bloom_add)
 			if wpn.id == "mb16" and cfg.tech.salvo:   # FULL SALVO (C4 marquee): both barrels, one draw
@@ -74,6 +82,10 @@ static func _fire(world: GameWorld, mpos: Vector2, barrel_ang: float, shot_ang: 
 	# AUTO splash shells burst at their computed intercept; FORCED ones fly full range (C3 rev 2)
 	if wpn.splash > 0.0 and not forced:
 		p.life = minf(origin.distance_to(aim), wpn.range_u) / wpn.speed
+	# CREWED GUNS: each crewed round rolls its reach — short rounds slap the sea and the burst
+	# stitches a walking line toward the target. Guarded so precision weapons draw no extra rng.
+	if wpn.reach_min < 1.0:
+		p.life *= wpn.reach_min + world.rng.nextf() * (1.0 - wpn.reach_min)
 
 static func mount_world(world: GameWorld, local: Vector2) -> Vector2:
 	return world.ship_pos + local.rotated(world.ship_heading)

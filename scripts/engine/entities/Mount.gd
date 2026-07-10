@@ -8,4 +8,5 @@ extends RefCounted
 var ang: float = 0.0
 var cool: float = 0.0
 var bloom: float = 0.0         # sustained-fire spread widening (AA texture; see WeaponDef)
+var burst_left: int = 0        # rounds left in the current crewed-MG burst (CREWED GUNS CR)
 var mode: String = "stow"      # stow | auto | forced — render reads it for the force-fire tint

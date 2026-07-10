@@ -8,18 +8,21 @@ script = ExtResource("2")
 id = "aa20"
 display_name = "VIGILANT 20MM"
 size = "S"
-domains = PackedStringArray("air")
+domains = PackedStringArray("air", "surface")
 policy = "CLOSE"
 range_u = 420.0
 rate = 12.0
 traverse = 4.0
 dmg = 1
 speed = 700.0
-spread = 0.045
+spread = 0.14
 splash = 0.0
 bloom_add = 0.01
 bloom_max = 0.1
 bloom_decay = 0.06
+burst_rounds = 10
+burst_rest = 1.5
+reach_min = 0.4
 
 [sub_resource type="Resource" id="dp5"]
 script = ExtResource("2")

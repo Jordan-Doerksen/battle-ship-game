@@ -18,10 +18,11 @@ static func spec_defaults() -> WeaponConfig:
 	var cfg := WeaponConfig.new()
 	var aa := WeaponDef.new()
 	aa.id = "aa20"; aa.display_name = "VIGILANT 20MM"; aa.size = "S"
-	aa.domains = PackedStringArray(["air"]); aa.policy = "CLOSE"
+	aa.domains = PackedStringArray(["air", "surface"]); aa.policy = "CLOSE"   # CREWED GUNS CR
 	aa.range_u = 420.0; aa.rate = 12.0; aa.traverse = 4.0; aa.dmg = 1
-	aa.speed = 700.0; aa.spread = 0.045; aa.splash = 0.0
+	aa.speed = 700.0; aa.spread = 0.14; aa.splash = 0.0
 	aa.bloom_add = 0.01; aa.bloom_max = 0.10; aa.bloom_decay = 0.06
+	aa.burst_rounds = 10; aa.burst_rest = 1.5; aa.reach_min = 0.4             # person-manned MGs
 	var dp := WeaponDef.new()
 	dp.id = "dp5"; dp.display_name = "SENTINEL 5-IN"; dp.size = "M"
 	dp.domains = PackedStringArray(["air", "surface"]); dp.policy = "CLOSE"

@@ -33,7 +33,8 @@ func _initialize() -> void:
 			prev[j] = w1.mounts[j].ang
 	fails += _check(worst <= 1e-6, "traverse limit: max overshoot %.9f rad/s" % worst)
 
-	# 2 — domain filter: lone SURFACE enemy in auto -> aa20 silent, dp5 + mb16 fire
+	# 2 — domain filter (CREWED GUNS re-target): the crewed MGs engage SURFACE now, so a lone
+	#     surface enemy draws all three sizes; the deep stays deaf (probe_sonar holds that law)
 	var c2 := _quiet()
 	var w2 := GameWorld.new(5)
 	Sim.step(w2, DT, c2)
@@ -46,8 +47,8 @@ func _initialize() -> void:
 			if e["type"] == "muzzle":
 				fired[e["size"]] = true
 		w2.effects.clear()
-	fails += _check(not fired.has("S") and fired.has("M") and fired.has("L"),
-		"domain filter: at a surface target, sizes fired = %s (S correctly silent)" % str(fired.keys()))
+	fails += _check(fired.has("S") and fired.has("M") and fired.has("L"),
+		"domain filter: at a surface target, sizes fired = %s (crewed MGs join in)" % str(fired.keys()))
 
 	# 3 — policy: near air + far surf, both immortal -> dp5 (CLOSE) hits near air, mb16 (STRONG,
 	#     surface-only) hits far surf
@@ -168,37 +169,59 @@ func _initialize() -> void:
 	var w6 := GameWorld.new(24)
 	Sim.step(w6, DT, c6)
 	_place(w6, "swarmer", Vector2(0, -200), 999999, c6)
-	_run(w6, c6, 6.0)
 	var s_idx: int = c6.hardpoints.mount_size.find("S")
-	var hot: float = w6.mounts[s_idx].bloom
+	var hot: float = 0.0   # burst rhythm makes bloom a sawtooth — assert its PEAK, not a phase-luck sample
+	for i in range(int(round(6.0 / DT))):
+		Sim.step(w6, DT, c6)
+		w6.effects.clear()
+		hot = maxf(hot, w6.mounts[s_idx].bloom)
 	w6.enemies[0].active = false
 	_run(w6, c6, 4.0)
 	var cold: float = w6.mounts[s_idx].bloom
 	var aa: WeaponDef = c6.weapons.by_id("aa20")
-	fails += _check(hot > aa.bloom_max * 0.8 and cold < 0.005,
-		"bloom: %.3f under sustained fire (max %.2f), %.3f after 4s rest" % [hot, aa.bloom_max, cold])
+	# bursts self-limit heat (10 rounds then a rest), so the old bloom_max ceiling is unreachable
+	# by design — the living mechanic is ACCUMULATION during a burst (flk4's target) + decay at rest
+	fails += _check(hot > aa.bloom_add * aa.burst_rounds * 0.4 and cold < 0.005,
+		"bloom: peak %.3f across bursts (gain %.2f/burst before decay), %.3f after 4s rest"
+		% [hot, aa.bloom_add * aa.burst_rounds, cold])
 
-	# 7 — cadence (C1 fix): sustained aa20 fire averages the CONFIGURED rate — the old whole-tick
-	#     reset (+ a ~1e-17 float residue) stretched the 5-tick period to 6, firing 10/s from a 12/s gun
+	# 7 — burst rhythm (CREWED GUNS re-target of the C8 cadence check): a crewed MG fires
+	#     burst_rounds at `rate` (in-burst gaps = the exact period — the C8 sub-tick fix still
+	#     guards that), then rests burst_rest; sustained count matches the cycle math ± one burst;
+	#     and short rounds STITCH — reach rolls put gunsplash slaps on the water while it fires
 	var c7 := _quiet()
 	c7.enemies.by_id("swarmer").speed = 0.0
 	var w7 := GameWorld.new(31)
 	Sim.step(w7, DT, c7)
 	_place(w7, "swarmer", Vector2(0, -200), 999999, c7)
-	_run(w7, c7, 2.0)   # warm up: slew, first shot, settle into steady cadence
+	_run(w7, c7, 2.0)   # warm up: slew, settle into the rhythm
 	var s7: int = c7.hardpoints.mount_size.find("S")
-	var rate7: float = c7.weapons.by_id("aa20").rate
+	var aa7: WeaponDef = c7.weapons.by_id("aa20")
 	var secs7: float = 10.0
 	var shots7: int = 0
+	var stitches7: int = 0
+	var ticks7: Array = []
 	for i in range(int(round(secs7 / DT))):
 		Sim.step(w7, DT, c7)
 		for e in w7.effects:
 			if e["type"] == "muzzle" and e["idx"] == s7:
 				shots7 += 1
+				ticks7.append(i)
+			elif e["type"] == "gunsplash":
+				stitches7 += 1
 		w7.effects.clear()
-	fails += _check(absf(shots7 - rate7 * secs7) <= 1.0,
-		"cadence: %d aa20 shots from one mount in %.0fs (configured %.1f/s -> expect %.0f +/- 1)"
-		% [shots7, secs7, rate7, rate7 * secs7])
+	var period7: int = int(floor(1.0 / (aa7.rate * DT)))
+	var min_gap7: int = 999999
+	var max_gap7: int = 0
+	for i in range(1, ticks7.size()):
+		min_gap7 = mini(min_gap7, ticks7[i] - ticks7[i - 1])
+		max_gap7 = maxi(max_gap7, ticks7[i] - ticks7[i - 1])
+	var cycle7: float = aa7.burst_rounds / aa7.rate + aa7.burst_rest
+	var expect7: float = secs7 / cycle7 * aa7.burst_rounds
+	fails += _check(absf(shots7 - expect7) <= aa7.burst_rounds \
+			and min_gap7 >= period7 and max_gap7 >= int(aa7.burst_rest / DT) and stitches7 > 0,
+		"burst rhythm: %d shots in %.0fs (cycle math %.0f +/- %d), in-burst gap %d ticks (period %d), rest gap %d ticks, %d stitches on the water"
+		% [shots7, secs7, expect7, aa7.burst_rounds, min_gap7, period7, max_gap7, stitches7])
 
 	# 8 — no catch-up (C1 fix): a gun idle for 10s must NOT machine-gun a banked backlog when a
 	#     target finally appears — one immediate shot at most, then normal cadence from there

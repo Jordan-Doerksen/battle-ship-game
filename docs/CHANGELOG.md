@@ -4,6 +4,30 @@ Chunk log, newest first. Each chunk ships only after it passes the cross-check a
 
 ---
 
+## CREWED GUNS · 2026-07-09 · Built
+
+The owner saw the door gunners stitch the water and wanted it aboard: "whatever that little
+strafe fire is we need to add that into the game." The four S mounts stop being clinical 12/s
+auto-hoses and become **person-manned machine guns** — the honest fix for "the AA guns feel a
+little powerful 'cause there's so many."
+
+- **Bursts with rest gaps** (owner interview): 10 rounds at 12/s, then 1.5 s while the crew
+  re-lays. Wild 0.14 spread. **Each round rolls 40–100% reach** (`world.rng`) — short rounds
+  slap the sea and every burst walks a stitch-line toward the target (the C9 splash kit renders
+  it for free).
+- **Air + surface** (owner interview): the MGs always have something to strafe — gunboats and
+  surfaced machines take chip fire. The deep stays deaf; the deaf-deep law untouched.
+- **Planes are more dangerous now — accepted in the directive itself.** Sustained output drops
+  from 12/s to ≈4.3/s, less on target. Compensation lives in FLAK tech / `weapons.tres`, not code.
+- Config-generic: `WeaponDef.burst_rounds/burst_rest/reach_min` (defaults leave dp5/mb16
+  byte-identical), `Mount.burst_left`, values mirrored in `weapons.tres` + `spec_defaults()`.
+  All six FLAK nodes stay live (bursts self-limit heat, so bloom asserts its accumulation, not
+  the hose-era ceiling).
+- **Verify:** `probe_hardpoints` re-targeted — surface targets draw all three sizes; burst
+  rhythm (count = cycle math ± one burst, in-burst gap = the exact period, rests observed,
+  stitches on the water); no-catch-up unchanged. Full gate green, determinism intact.
+  `ScreenshotCG` strafe-proof harness. Parity ported into the mockup sims that model aa20.
+
 ## C10 — TACTICAL ZOOM · 2026-07-09 · Built
 
 The camera got sea room. Formal CR: the C1 hardcoded 0.85 died; `CameraConfig`/`camera.tres`
