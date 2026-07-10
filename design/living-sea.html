@@ -875,13 +875,16 @@ const PRESETS = {
               foam: { density: 130, crest_bias: 0.6, crest_streaks: 0.0 },
               ship: { heave_px: 1.4, roll_deg: 1.0, shadow_px: 3.5 },
               splash: { scale: 1.0, foam_life: 4.0, dye: false }, wake: { life: 7.0, width: 1.0 } } },
+  // ★ APPROVED AT THE GATE 2026-07-09: direction B ships, with the owner's tunes applied below
+  //   (column scale 1.15→1.4, foam disc life 4.5→3.4, wake foam life 9.5→9.0; judged at zoom 0.51 —
+  //   noted for C10: the tactical camera should make that wide view home). A stays for reference.
   B: { name: "HEAVY WEATHER", voice: "The restraint order is rescinded. The sea files a demonstration.",
        cfg: { swell: { amp: 0.95, speed: 1.4, scale: 1.15 }, glint: { intensity: 0.75 },
               foam: { density: 210, crest_bias: 0.85, crest_streaks: 0.8 },
               ship: { heave_px: 3.0, roll_deg: 2.6, shadow_px: 5.0 },
-              splash: { scale: 1.15, foam_life: 4.5, dye: true }, wake: { life: 9.5, width: 1.35 } } },
+              splash: { scale: 1.4, foam_life: 3.4, dye: true }, wake: { life: 9.0, width: 1.35 } } },
 };
-let direction = "A";
+let direction = "B";
 function applyPreset(id) {
   direction = id;
   const zoom = cfg.view.zoom;                        // the C10 preview survives a direction flip
@@ -1021,7 +1024,7 @@ function frame(now) {
   render();
 }
 buildPanel();
-applyPreset("A");
+applyPreset("B");   // the approved direction boots by default (gate 2026-07-09)
 requestAnimationFrame(frame);
 </script>
 </body>
