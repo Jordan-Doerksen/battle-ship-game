@@ -246,6 +246,10 @@ treated as locked:
 ---
 
 ## Change Log
+- **2026-07-10 — C12 spec interview: onboarding = CONTEXTUAL DRIP.** One-line deadpan hint
+  plates, each shown ONCE PER PROFILE the first time it matters (first sortie: helm +
+  force-fire; first sub contact: the deaf-deep rule; first torpedo; first machine) — no menus,
+  no manual. Seen-flags persist in the profile (app layer, like XP).
 - **2026-07-10 — C11 LONG-RANGE FIRE CONTROL built; the C3 gate-rev-2 rule formally superseded
   WITHIN GUN RANGE (CR complete).** Gate approved as-is (`design/fire-control.html`). Forced
   splash shells burst AT the cursor when it's within reach (`Turrets._fire`: the `not forced`
