@@ -245,6 +245,17 @@ treated as locked:
 ---
 
 ## Change Log
+- **2026-07-10 — C13 FIELD MANUAL + show-off title built (owner directives at the play-test,
+  verbatim: "needs a tutorial page that explains a function in text then underneath has a live
+  example of all the mechanics"; "make the ship on the title screen invulnerable but have tons
+  of shit on screen and max ALL of its upgrades — JUST for the title screen to show off").**
+  New `manual` state + `TutorialScreen`/`TutorialVignettes` (nine text-over-training-film
+  pages, deterministic loops, reduced-motion stills, M key + third title button); the attract
+  world runs full-tree + `godmode` (presentation use of the DEV flag) + a cranked director
+  (attract-only mutations on the DERIVED config copy — `start_sortie` re-derives honestly).
+  This partially supersedes the C12 onboarding interview's "drip only" scope: the drip stays
+  the in-sortie teacher; the manual is the reference the owner asked for after playing.
+  UI/app/render only; gate green; probes untouched.
 - **2026-07-10 — Play-test tune (owner feedback at the first C12 play-test; the K-GUN
   owner-tune precedent):** rack state moved OFF the scope onto the gauge plate's instrument
   line (`RACKS ARMED` / `RACKS · · ·`, fixed width — the on-scope dial read as a contact;

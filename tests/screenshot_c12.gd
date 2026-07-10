@@ -1,7 +1,7 @@
 extends Node
-# TEMPORARY dev harness (not part of the verify gate): C12 + play-test-tune proofs — the attract
-# battle under the title (scrim + action), then a sortie's cleaned-up scope (ring labels, RACKS
-# readout on the plate) with a hint plate up.
+# TEMPORARY dev harness (not part of the verify gate): C13 proofs — the cranked attract title
+# (full tree, godmode, crowded ocean) and two FIELD MANUAL pages. No sortie is started, so the
+# real profile's drip hints stay un-consumed.
 
 const OUT := "C:/Users/Doerk/AppData/Local/Temp/claude/C--projects/16634eea-72ab-4d6d-a258-f38bc2e50372/scratchpad/"
 
@@ -14,13 +14,16 @@ func _shot(path: String) -> void:
 
 func _process(_delta: float) -> void:
 	t += 1
-	if t == 1500:   # the attract war has waves on screen by now
-		_shot(OUT + "tune_title_attract.png")
-	if t == 1510:
-		main.start_sortie()
-		main.world.godmode = true
-		Input.action_press("helm_ahead")
-	if t == 1800:   # helm hint plate up (first-profile drip), scope labeled, racks armed
-		_shot(OUT + "tune_scope_hud.png")
-	if t >= 1805:
+	if t == 1100:   # ~18s in: the show-off war is crowded, wave 2-3 fielded
+		_shot(OUT + "c13_title_attract.png")
+	if t == 1110:
+		main._open_manual()
+	if t == 1300:   # page 1, mid-loop
+		_shot(OUT + "c13_manual_p1.png")
+	if t == 1310:
+		for k in range(4):   # flip to page 5 — THE DEEP
+			main._manual.flip(1)
+	if t == 1550:
+		_shot(OUT + "c13_manual_p5.png")
+	if t >= 1555:
 		get_tree().quit()

@@ -4,6 +4,26 @@ Chunk log, newest first. Each chunk ships only after it passes the cross-check a
 
 ---
 
+## C13 — FIELD MANUAL & THE SHOW-OFF TITLE · 2026-07-10 · Built
+
+Owner directives at the play-test: "a tutorial page that explains a function in text then
+underneath has a live example of all the mechanics," and make the title demo "invulnerable,
+tons of shit on screen, max ALL its upgrades — JUST for the title."
+
+- **THE FIELD MANUAL** (`TutorialScreen` + `TutorialVignettes`, M or the new title button):
+  nine pages, each a deadpan explanation over a live looping TRAINING FILM — the helm's
+  S-carve with WASD glyphs lighting from the path itself, the batteries slewing through the
+  three force orders, long-range fire walking SHORT → STRADDLE → HIT, the crewed guns
+  stitching, the deep (ping → diamond → drive-over → K-guns), torpedo evasion, the air wing's
+  kill chain, a machine losing its parts, and the scope decoder ring by ring. ←/→ or A/D to
+  turn pages, dots clickable, ESC/M home. Vignettes are deterministic hand-staged loops (no
+  randf, local clock); reduced motion holds each film at a readable still.
+- **The attract shows off:** the demo ship owns all 37 nodes (bird flying, flak bursting,
+  full salvos), `godmode` on (a presentation use of the DEV flag — honest sim otherwise),
+  and a cranked director: dense budgets, 2 s lulls, in-frame spawn ring, every bearing at
+  once, a war machine every 2nd wave, quiet relaunch at 90 s. `start_sortie` re-derives
+  honest configs — nothing leaks into a real run.
+
 ## PLAY-TEST TUNE — the scope, and a title with a pulse · 2026-07-10
 
 Owner feedback, first C12 play-test: the rack dial "looks so weird inside the minimap," the

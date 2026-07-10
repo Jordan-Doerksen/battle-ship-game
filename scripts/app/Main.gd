@@ -1,5 +1,6 @@
 extends Node2D
-# Root (app domain). Owns the fixed-step accumulator, the C4 state machine (title / tree / game),
+# Root (app domain). Owns the fixed-step accumulator, the C4 state machine (title / tree / game /
+# manual — the C13 FIELD MANUAL),
 # the persistent Profile (banked at run end; the sim never reads it), and the InputState snapshot —
 # still the ONLY door input enters the sim through. Each sortie derives its Configs from the base
 # .tres values + the profile's unlocked tech (Tech.apply) BEFORE the world is created, so
@@ -27,7 +28,7 @@ var cfgs: Configs
 var profile: Profile
 var paused: bool = false          # C12: P toggles mid-sortie; sim/input/effects hold, render runs
 var god_guns: bool = false        # DEV kit weapon override, rebuilt into cfgs per toggle/sortie
-var state: String = "title"       # title | tree | game
+var state: String = "title"       # title | tree | game | manual
 var _accum: float = 0.0
 var _step: float = 1.0 / 60.0
 var _banked: bool = false
@@ -45,6 +46,7 @@ var _hint_ms: int = 0             # C12: tick the active hint went up
 @onready var _gauges: HelmGauges = $HUD/Gauges
 @onready var _title: TitleScreen = $HUD/Title
 @onready var _tree: TechTreeScreen = $HUD/Tree
+@onready var _manual: TutorialScreen = $HUD/Manual
 @onready var _devkit: DevKit = $HUD/DevKit
 @onready var _sfx: SfxPlayer = $Sfx
 
@@ -76,8 +78,10 @@ func _ready() -> void:
 	sea_mat.set_shader_parameter("glint", field_cfg.glint_intensity)
 	_title.bind(profile, base_cfgs.progress)
 	_tree.bind(profile, base_cfgs.tech, base_cfgs.progress)
+	_manual.bind(field_cfg)   # the manual only needs reduced_motion; fonts are self-made
 	_title.sortie_requested.connect(start_sortie)
 	_title.tree_requested.connect(func() -> void: show_screen("tree"))
+	_title.manual_requested.connect(_open_manual)
 	_tree.back_requested.connect(func() -> void: show_screen("title"))
 	if OS.is_debug_build():
 		_devkit.bind(self)
@@ -92,27 +96,52 @@ func show_screen(next: String) -> void:
 	state = next
 	_title.visible = next == "title"
 	_tree.visible = next == "tree"
+	_manual.visible = next == "manual"
 	_gauges.visible = next == "game"
-	_field.show_ship = next != "tree"   # the attract war shows under the title; the tree keeps open sea
+	# the attract war shows under the title; the tree and manual keep open sea (C13)
+	_field.show_ship = next == "game" or next == "title"
 	_field.queue_redraw()
 	if next == "title":
 		_title.queue_redraw()
 	if next == "tree":
 		_tree.queue_redraw()
+	if next == "manual":
+		_manual.queue_redraw()
 
-# C12 attract: a fresh demo world with the player's own unlocks — the fleet fights itself a
-# little while nobody's driving. Real sim, real waves; never banked, never hinted.
+func _open_manual() -> void:   # title button + M share this door; the manual opens at page one
+	_manual.open()
+	show_screen("manual")
+
+# C12 attract, cranked at the play-test (owner: "tons of shit on screen, max ALL upgrades,
+# invulnerable — JUST for the title"): the demo ship owns the whole tree, can't die, and the
+# director fields a crowded ocean with machines every 3rd wave. Real sim, synthetic helm;
+# never banked, never hinted — start_sortie re-derives honest configs from the profile.
 func _start_attract() -> void:
-	cfgs = Tech.apply(base_cfgs, profile.unlocked)
+	var all_ids: Array = []
+	for n in base_cfgs.tech.catalog:
+		all_ids.append(n.id)
+	cfgs = Tech.apply(base_cfgs, all_ids)
+	cfgs.waves.first_wave_delay = 1.5
+	cfgs.waves.base_budget = 30
+	cfgs.waves.budget_per_wave = 14
+	cfgs.waves.lull_secs = 2.0          # the demo doesn't breathe — the player isn't in it
+	cfgs.waves.spawn_ring_min = 900.0   # arrivals land in frame instead of a horizon away
+	cfgs.waves.spawn_ring_max = 1300.0
+	cfgs.waves.cluster_min = 3          # every bearing at once — the crowded ocean
+	cfgs.bosses.every_n = 2
 	world = GameWorld.new(int(Time.get_ticks_usec()))
+	world.godmode = true
 	_accum = 0.0
 	_attract_wait = 0.0
 	_field.bind(world, field_cfg, cam_cfg, cfgs)
 	_gauges.bind(world, cfgs)
 
 func _step_attract(delta: float) -> void:
+	if world.elapsed > 90.0:   # the invulnerable demo never dies — relaunch before the war
+		_start_attract()        # escalates past what an idle menu should be simulating
+		return
 	if world.run_over:
-		_attract_wait += delta   # let the death play out, then quietly relaunch
+		_attract_wait += delta   # (unreachable under godmode; kept for safety)
 		if _attract_wait > 3.0:
 			_start_attract()
 			return
@@ -200,9 +229,18 @@ func _unhandled_input(event: InputEvent) -> void:
 					start_sortie()
 				elif event.physical_keycode == KEY_T:
 					show_screen("tree")
+				elif event.physical_keycode == KEY_M:
+					_open_manual()
 			"tree":
 				if event.is_action("ui_cancel"):
 					show_screen("title")
+			"manual":
+				if event.is_action("ui_cancel") or event.physical_keycode == KEY_M:
+					show_screen("title")
+				elif event.physical_keycode == KEY_LEFT or event.physical_keycode == KEY_A:
+					_manual.flip(-1)
+				elif event.physical_keycode == KEY_RIGHT or event.physical_keycode == KEY_D:
+					_manual.flip(1)
 
 func _check_hints() -> void:   # C12 contextual drip — mid-fight triggers only, each once per profile
 	if world.run_over:

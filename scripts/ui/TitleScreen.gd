@@ -1,11 +1,13 @@
 class_name TitleScreen
 extends Control
 # The game's front door (C4): propaganda-poster title, commander level + XP bar, BEGIN SORTIE /
-# TECH TREE. Custom-drawn in the plate/brass language; buttons are drawn rects with hit tests.
-# Emits signals; Main owns the state machine. Keyboard: ENTER = sortie, T = tree (Main routes keys).
+# TECH TREE / FIELD MANUAL (C13). Custom-drawn in the plate/brass language; buttons are drawn
+# rects with hit tests. Emits signals; Main owns the state machine. Keyboard: ENTER = sortie,
+# T = tree, M = manual (Main routes keys).
 
 signal sortie_requested
 signal tree_requested
+signal manual_requested
 
 const FOAM := Color(0.894, 0.941, 0.949)
 const RED := Color(0.851, 0.310, 0.169)
@@ -18,6 +20,7 @@ var _sans: Font
 var _mono: Font
 var _btn_sortie := Rect2()
 var _btn_tree := Rect2()
+var _btn_manual := Rect2()
 
 func bind(profile: Profile, pc: ProgressConfig) -> void:
 	_profile = profile
@@ -56,8 +59,8 @@ func _draw() -> void:
 	var cy := size.y * 0.42
 	# C12 play-test: an attract battle runs behind this screen — a quiet scrim keeps the title
 	# legible while the war shows around it
-	draw_rect(Rect2(cx - 300.0, cy - 140.0, 600.0, 372.0), Color(0.02, 0.078, 0.102, 0.72))
-	draw_rect(Rect2(cx - 300.0, cy - 140.0, 600.0, 372.0), Color(0.804, 0.729, 0.557, 0.25), false, 1.0)
+	draw_rect(Rect2(cx - 300.0, cy - 140.0, 600.0, 416.0), Color(0.02, 0.078, 0.102, 0.72))
+	draw_rect(Rect2(cx - 300.0, cy - 140.0, 600.0, 416.0), Color(0.804, 0.729, 0.557, 0.25), false, 1.0)
 	_spaced(cx, cy - 110.0, "★ NAVAL TRIALS BUREAU · RESTRICTED", 10, BRASS_DIM, 3.0)
 	_spaced(cx, cy - 62.0, "EARTH", 52, FOAM, 14.0)
 	_spaced(cx, cy - 6.0, "DEFENSE FORCE", 52, FOAM, 14.0)
@@ -75,12 +78,14 @@ func _draw() -> void:
 	draw_rect(bar, BRASS_DIM, false, 1.0)
 	if lv["next"] > 0:
 		draw_rect(Rect2(bar.position, Vector2(bar.size.x * float(lv["into"]) / float(lv["next"]), bar.size.y)), RED)
-	# buttons
+	# buttons — the manual rides a slim third row so the sortie/tree pair keeps its weight (C13)
 	_btn_sortie = Rect2(cx - 210.0, cy + 128.0, 220.0, 48.0)
 	_btn_tree = Rect2(cx + 30.0, cy + 128.0, 180.0, 48.0)
+	_btn_manual = Rect2(cx - 120.0, cy + 190.0, 240.0, 36.0)
 	_button(_btn_sortie, "BEGIN SORTIE", true)
 	_button(_btn_tree, "TECH TREE", false)
-	_spaced(cx, cy + 208.0, "ENTER — SORTIE     T — TECH TREE", 9, BRASS_DIM, 2.0)
+	_button(_btn_manual, "FIELD MANUAL", false)
+	_spaced(cx, cy + 252.0, "ENTER — SORTIE     T — TECH TREE     M — MANUAL", 9, BRASS_DIM, 2.0)
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -88,3 +93,5 @@ func _gui_input(event: InputEvent) -> void:
 			sortie_requested.emit()
 		elif _btn_tree.has_point(event.position):
 			tree_requested.emit()
+		elif _btn_manual.has_point(event.position):
+			manual_requested.emit()
