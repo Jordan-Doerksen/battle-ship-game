@@ -1,6 +1,7 @@
-# C10 — TACTICAL ZOOM (spec — AT THE GATE)
+# C10 — TACTICAL ZOOM (spec)
 
-> Status: mockup gate. `design/tactical-zoom.html` is the gate artifact (forked from the approved
+> Status: BUILT 2026-07-09 — gate passed "approved as-is", defaults shipped.
+> `design/tactical-zoom.html` is the gate artifact (forked from the approved
 > C9 living-sea machinery, sea locked to the approved preset). This is a **formal Change Request**:
 > the camera was deliberately fixed at 0.85 in C1 (`scenes/Main.tscn`, hardcoded) — this chunk
 > supersedes that with a player-controlled tactical zoom. The owner directive (research-pass

@@ -4,6 +4,27 @@ Chunk log, newest first. Each chunk ships only after it passes the cross-check a
 
 ---
 
+## C10 — TACTICAL ZOOM · 2026-07-09 · Built
+
+The camera got sea room. Formal CR: the C1 hardcoded 0.85 died; `CameraConfig`/`camera.tres`
+rule the view. Owner gate: `design/tactical-zoom.html` approved as-is (defaults shipped).
+App/render only — the sim never sees the camera; probes byte-identical.
+
+- **Wheel zoom 0.40–0.85**, exponential lerp (half-life 0.12 s), sorties boot at **home 0.51**
+  (the owner's judged view), `H` snaps home. Fades key off the wheel TARGET so nothing shimmers
+  mid-lerp. Camera stays ship-centered (the cursor-anchor idea superseded with rationale in the
+  spec — it would fight the C1 ship lock and skew the radar's viewport read).
+- **Stroke compensation**: world-art outline widths hold their 0.85-baseline apparent weight
+  (`×clamp(0.85/zoom, 1, 2.2)`) — hull rim, deck lines, barbettes, turret houses, AA rings,
+  enemy outlines, sub silhouette + ripple tell, tracers, streaks, splash/dye rings, helo. At
+  0.85 the factor is exactly 1: the LOOK-LOCKED view is byte-identical.
+- **Minimum-apparent-size floor** (`enemy_min_px` 10): the smallest hostiles never render under
+  10 px — a GNAT at the floor stays a GNAT, not mush. Inert at 0.85.
+- Glint tune at port fidelity check: envelope/grain thresholds tightened (0.55–0.85 / 0.82–0.94)
+  — the close view was reading snowier than the approved mockup's sparse flecks.
+- `zoom_in`/`zoom_out`/`zoom_home` input actions; `ScreenshotC10` harness (home / floor / max);
+  `ScreenshotC9` re-pointed at the target-zoom path.
+
 ## C9 — THE LIVING SEA · 2026-07-09 · Built
 
 The water learned to move. Owner gate: two directions built as live presets on one mockup

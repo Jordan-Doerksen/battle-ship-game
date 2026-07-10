@@ -35,7 +35,7 @@ func _process(_delta: float) -> void:
 	if t == 260:
 		_shot(OUT + "c9_port_sea.png")
 	if t == 270:
-		main.get_node("Cam").zoom = Vector2(0.4, 0.4)   # the C10 floor preview
+		main._target_zoom = 0.4   # the C10 floor (drive the target — the camera lerps there)
 	if t == 350:
 		_shot(OUT + "c9_port_zoom04.png")
 	if t == 360:

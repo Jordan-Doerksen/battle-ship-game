@@ -65,14 +65,14 @@ static func draw_hull(r: FieldRenderer, rd: Dictionary) -> void:
 			minf(0.55, 0.12 + speed / r._cfgs.movement.max_speed_ahead * 0.5))
 	var closed := PackedVector2Array(r._hull_outline)
 	closed.append(r._hull_outline[0])
-	r.draw_polyline(closed, r.wreck_fade(edge, fade), 2.0 if flick else 1.2, true)
+	r.draw_polyline(closed, r.wreck_fade(edge, fade), r.lw(2.0 if flick else 1.2), true)
 	# deck furniture (mockup rev 3): superstructure, bridge, funnel, helipad, bow jack line
 	r.draw_rect(Rect2(-13, -31, 26, 41), r.wreck_fade(FieldRenderer.DECK, fade))
 	r.draw_rect(Rect2(-8, -43, 16, 12), r.wreck_fade(FieldRenderer.DECK, fade))
 	r.draw_rect(Rect2(-4, -18, 8, 8), r.wreck_fade(Color(0.290, 0.373, 0.408), fade))
-	r.draw_arc(Vector2(0, 65), 14.0, 0.0, TAU, 32, r.wreck_fade(FieldRenderer.STEEL, fade), 1.0, true)
-	r.draw_line(Vector2(-8, 65), Vector2(8, 65), r.wreck_fade(FieldRenderer.STEEL, fade), 1.0)
-	r.draw_line(Vector2(0, -120), Vector2(0, -90), r.wreck_fade(FieldRenderer.STEEL, fade), 1.0)
+	r.draw_arc(Vector2(0, 65), 14.0, 0.0, TAU, 32, r.wreck_fade(FieldRenderer.STEEL, fade), r.lw(1.0), true)
+	r.draw_line(Vector2(-8, 65), Vector2(8, 65), r.wreck_fade(FieldRenderer.STEEL, fade), r.lw(1.0))
+	r.draw_line(Vector2(0, -120), Vector2(0, -90), r.wreck_fade(FieldRenderer.STEEL, fade), r.lw(1.0))
 	r.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 # Bow wave (C9) — two speed-scaled strokes at the stem, drawn inside the hull transform BEFORE
@@ -86,7 +86,7 @@ static func draw_bow_wave(r: FieldRenderer) -> void:
 		var pts := PackedVector2Array()
 		pts.append(Vector2(s * 3.0, -118.0))
 		quad(pts, Vector2(s * 3.0, -118.0), Vector2(s * 12.0, -112.0), Vector2(s * (14.0 + spd01 * 5.0), -94.0), 6)
-		r.draw_polyline(pts, col, 2.0, true)
+		r.draw_polyline(pts, col, r.lw(2.0), true)
 
 # Class-distinct turret art (LOOK-LOCK): L twin-barrel armored turret, M single-gun angular house,
 # S open AA ring. Houses + barrels rotate to the WORLD barrel angle; barbettes stay hull-fixed.
@@ -110,9 +110,9 @@ static func draw_mounts(r: FieldRenderer, rd: Dictionary) -> void:
 		# barbette rings — hull-fixed under the rotating turret
 		r.draw_set_transform(mpos, 0.0, Vector2.ONE)
 		if size == "L":
-			r.draw_arc(Vector2.ZERO, 11.5, 0.0, TAU, 32, Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.25 * fade), 1.5, true)
+			r.draw_arc(Vector2.ZERO, 11.5, 0.0, TAU, 32, Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.25 * fade), r.lw(1.5), true)
 		elif size == "M":
-			r.draw_arc(Vector2.ZERO, 7.5, 0.0, TAU, 24, Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.25 * fade), 1.0, true)
+			r.draw_arc(Vector2.ZERO, 7.5, 0.0, TAU, 24, Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.25 * fade), r.lw(1.0), true)
 		# house + barrels at the world barrel angle (leaning with the roll)
 		r.draw_set_transform(mpos, m.ang + rd["roll"], Vector2.ONE)
 		if size == "L":
@@ -126,7 +126,7 @@ static func draw_mounts(r: FieldRenderer, rd: Dictionary) -> void:
 			lh.append(Vector2(8, 12))
 			r.draw_colored_polygon(lh, house)
 			var lhc := PackedVector2Array(lh); lhc.append(lh[0])
-			r.draw_polyline(lhc, Color(0.039, 0.118, 0.157, 0.55), 1.0, true)
+			r.draw_polyline(lhc, Color(0.039, 0.118, 0.157, 0.55), r.lw(1.0), true)
 			r.draw_rect(Rect2(-10, 3, 3, 2.4), r.wreck_fade(FieldRenderer.STEEL, fade))     # rangefinder ears
 			r.draw_rect(Rect2(7, 3, 3, 2.4), r.wreck_fade(FieldRenderer.STEEL, fade))
 		elif size == "M":
@@ -138,10 +138,10 @@ static func draw_mounts(r: FieldRenderer, rd: Dictionary) -> void:
 			])
 			r.draw_colored_polygon(mh, house)
 			var mhc := PackedVector2Array(mh); mhc.append(mh[0])
-			r.draw_polyline(mhc, Color(0.039, 0.118, 0.157, 0.55), 1.0, true)
+			r.draw_polyline(mhc, Color(0.039, 0.118, 0.157, 0.55), r.lw(1.0), true)
 		else:
 			var ring := r.wreck_fade(Color(0.690, 0.537, 0.408) if forced else Color(0.494, 0.576, 0.612), fade)
-			r.draw_arc(Vector2.ZERO, 5.5, 0.0, TAU, 20, ring, 1.2, true)                  # open ring mount
+			r.draw_arc(Vector2.ZERO, 5.5, 0.0, TAU, 20, ring, r.lw(1.2), true)             # open ring mount
 			for bx in [-1.5, 1.5]:
 				r.draw_rect(Rect2(bx - 0.55, -2.0 - 11.0 + rec * 2.0, 1.1, 11.0), r.wreck_fade(FieldRenderer.STEEL, fade))
 			r.draw_circle(Vector2(0, 2.2), 2.6, house)                                    # pedestal + tub
@@ -164,9 +164,9 @@ static func draw_helo(r: FieldRenderer) -> void:
 		# dip ring pulse: the ears in the water
 		var k: float = fmod(now * 0.0006, 1.0)
 		r.draw_arc(hp, maxf(0.5, r._cfgs.airwing.dip_radius * k), 0.0, TAU, 48,
-			Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.18 * (1.0 - k)), 1.2, true)
+			Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.18 * (1.0 - k)), r.lw(1.2), true)
 		r.draw_arc(hp, r._cfgs.airwing.dip_radius, 0.0, TAU, 48,
-			Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.10), 1.0, true)
+			Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.10), r.lw(1.0), true)
 	var body: Color = Color(0.353, 0.439, 0.478) if airborne else Color(0.278, 0.345, 0.373)
 	r.draw_set_transform(hp, w.helo_heading, Vector2(0.52, 1.0))
 	r.draw_circle(Vector2(0, 1), 6.5, body)                       # fuselage (ellipse via scale)
@@ -175,9 +175,9 @@ static func draw_helo(r: FieldRenderer) -> void:
 	r.draw_rect(Rect2(-2.6, 12, 5.2, 1.6), FieldRenderer.STEEL)   # tail rotor bar
 	r.draw_circle(Vector2(0, -2.2), 1.5, Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.75))   # canopy glint
 	var spin: float = now * (0.045 if airborne else 0.006)        # idle turn on the pad
-	r.draw_arc(Vector2.ZERO, 11.0, 0.0, TAU, 24, Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.14), 1.0, true)
+	r.draw_arc(Vector2.ZERO, 11.0, 0.0, TAU, 24, Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.14), r.lw(1.0), true)
 	r.draw_line(Vector2(cos(spin), sin(spin)) * 11.0, Vector2(-cos(spin), -sin(spin)) * 11.0,
-		Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.55), 1.4)
+		Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.55), r.lw(1.4))
 	r.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	if not airborne and w.helo_rearm > 0.0:                       # rearm progress arc over the pad
 		var kk: float = 1.0 - w.helo_rearm / maxf(r._cfgs.airwing.turnaround_secs, 0.001)

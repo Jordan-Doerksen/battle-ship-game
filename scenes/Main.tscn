@@ -32,7 +32,6 @@ mouse_filter = 2
 script = ExtResource("2")
 
 [node name="Cam" type="Camera2D" parent="."]
-zoom = Vector2(0.85, 0.85)
 
 [node name="HUD" type="CanvasLayer" parent="."]
 

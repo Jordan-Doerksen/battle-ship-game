@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CameraConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://config/CameraConfig.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+zoom_min = 0.4
+zoom_max = 0.85
+zoom_home = 0.51
+wheel_step = 1.18
+lerp_half_life = 0.12
+enemy_min_px = 10.0
+stroke_comp = true

@@ -64,10 +64,10 @@ void fragment() {
 	// high-frequency grain thresholded near its peaks makes the catches TINY (the mockup's 3-px
 	// flecks, per-pixel). Soft edges, never hard sparkle; the whole layer fades with the C10 zoom.
 	if (glint > 0.02) {
-		float env = smoothstep(0.45, 0.72, vnoise(world * 0.012 + vec2(sea_time * 0.55, sea_time * 0.40)));
+		float env = smoothstep(0.55, 0.85, vnoise(world * 0.012 + vec2(sea_time * 0.55, sea_time * 0.40)));
 		float grain = vnoise(world * 0.09 + vec2(-sea_time * 0.45, sea_time * 0.35) * 4.0);
-		float m = smoothstep(0.78, 0.92, grain) * env * glint * hf_fade;
-		col = mix(col, FOAM, m * 0.45);
+		float m = smoothstep(0.82, 0.94, grain) * env * glint * hf_fade;
+		col = mix(col, FOAM, m * 0.4);
 	}
 	COLOR = vec4(col, 1.0);
 }

@@ -120,13 +120,21 @@ tables incl. `reduced_motion` (the law). **`FieldRenderer` split** into `SeaRend
 fails on SHADER ERROR too; `ScreenshotC9` proves sea / zoom floor / reduced motion. Spec:
 `docs/specs/living-sea.md`. Probes stay byte-identical — the render-only proof.
 
-**The founding brief is SYSTEMS-COMPLETE; the rest of the polish arc (owner-approved 2026-07-09,
-directive recorded verbatim in the DECISIONS Change Log):**
-C10 TACTICAL ZOOM (~2× out; camera goes to config; formal CR; the owner already lives at ~0.51)
-→ C11 LONG-RANGE FIRE CONTROL (burst-at-cursor + fall-of-shot feedback; formal CR; the deaf-deep
+**C10 — TACTICAL ZOOM is BUILT (2026-07-09):** gate approved as-is (`design/tactical-zoom.html`).
+Wheel zoom 0.40–0.85, sorties boot at home 0.51, `H` snaps home; `CameraConfig`/`camera.tres`
+(the C1 hardcode is dead — formal CR complete); ship-centered camera retained (cursor-anchor
+superseded with rationale, spec §2); stroke compensation through all render helpers (×1 at 0.85 —
+LOOK-LOCK intact); 10 px min-size floor on hostiles; sim camera-blind, probes byte-identical.
+Spec: `docs/specs/tactical-zoom.md`; `ScreenshotC10` harness.
+
+**The founding brief is SYSTEMS-COMPLETE; the rest of the arc (owner-approved 2026-07-09,
+directives recorded verbatim in the DECISIONS Change Log):**
+CREWED GUNS (owner directive + locked interview: the S mounts become burst-fire person-manned
+MGs with the door-gunner reach-roll stitching, air+surface, planes get scarier by design) →
+C11 LONG-RANGE FIRE CONTROL (burst-at-cursor + fall-of-shot feedback; formal CR; the deaf-deep
 law is explicitly untouched) → C12 READABILITY & FEEL (scope legibility, pause, onboarding,
 minimal procedural SFX on the existing effect events). Each chunk still runs interview → spec →
-mockup → port. Remaining open threads are narrative/naming only: #1 water-mystery payoff,
+gate → port. Remaining open threads are narrative/naming only: #1 water-mystery payoff,
 #4 working-title trademark check. New systems beyond the arc (a win mode? new hulls? D1.12 says
 one hull until revisited) start with fresh `/spec-feature` interviews.
 

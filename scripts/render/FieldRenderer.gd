@@ -36,6 +36,7 @@ const FX_LIFE := {
 
 var _world: GameWorld
 var _field_cfg: FieldConfig
+var _cam_cfg: CameraConfig
 var _cfgs: Configs
 var _flecks: Array = []
 var _wake: Array = []
@@ -50,10 +51,12 @@ var _death_ms: int = -1                      # when the shipdeath effect landed 
 var show_ship: bool = true                   # Main clears it behind the title/tree screens (C4)
 var sea_t: float = 0.0                       # the render sea clock — Main pushes it (frozen under
                                              # reduced motion; never the sim clock, cosmetics only)
+var target_zoom: float = 0.51                # C10: Main pushes the wheel TARGET — fades key off it
 
-func bind(world: GameWorld, field_cfg: FieldConfig, cfgs: Configs) -> void:
+func bind(world: GameWorld, field_cfg: FieldConfig, cam_cfg: CameraConfig, cfgs: Configs) -> void:
 	_world = world
 	_field_cfg = field_cfg
+	_cam_cfg = cam_cfg
 	_cfgs = cfgs
 	_build_flecks()
 	_hull_outline = ShipRender.build_hull_outline()
@@ -132,6 +135,19 @@ func view_rect() -> Rect2:
 func zoom() -> float:
 	var cam := get_viewport().get_camera_2d()
 	return cam.zoom.x if cam != null else 1.0
+
+# C10 stroke compensation: world-art outline widths hold their 0.85-baseline apparent weight
+# under zoom-out (identical to the LOOK-LOCKED view at 0.85; capped so nothing turns to rope).
+func lw(w: float) -> float:
+	if _cam_cfg == null or not _cam_cfg.stroke_comp:
+		return w
+	return w * clampf(0.85 / zoom(), 1.0, 2.2)
+
+# C10 minimum-apparent-size floor: the smallest hostiles never render under enemy_min_px.
+func size_floor(world_len: float) -> float:
+	if _cam_cfg == null:
+		return 1.0
+	return maxf(1.0, _cam_cfg.enemy_min_px / maxf(world_len * zoom(), 0.001))
 
 func wreck_alpha() -> float:
 	if not _world.run_over or _death_ms < 0:

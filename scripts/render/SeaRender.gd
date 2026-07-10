@@ -36,7 +36,7 @@ static func draw_flecks(r: FieldRenderer) -> void:
 	var cfg: FieldConfig = r._field_cfg
 	var tile: float = cfg.field_tile
 	var cam_pos: Vector2 = r._world.ship_pos
-	var fade: float = 0.45 + 0.55 * hf_fade(r.zoom())
+	var fade: float = 0.45 + 0.55 * hf_fade(r.target_zoom)
 	var bias: float = cfg.crest_bias
 	for f in r._flecks:
 		var wx: float = fposmod(f["x"] - cam_pos.x + tile * 0.5, tile) - tile * 0.5 + cam_pos.x
@@ -77,7 +77,7 @@ static func step_streaks(r: FieldRenderer) -> void:
 
 static func draw_streaks(r: FieldRenderer) -> void:
 	var cfg: FieldConfig = r._field_cfg
-	var fade: float = (0.45 + 0.55 * hf_fade(r.zoom())) * cfg.crest_streaks
+	var fade: float = (0.45 + 0.55 * hf_fade(r.target_zoom)) * cfg.crest_streaks
 	var i: int = r._streaks.size() - 1
 	while i >= 0:
 		var s: Dictionary = r._streaks[i]
@@ -97,7 +97,7 @@ static func draw_streaks(r: FieldRenderer) -> void:
 				var p0: Vector2 = s["pos"] - d * half
 				var p1: Vector2 = s["pos"] + d * half
 				pts.append(p0.lerp(mid, t).lerp(mid.lerp(p1, t), t))
-			r.draw_polyline(pts, Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, a), 1.3, true)
+			r.draw_polyline(pts, Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, a), r.lw(1.3), true)
 		i -= 1
 
 # Wake (C9): prop churn + widening V shoulders that drift outboard — persistent churned foam.

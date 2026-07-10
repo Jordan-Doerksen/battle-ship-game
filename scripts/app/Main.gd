@@ -8,6 +8,7 @@ extends Node2D
 var world: GameWorld
 var sim_cfg: SimConfig
 var field_cfg: FieldConfig
+var cam_cfg: CameraConfig
 var base_cfgs: Configs
 var cfgs: Configs
 var profile: Profile
@@ -19,6 +20,7 @@ var _banked: bool = false
 var _banked_xp: int = 0           # this run's XP already in the profile (posthumous kills bank the delta)
 var _level_before_bank: int = 1   # career level when this run's banking began (for the LEVEL UP line)
 var _sea_t: float = 0.0           # the C9 sea clock — cosmetic, frozen under reduced motion
+var _target_zoom: float = 0.51    # C10: the wheel drives this; the camera lerps toward it
 @onready var _field: FieldRenderer = $Field
 @onready var _cam: Camera2D = $Cam
 @onready var _sea: ColorRect = $SeaLayer/Sea
@@ -34,6 +36,11 @@ func _ready() -> void:
 	field_cfg = load("res://config/field.tres") as FieldConfig
 	if field_cfg == null:
 		field_cfg = FieldConfig.new()
+	cam_cfg = load("res://config/camera.tres") as CameraConfig
+	if cam_cfg == null:
+		cam_cfg = CameraConfig.new()
+	_target_zoom = cam_cfg.zoom_home
+	_cam.zoom = Vector2.ONE * _target_zoom   # C10: the .tscn hardcode died; config rules the camera
 	base_cfgs = Configs.load_all()
 	profile = Profile.load_profile()
 	_step = 1.0 / float(sim_cfg.sim_hz)
@@ -56,7 +63,7 @@ func _ready() -> void:
 	# a quiet world idles behind the menus (never stepped until a sortie starts)
 	cfgs = Tech.apply(base_cfgs, profile.unlocked)
 	world = GameWorld.new(0)
-	_field.bind(world, field_cfg, cfgs)
+	_field.bind(world, field_cfg, cam_cfg, cfgs)
 	_gauges.bind(world, cfgs)
 	show_screen("title")
 
@@ -79,8 +86,9 @@ func start_sortie() -> void:
 	world = GameWorld.new(int(Time.get_ticks_usec()))
 	_accum = 0.0
 	_banked = false
+	_target_zoom = cam_cfg.zoom_home   # sorties start at the home view (C10 gate)
 	_gauges.lost_report = {}
-	_field.bind(world, field_cfg, cfgs)
+	_field.bind(world, field_cfg, cam_cfg, cfgs)
 	_gauges.bind(world, cfgs)
 	show_screen("game")
 
@@ -112,7 +120,7 @@ func toggle_god_guns() -> void:   # DEV kit: rebuild the derived configs so the 
 	cfgs = Tech.apply(base_cfgs, profile.unlocked)
 	if god_guns:
 		_apply_god_guns()
-	_field.bind(world, field_cfg, cfgs)
+	_field.bind(world, field_cfg, cam_cfg, cfgs)
 	_gauges.bind(world, cfgs)
 
 func dev_max_level() -> void:     # DEV kit: enough XP for the whole tree, computed from the catalog
@@ -141,14 +149,27 @@ func _update_sea(delta: float) -> void:   # C9: one-way render plumbing, runs in
 	if not field_cfg.reduced_motion:       # the water lives behind the menus too
 		_sea_t += delta
 	_field.sea_t = _sea_t
+	_field.target_zoom = _target_zoom      # C10: fades key off the TARGET so nothing shimmers mid-lerp
 	var mat: ShaderMaterial = _sea.material
 	mat.set_shader_parameter("sea_time", _sea_t)
 	mat.set_shader_parameter("cam_pos", world.ship_pos if world != null else Vector2.ZERO)
 	mat.set_shader_parameter("zoom", _cam.zoom.x)
 	mat.set_shader_parameter("viewport_size", get_viewport_rect().size)
-	mat.set_shader_parameter("hf_fade", SeaRender.hf_fade(_cam.zoom.x))
+	mat.set_shader_parameter("hf_fade", SeaRender.hf_fade(_target_zoom))
+
+func _update_camera(delta: float) -> void:   # C10 tactical zoom — app/render only, sim-blind
+	if state == "game":
+		if Input.is_action_just_pressed("zoom_in"):
+			_target_zoom = clampf(_target_zoom * cam_cfg.wheel_step, cam_cfg.zoom_min, cam_cfg.zoom_max)
+		if Input.is_action_just_pressed("zoom_out"):
+			_target_zoom = clampf(_target_zoom / cam_cfg.wheel_step, cam_cfg.zoom_min, cam_cfg.zoom_max)
+		if Input.is_action_just_pressed("zoom_home"):
+			_target_zoom = clampf(cam_cfg.zoom_home, cam_cfg.zoom_min, cam_cfg.zoom_max)
+	var k: float = 1.0 - pow(0.5, delta / maxf(cam_cfg.lerp_half_life, 0.001))
+	_cam.zoom = _cam.zoom.lerp(Vector2.ONE * _target_zoom, k)
 
 func _process(delta: float) -> void:
+	_update_camera(delta)
 	_update_sea(delta)
 	if state != "game":
 		_field.queue_redraw()   # foam keeps drifting under the title/tree screens

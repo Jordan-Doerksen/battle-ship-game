@@ -64,11 +64,11 @@ static func draw_splash_water(r: FieldRenderer) -> void:
 		var grow: float = 1.0 if cfg.reduced_motion else 0.75 + 0.35 * minf(age / 0.6, 1.0)
 		var fa: float = 0.34 * pow(1.0 - age / foam_life, 1.3)
 		r.draw_circle(sp["pos"], rf * grow, Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, fa * 0.8))
-		r.draw_arc(sp["pos"], rf * grow, 0.0, TAU, 40, Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, fa), 1.4, true)
+		r.draw_arc(sp["pos"], rf * grow, 0.0, TAU, 40, Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, fa), r.lw(1.4), true)
 		if cfg.splash_dye and not sp["hostile"] and DYE.has(sp["kind"]) and age < foam_life * 0.4:
 			var dye: Color = DYE[sp["kind"]]
 			r.draw_arc(sp["pos"], rf * grow * 0.82, 0.0, TAU, 40,
-				Color(dye.r, dye.g, dye.b, dye.a * (1.0 - age / (foam_life * 0.4))), 2.0, true)
+				Color(dye.r, dye.g, dye.b, dye.a * (1.0 - age / (foam_life * 0.4))), r.lw(2.0), true)
 		if not cfg.reduced_motion:
 			# (2) sun-opposite shadow, offset tracking column height
 			var h: float = col_h(k, age)
@@ -98,7 +98,7 @@ static func draw_splash_plumes(r: FieldRenderer) -> void:
 			r.draw_circle(sp["pos"] + FieldRenderer.SUN_DIR * rf * 0.15, rf * 0.42 * h, col)
 			r.draw_circle(sp["pos"] + FieldRenderer.SUN_DIR * rf * 0.30 + Vector2(0, -rf * 0.12 * h), rf * 0.26 * h, col)
 			if cfg.splash_dye and not sp["hostile"] and DYE.has(sp["kind"]):
-				r.draw_arc(sp["pos"], rf * 0.72 * h, 0.0, TAU, 32, DYE[sp["kind"]], 2.0, true)
+				r.draw_arc(sp["pos"], rf * 0.72 * h, 0.0, TAU, 32, DYE[sp["kind"]], r.lw(2.0), true)
 		if age < 0.9:                    # (4) droplets: fly out, stop, fade
 			var kk: float = minf(age / 0.5, 1.0)
 			var eased: float = 1.0 - (1.0 - kk) * (1.0 - kk)
@@ -120,24 +120,24 @@ static func draw_projectiles(r: FieldRenderer) -> void:
 				r.draw_circle(p.pos - u * (wk * 14.0), 1.6 + wk * 0.35,
 					Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.5 - wk * 0.05))
 			r.draw_circle(p.pos, 3.0, Color(0.094, 0.165, 0.212, 0.95))
-			r.draw_arc(p.pos, 3.0, 0.0, TAU, 16, Color(0.914, 0.404, 0.259, 0.8), 1.0, true)
+			r.draw_arc(p.pos, 3.0, 0.0, TAU, 16, Color(0.914, 0.404, 0.259, 0.8), r.lw(1.0), true)
 		elif p.wid == "dc":      # C5: charge shrinking + spreading ring as it sinks on its fuse
 			var sink: float = 1.0 - p.life / maxf(r._cfgs.sonar.dc_fuse, 0.001)
 			r.draw_circle(p.pos, 3.5 - sink * 2.0, Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.7 - sink * 0.5))
 			r.draw_arc(p.pos, 5.0 + sink * 6.0, 0.0, TAU, 20,
 				Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.3 - sink * 0.2), 1.0, true)
 		elif p.wid == "doorgun":   # C6: door-gun tracer — thin, hot, wild
-			r.draw_line(tail, p.pos, Color(FieldRenderer.FLASH.r, FieldRenderer.FLASH.g, FieldRenderer.FLASH.b, 0.75), 1.0)
+			r.draw_line(tail, p.pos, Color(FieldRenderer.FLASH.r, FieldRenderer.FLASH.g, FieldRenderer.FLASH.b, 0.75), r.lw(1.0))
 		elif p.hostile:
-			r.draw_line(tail, p.pos, Color(0.914, 0.404, 0.259, 0.95), 2.0)
+			r.draw_line(tail, p.pos, Color(0.914, 0.404, 0.259, 0.95), r.lw(2.0))
 			r.draw_circle(p.pos, 2.4, Color(0.914, 0.404, 0.259, 0.95))
 		elif p.splash > 0.0:
 			r.draw_circle(p.pos, 2.6, Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.95))
-			r.draw_line(tail, p.pos, Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.35), 2.0)
+			r.draw_line(tail, p.pos, Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.35), r.lw(2.0))
 		elif p.wid == "aa20":
-			r.draw_line(tail, p.pos, Color(0.804, 0.729, 0.557, 0.9), 1.2)
+			r.draw_line(tail, p.pos, Color(0.804, 0.729, 0.557, 0.9), r.lw(1.2))
 		else:
-			r.draw_line(tail, p.pos, Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.85), 1.2)
+			r.draw_line(tail, p.pos, Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.85), r.lw(1.2))
 
 static func draw_fx(r: FieldRenderer) -> void:
 	var now: int = Time.get_ticks_msec()

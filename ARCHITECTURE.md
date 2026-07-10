@@ -48,7 +48,7 @@ hardcoded (DECISIONS Non-Negotiable Constraints).
 
 | Domain | Purpose | Entry Point | Config | Notes |
 |--------|---------|-------------|--------|-------|
-| app | root scene, loop plumbing, state machine, meta layer | `scripts/app/Main.gd` + `scenes/Main.tscn` | — | `Profile` (save file), `Tech` (config derivation + spend rules); owns no gameplay |
+| app | root scene, loop plumbing, state machine, meta layer | `scripts/app/Main.gd` + `scenes/Main.tscn` | `config/camera.tres` (C10 tactical zoom — wheel 0.40–0.85, home 0.51; sim is camera-blind) | `Profile` (save file), `Tech` (config derivation + spend rules); owns no gameplay; feeds the sea shader + camera one-way |
 | engine (sim) | the deterministic step root | `scripts/engine/Sim.gd` | `config/sim.tres` (clock only) | fixed-step; calls systems in a locked order (Movement first) |
 | engine/data | the world truth object + input snapshot + config bundle | `scripts/engine/data/` | `config/*.tres` (one small file per system — see DECISIONS Non-Negotiable Constraints) | `GameWorld`, `InputState`, `Configs` |
 | engine/systems | sim systems — static funcs that mutate `GameWorld` | `scripts/engine/systems/` | each reads its own config | `Movement` (C1); `Turrets`/`Projectiles` (C2: `hardpoint`/`weapons.tres`); `Waves`/`Enemies`/`Hull` (C3: `waves`/`enemies.tres`); `Sonar`/`DepthCharges` (C5: `sonar.tres`); `AirWing` (C6: `airwing.tres`); `Bosses` (C7: `bosses.tres`) |

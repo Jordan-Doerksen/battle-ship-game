@@ -231,17 +231,29 @@ treated as locked:
   probe-gated, no design changes.
 - **C9 — THE LIVING SEA.** BUILT 2026-07-09 (see Change Log): HEAVY WEATHER approved at the
   mockup gate; sea shader + ride + splash columns, render-only, probes byte-identical.
-- **C10–C12 — the rest of the polish arc (owner-approved 2026-07-09, see Change Log for the
-  directive):** C10 TACTICAL ZOOM (~2× out, camera config; formal CR; owner judged the sea at
-  zoom 0.51 — make the wide view home) → C11 LONG-RANGE FIRE CONTROL (burst-at-cursor +
-  fall-of-shot feedback; formal CR; deaf-deep law untouched) → C12 READABILITY & FEEL (scope
-  legibility, pause, onboarding, minimal SFX). Each chunk still gets its own spec interview +
-  mockup gate before port. Remaining founding threads are narrative/naming only (#1
-  water-mystery, #4 working title).
+- **C10 — TACTICAL ZOOM.** BUILT 2026-07-09 (see Change Log): approved as-is; wheel 0.40–0.85,
+  home 0.51, camera in config, sim camera-blind.
+- **Next — the rest of the arc (owner-approved 2026-07-09):** CREWED GUNS (owner directive +
+  locked interview, see Change Log — burst-fire crewed MGs on the S mounts, air+surface) →
+  C11 LONG-RANGE FIRE CONTROL (burst-at-cursor + fall-of-shot feedback; formal CR; deaf-deep
+  law untouched) → C12 READABILITY & FEEL (scope legibility, pause, onboarding, minimal SFX).
+  Each chunk still gets its own spec interview + gate. Remaining founding threads are
+  narrative/naming only (#1 water-mystery, #4 working title).
 
 ---
 
 ## Change Log
+- **2026-07-09 — C10 TACTICAL ZOOM built; the C1 fixed camera formally superseded (CR complete).**
+  Gate: `design/tactical-zoom.html` approved as-is, defaults shipped. New `CameraConfig.gd`/
+  `camera.tres` (zoom 0.40–0.85, home 0.51, wheel step 1.18, lerp half-life 0.12 s, enemy floor
+  10 px, stroke comp on); the `.tscn` hardcode removed; `zoom_in`/`zoom_out`/`zoom_home` input
+  actions. Sorties boot at home; fades key off the wheel target. **Ship-centered camera retained
+  — the directive's "cursor-anchored" detail superseded with rationale** (would fight the C1
+  ship lock and skew the radar's viewport-extent read; spec §2). Stroke compensation routed
+  through all render helpers (×1 exactly at 0.85 — the LOOK-LOCK view byte-identical);
+  min-apparent-size floor on hostiles. App/render only, sim camera-blind, probes byte-identical.
+  Glint shader thresholds tightened at the port fidelity check (the 0.85 view read snowier than
+  the approved mockup). `ScreenshotC10` harness; C9's harness re-pointed at the target-zoom path.
 - **2026-07-09 — Owner directive (mid-C10, recorded verbatim per the C4 CR template): CREWED
   GUNS.** "Whatever that little strafe fire is we need to add that into the game, it looks so
   good — let's find an excuse to use it. The AA guns feel a little powerful 'cause there's so
