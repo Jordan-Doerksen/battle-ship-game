@@ -150,11 +150,23 @@ dashed DC arm ring + rack dial. Flow: `P` pause (the war waits, the sea doesn't)
 card, five once-per-profile drip hints (`Profile.seen_hints`). Render: wounded tells. Spec:
 `docs/specs/readability-feel.md`.
 
-**The founding brief is SYSTEMS-COMPLETE and the 2026-07-09 polish directive fully discharged**
-(C8 bugs · C9 living sea · C10 tactical zoom · CREWED GUNS · C11 fire control · C12 feel).
-Remaining open threads are narrative/naming only: #1 water-mystery payoff, #4 working-title
-trademark check. New systems (a win mode? new hulls? D1.12 says one hull until revisited)
-start with fresh `/spec-feature` interviews.
+**THE POLISH ARC (C8–C12) and THE WORLD ARC (C14–C16) are BOTH COMPLETE (2026-07-10), plus the
+AIR THREAT rework:**
+- **C13** FIELD MANUAL (nine live-vignette pages, `M`) + the show-off attract (full tree, godmode).
+- **C14** THE HULL — ×2.75, art + capsule together.
+- **AIR THREAT** — VULTURE is a torpedo bomber; the WASP rocket plane joined the roster
+  (`EnemyDef.salvo`). Fixed "AFK to a boss."
+- **C15** THE WATERS — seeded archipelagos (`Terrain.gd`/`terrain.tres`), the land-rule blocking
+  matrix, sliding collision + grind pips, waterborne avoidance, `probe_terrain`.
+- **C16** THE WAR, REPACKED — the formation/echelon director (`WaveConfig.templates()`,
+  vanguard/main/sting, real quiet, lanes + ambushes), composition on a `(seed, wave)` substream
+  (zero director `world.rng`). Superseded the C3 greedy spend. Spec: `docs/specs/the-war-repacked.md`.
+
+**The founding brief is SYSTEMS-COMPLETE; the 2026-07-09 polish directive and the 2026-07-10
+world-arc directive are both fully discharged.** Remaining open threads are narrative/naming
+only: #1 water-mystery payoff, #4 working-title trademark check. Housekeeping CR on deck:
+`HelmGauges.gd` is past the 500-line split guide. New systems (a win mode? new hulls? D1.12 says
+one hull until revisited) start with fresh `/spec-feature` interviews.
 
 ## 3. Tree layout
 

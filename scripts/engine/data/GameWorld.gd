@@ -29,8 +29,14 @@ var hull: int = -1                       # pips; -1 = uninitialized, Waves.step 
 var grace_until: float = 0.0             # post-hit invulnerability end time (Hull.gd)
 var run_over: bool = false               # hull reached 0 — Main shows the card and restarts
 var wave: int = 0
-var wave_state: String = "lull"          # lull | fighting
+var wave_state: String = "lull"          # lull | fighting  (C16: "lull" IS the real quiet — Waves.gd holds it for quiet_secs)
 var lull_until: float = -1.0             # -1 = arm from first_wave_delay on the first step
+# C16 THE WAR, REPACKED (Waves.gd) — the composed wave lands in time-ordered echelons, so the plan
+# and its drain state must survive across ticks, and the HUD reads the echelon shape off the world.
+var wave_started: float = 0.0            # elapsed when the current wave began — HUD lights echelons by (elapsed - wave_started)
+var wave_queue: Array = []               # time-ordered spawn entries { rel,type,bearing,ring,ox,oy,feat,seq } drained over the fight
+var wave_lines: Dictionary = {}          # HUD wave plate: { "vanguard":Array[String], "main":…, "sting":… } collapsed formation labels ("×N" dedup)
+var wave_ech_rel: Dictionary = {}        # HUD echelon clock: { "vanguard":0.0, "main":r, "sting":r } normalized landing times (earliest = 0)
 var xp_run: int = 0                      # XP earned this sortie (C4); Main banks it into the Profile
 var crash_until: float = -1.0            # CRASH TURN window end (marquee; Movement.gd)
 var crash_ready: float = 0.0             # CRASH TURN cooldown gate

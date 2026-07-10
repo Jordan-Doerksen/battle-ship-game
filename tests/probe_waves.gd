@@ -1,7 +1,10 @@
 extends SceneTree
-# C3 acceptance probe (docs/specs/wave-director.md §Acceptance) — mirrors the validation harness that
-# ran against the approved mockup: determinism through real combat, the budget director's exact
-# spend + unlock milestones, the wave lifecycle, hull damage + grace, gunboat behavior, and run end.
+# C16 THE WAR, REPACKED acceptance probe (docs/specs/the-war-repacked.md §3) — re-targets the C3
+# suite onto the echelon/formation director: determinism through real combat (composition now rides a
+# per-wave substream, so world.rng.calls re-baselines but two-world byte-identity holds), the exact
+# budget spend read off the composed PLAN (singles fill), the wave lifecycle on the REAL QUIET,
+# hull damage + grace, gunboat standoff, run end, the AIR THREAT (VULTURE torpedo + WASP salvo), and
+# the four C16 gates: formation cohesion, echelon separation, same-seed reproduction, ambush validity.
 
 const DT: float = 1.0 / 60.0
 
@@ -31,10 +34,12 @@ func _initialize() -> void:
 	fails += _check(same and wa.rng.calls == wb.rng.calls,
 		"determinism: 3600 ticks byte-identical (wave %d, hull %d, kills %d, rng.calls %d)" % [wa.wave, wa.hull, wa.kills, wa.rng.calls])
 
-	# 2+3 — budget honored / unlocks / lifecycle over six waves
+	# 2+3 — budget honored / unlocks / lifecycle over six waves. C16: the wave lands in ECHELONS over
+	# time, so the exact spend is read off the composed PLAN (wave_queue at the flip), not live enemies;
+	# the between-wave breather is now the REAL QUIET (quiet_secs).
 	var c2 := Configs.defaults()
-	c2.bosses.every_n = 0   # isolate the C3 director — the C7 ladder has its own probe
-	c2.waves.lull_secs = 1.0
+	c2.bosses.every_n = 0   # isolate the C16 director — the C7 ladder has its own probe
+	c2.waves.quiet_secs = 1.0
 	c2.waves.first_wave_delay = 0.5
 	c2.waves.hull_pips = 100000
 	for wdef in c2.weapons.catalog:
@@ -43,26 +48,26 @@ func _initialize() -> void:
 	var costs: Array[int] = []
 	var unlock_ok: bool = true
 	var seq_ok: bool = true
-	var lull_durs: Array[float] = []
+	var quiet_durs: Array[float] = []
 	var last_state: String = "lull"
-	var lull_start: float = -1.0
+	var quiet_start: float = -1.0
 	for i in range(60 * 600):
 		Sim.step(w2, DT, c2)
 		w2.effects.clear()
 		if last_state == "lull" and w2.wave_state == "fighting":
 			var cost: int = 0
-			for e in w2.enemies:
-				var d: EnemyDef = c2.enemies.by_id(e.type_id)
+			for entry in w2.wave_queue:                 # the whole wave's plan: templates + singles
+				var d: EnemyDef = c2.enemies.by_id(entry["type"])
 				cost += d.cost
 				if w2.wave < d.unlock:
 					unlock_ok = false
 			costs.append(cost)
 			if w2.wave != costs.size():
 				seq_ok = false
-			if lull_start >= 0.0 and w2.wave > 1:
-				lull_durs.append(w2.elapsed - lull_start)
+			if quiet_start >= 0.0 and w2.wave > 1:
+				quiet_durs.append(w2.elapsed - quiet_start)
 		if last_state == "fighting" and w2.wave_state == "lull":
-			lull_start = w2.elapsed
+			quiet_start = w2.elapsed
 		last_state = w2.wave_state
 		if costs.size() >= 6:
 			break
@@ -70,12 +75,12 @@ func _initialize() -> void:
 	for i in range(costs.size()):
 		if costs[i] != c2.waves.base_budget + c2.waves.budget_per_wave * i:
 			budget_ok = false
-	var lull_ok: bool = lull_durs.size() > 0
-	for d in lull_durs:
-		if absf(d - c2.waves.lull_secs) > 0.1:
-			lull_ok = false
+	var quiet_ok: bool = quiet_durs.size() > 0
+	for d in quiet_durs:
+		if absf(d - c2.waves.quiet_secs) > 0.1:
+			quiet_ok = false
 	fails += _check(budget_ok and unlock_ok, "budget+unlocks: six waves spent exactly (%s); no type before its unlock" % str(costs))
-	fails += _check(seq_ok and lull_ok, "lifecycle: waves 1..6 in order; lulls within 0.1s of %.1fs" % c2.waves.lull_secs)
+	fails += _check(seq_ok and quiet_ok, "lifecycle: waves 1..6 in order; quiets within 0.1s of %.1fs" % c2.waves.quiet_secs)
 
 	# 4 — damage + grace: contact costs 1 pip; a second inside grace costs nothing; after grace it costs
 	var c4 := _disarmed()
@@ -173,6 +178,121 @@ func _initialize() -> void:
 	fails += _check(torps7 >= 1 and klaxon7 >= 1 and rockets7 == wasp_def.salvo,
 		"AIR THREAT: VULTURE dropped %d torpedo(s) (%d klaxon); WASP rippled %d rocket(s) (salvo %d)"
 		% [torps7, klaxon7, rockets7, wasp_def.salvo])
+
+	# 8 — formation cohesion: a formation's members share ONE anchor bearing and arrive together (rel
+	#     equal), spread by its shape. Wave 1 at budget 5 buys exactly one GNAT SWARM (5 swarmers, wedge).
+	var c8 := Configs.defaults()
+	c8.bosses.every_n = 0
+	c8.waves.base_budget = 5
+	c8.waves.budget_per_wave = 0
+	var w8 := GameWorld.new(50)
+	w8.wave = 1
+	Waves._begin_wave(w8, c8)
+	var q8: Array = w8.wave_queue
+	var cohesion_ok: bool = q8.size() == 5
+	var b8: float = float(q8[0]["bearing"]) if q8.size() > 0 else 0.0
+	var r8: float = float(q8[0]["rel"]) if q8.size() > 0 else -1.0
+	var spread8: bool = false
+	for entry in q8:
+		if String(entry["type"]) != "swarmer" or absf(float(entry["rel"]) - r8) > 1e-6 or absf(float(entry["bearing"]) - b8) > 1e-6:
+			cohesion_ok = false
+		if absf(float(entry["ox"])) > 1e-6 or absf(float(entry["oy"])) > 1e-6:
+			spread8 = true
+	fails += _check(cohesion_ok and spread8,
+		"formation cohesion: GNAT SWARM = %d swarmers on one bearing, arriving together, spread in a wedge" % q8.size())
+
+	# 9 — echelon separation: the plate's echelon clock normalizes the vanguard to 0 and spaces the
+	#     main body / sting by the config delays; and a real wave lands its main body main_delay after
+	#     its vanguard in the drained queue (rel 0 alongside rel main_delay).
+	var c9 := Configs.defaults()
+	c9.bosses.every_n = 0
+	c9.waves.quiet_secs = 0.5
+	c9.waves.first_wave_delay = 0.5
+	c9.waves.base_budget = 60      # rich: wave-3+ buys span the echelons
+	c9.waves.budget_per_wave = 0
+	c9.waves.hull_pips = 100000
+	for wdef in c9.weapons.catalog:
+		wdef.dmg = 500
+	var w9 := GameWorld.new(101)
+	var ech_meta_ok: bool = false
+	var ech_realized: bool = false
+	var last9: String = "lull"
+	for i in range(60 * 400):
+		Sim.step(w9, DT, c9)
+		w9.effects.clear()
+		if last9 == "lull" and w9.wave_state == "fighting":
+			if not w9.wave_lines["vanguard"].is_empty():
+				if absf(float(w9.wave_ech_rel["main"]) - float(w9.wave_ech_rel["vanguard"]) - c9.waves.main_delay) < 1e-3 \
+						and absf(float(w9.wave_ech_rel["sting"]) - float(w9.wave_ech_rel["vanguard"]) - c9.waves.sting_delay) < 1e-3:
+					ech_meta_ok = true
+			var has_van: bool = false
+			var has_main: bool = false
+			for entry in w9.wave_queue:
+				if absf(float(entry["rel"])) < 1e-3:
+					has_van = true
+				if absf(float(entry["rel"]) - c9.waves.main_delay) < 1e-3:
+					has_main = true
+			if has_van and has_main and not w9.wave_lines["main"].is_empty():
+				ech_realized = true
+		last9 = w9.wave_state
+		if ech_meta_ok and ech_realized:
+			break
+	fails += _check(ech_meta_ok and ech_realized,
+		"echelon separation: main body lands +%.0fs / sting +%.0fs behind the vanguard" % [c9.waves.main_delay, c9.waves.sting_delay])
+
+	# 10 — same seed = same war: two worlds on one seed compose an identical wave-3 plan despite
+	#      different ship positions AND different world.rng histories (composition rides the per-wave
+	#      substream, never world.rng or the player's path).
+	var c10 := Configs.defaults()
+	c10.bosses.every_n = 0
+	var wr1 := GameWorld.new(77)
+	var wr2 := GameWorld.new(77)
+	wr1.ship_pos = Vector2(1234.0, -567.0)
+	wr1.rng.nextf(); wr1.rng.nextf(); wr1.rng.nextf()   # advance world.rng — must NOT change the plan
+	wr2.ship_pos = Vector2(-800.0, 200.0)
+	wr1.wave = 3
+	wr2.wave = 3
+	Waves._begin_wave(wr1, c10)
+	Waves._begin_wave(wr2, c10)
+	var repro_ok: bool = wr1.wave_queue.size() == wr2.wave_queue.size() and wr1.wave_queue.size() > 0
+	for i in range(wr1.wave_queue.size()):
+		var ea: Dictionary = wr1.wave_queue[i]
+		var eb: Dictionary = wr2.wave_queue[i]
+		repro_ok = repro_ok and String(ea["type"]) == String(eb["type"]) \
+			and absf(float(ea["rel"]) - float(eb["rel"])) < 1e-9 and absf(float(ea["bearing"]) - float(eb["bearing"])) < 1e-9 \
+			and absf(float(ea["ring"]) - float(eb["ring"])) < 1e-9 \
+			and absf(float(ea["ox"]) - float(eb["ox"])) < 1e-9 and absf(float(ea["oy"]) - float(eb["oy"])) < 1e-9
+	fails += _check(repro_ok, "same seed = same war: seed 77 wave 3 composes identically from any ship pos / rng state (%d entries)" % wr1.wave_queue.size())
+
+	# 11 — ambush validity: an ambush_ok formation staged behind a terrain feature spawns OUTSIDE the
+	#      feature's circle and on its FAR side. Force wave 3 = one JACKAL PINCER (swarmer priced out so
+	#      only the pincer is affordable) with a feature in ambush country (800u off the bow).
+	var c11 := Configs.defaults()
+	c11.bosses.every_n = 0
+	c11.waves.ambush_chance = 1.0
+	c11.waves.base_budget = 6
+	c11.waves.budget_per_wave = 0
+	c11.enemies.by_id("swarmer").cost = 999   # kills GNAT SWARM / SCREEN affordability — pincer only
+	var w11 := GameWorld.new(1)
+	w11.terrain.append({ "pos": Vector2(0.0, -800.0), "r": 100.0, "islet": false })
+	w11.wave = 3
+	Waves._begin_wave(w11, c11)
+	var amb_entry = null
+	for entry in w11.wave_queue:
+		if entry["feat"] != null:
+			amb_entry = entry
+			break
+	var composed_ambush: bool = amb_entry != null
+	var outside11: bool = false
+	var far11: bool = false
+	if composed_ambush:
+		Waves._spawn_entry(w11, c11, amb_entry)
+		var e11: Enemy = w11.enemies[w11.enemies.size() - 1]
+		var fp: Vector2 = amb_entry["feat"]["pos"]
+		outside11 = e11.pos.distance_to(fp) > float(amb_entry["feat"]["r"])
+		far11 = (e11.pos - fp).dot(fp - w11.ship_pos) > 0.0
+	fails += _check(composed_ambush and outside11 and far11,
+		"ambush validity: JACKAL PINCER staged behind the rock — spawns outside its circle, on the far side")
 
 	if fails == 0:
 		print("PROBE_WAVES PASSED")

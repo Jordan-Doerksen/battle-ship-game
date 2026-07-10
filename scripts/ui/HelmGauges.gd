@@ -190,7 +190,8 @@ func _draw_wave_plate() -> void:
 	if _world.run_over:
 		line = "WAVE %d — SHIP LOST" % _world.wave
 	elif _world.wave_state == "fighting":
-		# C7 naming pass: the plate reads like a newsreel — reporting names, tallied
+		# C7 naming pass + C16 echelon phase: the plate reads like a newsreel — the drill phase
+		# (which echelon is on the water) then the reporting-name tally
 		var tally := {}
 		for e in _world.enemies:
 			if e.active:
@@ -202,8 +203,16 @@ func _draw_wave_plate() -> void:
 			bits.append("☠ " + Bosses.def_of(_world, _cfgs).display_name)
 		for nm in tally:
 			bits.append("%s ×%d" % [nm, tally[nm]])
-		line = "WAVE %d · %s" % [_world.wave, " · ".join(bits)] if not bits.is_empty() \
-			else "WAVE %d · CONTACTS: 0" % _world.wave
+		# C16: name the latest echelon that has both landed and carries formations
+		var since: float = _world.elapsed - _world.wave_started
+		var phase := ""
+		for ech in ["vanguard", "main", "sting"]:
+			if not Array(_world.wave_lines.get(ech, [])).is_empty() \
+					and since >= float(_world.wave_ech_rel.get(ech, 1e12)):
+				phase = { "vanguard": "VANGUARD", "main": "MAIN BODY", "sting": "STING" }[ech]
+		var head := "WAVE %d" % _world.wave + (" · " + phase if phase != "" else "")
+		line = "%s · %s" % [head, " · ".join(bits)] if not bits.is_empty() \
+			else "%s · CONTACTS: 0" % head
 	elif _world.wave == 0:
 		line = "CONTACTS INBOUND — %d" % maxi(0, ceili(_world.lull_until - _world.elapsed))
 	else:

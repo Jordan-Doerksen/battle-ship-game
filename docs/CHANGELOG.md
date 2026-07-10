@@ -4,6 +4,35 @@ Chunk log, newest first. Each chunk ships only after it passes the cross-check a
 
 ---
 
+## C16 — THE WAR, REPACKED · 2026-07-10 · Built
+
+The enemy learned drill. The world arc closes: the director stops spending its budget like a
+slot machine and fields ENGAGEMENTS. Gate approved as-is. Formal CR — supersedes the C3 greedy
+spend; every pre-C16 probe still passes (no cross-system regression).
+
+- **Formations, not blobs:** six templates as config data (`WaveConfig.templates()`) — GNAT
+  SWARM (wedge), GNAT SCREEN + JACKAL LINE (the screened advance, gunboats +8s behind the
+  gnats), JACKAL PINCER (split bearings), WASP FLIGHT (loose, flank), VULTURE RAID (near-
+  opposite anvil), WOLFPACK (subs, wave 7+). Members share an anchor and arrive as a body.
+- **Echelons + real quiet:** the budget's buys land in a vanguard (0s) → main body (+15s) →
+  sting (+28s), normalized so the earliest lands at 0. Between waves, a genuinely longer,
+  empty quiet (`quiet_secs` 12, was the 8s lull) — the sonar-sweep breather. Singles fill the
+  budget remainder exactly (the C3 greedy path survives inside the new composer).
+- **Terrain-aware packing:** surface/sub formations pick OPEN-WATER lanes (approach scored
+  against the C15 rocks); `ambush_ok` templates (pincer, wolfpack) stage behind a feature's far
+  side ~35% of the time — "they were waiting behind the rock." Air ignores terrain.
+- **Determinism, stronger:** composition runs entirely on a per-wave substream keyed
+  `(world_seed, wave)` — ZERO `world.rng` draws — so the same seed fields the same war no
+  matter how you fought the last one (the C15 "same seed = same archipelago" guarantee, now
+  for the war too). `world.rng` stays byte-identical across two worlds; the probe re-baselines.
+- **HUD:** the wave-plate names the drill phase (WAVE 3 · MAIN BODY · JACKAL ×2) alongside the
+  newsreel tally. C7 boss ladder integration preserved verbatim (machine every Nth wave, escort
+  composed from the reduced budget).
+- Integration seams fixed at the gate run (the `lull_secs → quiet_secs` rename): `probe_bosses`
+  (1,2), `probe_sonar` (8), and Main's attract all switched to `quiet_secs`. `probe_waves`
+  re-targeted: exact spend read off the composed plan, +4 C16 checks (formation cohesion,
+  echelon separation, same-seed reproduction, ambush validity) — 11 checks, all green.
+
 ## C15 — THE WATERS · 2026-07-10 · Built
 
 The ocean grew teeth. Gate approved as-is with the owner's recipe (3 islets · 9 rocks ·

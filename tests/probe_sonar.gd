@@ -167,7 +167,7 @@ func _initialize() -> void:
 	# 8 — zero-tech baseline: waves 1–6 stay sub-free (unlock 7), so pre-C5 runs are untouched;
 	#     and the director CAN field subs once the unlock gate opens (no dead roster entry)
 	var c8 := Configs.defaults()
-	c8.waves.lull_secs = 1.0
+	c8.waves.quiet_secs = 1.0   # C16: the real quiet governs cadence now (lull_secs is inert)
 	c8.waves.first_wave_delay = 0.5
 	c8.waves.hull_pips = 100000
 	for wdef in c8.weapons.catalog:

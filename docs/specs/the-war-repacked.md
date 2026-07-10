@@ -1,6 +1,9 @@
-# C16 — THE WAR, REPACKED (spec — AT THE GATE)
+# C16 — THE WAR, REPACKED (spec)
 
-> Status: mockup gate (`design/the-war-repacked.html`, forked from the C15 machinery — the
+> Status: BUILT 2026-07-10 — gate approved as-is, defaults shipped. Determinism note vs §1:
+> composition draws ZERO `world.rng` — it runs on a per-wave substream keyed `(world_seed, wave)`,
+> a strictly stronger "same seed = same war" than the C3 single-stream (play-independent, like
+> C15 terrain). Gate artifact: `design/the-war-repacked.html` (forked from the C15 machinery — the
 > owner fights the new waves in real waters). The world arc's closer. Interviews locked:
 > **formations with shape** (not blobs) · **echelons + real quiet** (vanguard → main body
 > ~15 s → sting; longer, genuinely empty lulls) · **terrain-aware packing** (open-water lanes;

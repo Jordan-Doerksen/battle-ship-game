@@ -25,7 +25,7 @@ Input (keys / mouse→world-space)  →  InputState   (Main writes it pre-step; 
         ↓
 Sim.step(world, dt, cfgs: Configs)          ← fixed 60 Hz, ONLY randomness = world.rng
    ├─ Movement.step (C1)                       (systems are static funcs that mutate `world`;
-   ├─ Waves.step (C3)                           the whole block freezes when the run is over)
+   ├─ Waves.step (C3→C16)                       formation/echelon director on a (seed,wave) substream
    ├─ Enemies.step (C3/C5)                     pursuit/orbit + gunboat shells / sub torpedoes
    ├─ Bosses.step (C7)                         the war machine: parts, phases, breach cycle
    ├─ Sonar.step (C5)                          passive detection radius + contact latch (D1.10)

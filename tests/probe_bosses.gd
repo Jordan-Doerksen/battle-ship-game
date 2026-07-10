@@ -14,7 +14,7 @@ func _initialize() -> void:
 	# 1 — determinism: fight through the wave-5 machine, byte-identical twin worlds
 	var c1 := Configs.defaults()
 	c1.waves.first_wave_delay = 0.5
-	c1.waves.lull_secs = 1.0
+	c1.waves.quiet_secs = 1.0   # C16: the real quiet, not the inert lull_secs
 	c1.waves.hull_pips = 100000
 	for wdef in c1.weapons.catalog:
 		wdef.dmg = 60
@@ -40,7 +40,7 @@ func _initialize() -> void:
 	# 2 — cadence + ladder + baseline: 5/10/15 field the rungs, 20 laps at x1.5; waves 1-4 boss-free
 	var c2 := Configs.defaults()
 	c2.waves.first_wave_delay = 0.5
-	c2.waves.lull_secs = 0.5
+	c2.waves.quiet_secs = 0.5   # C16: the between-wave breather is the REAL QUIET now (lull_secs is inert)
 	c2.waves.hull_pips = 100000
 	c2.enemies.by_id("sub").cost = 999999   # an idle ship can't prosecute subs — cadence is the test
 	for wdef in c2.weapons.catalog:

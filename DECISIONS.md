@@ -245,6 +245,20 @@ treated as locked:
 ---
 
 ## Change Log
+- **2026-07-10 — C16 THE WAR, REPACKED built; THE WORLD ARC (C14 hull · C15 waters · C16 war)
+  IS COMPLETE.** Gate approved as-is. The C3 greedy director superseded (formal CR) by the
+  formation/echelon composer: six templates as `WaveConfig.templates()` config data, echelons
+  (vanguard 0 / main +15 / sting +28, normalized), the `quiet_secs` real quiet (12, renamed
+  from the inert `lull_secs`), terrain-aware lane scoring + behind-the-rock ambushes (C15
+  Terrain), singles filling the budget exactly. **Determinism strengthened:** composition on a
+  per-wave substream keyed `(world_seed, wave)` — ZERO director `world.rng` draws — so the war
+  is play-independent per seed (matches C15's terrain guarantee); two-world byte-identity holds,
+  the probe re-baselines. C7 boss ladder preserved. New GameWorld read-state for the HUD
+  (`wave_started`/`wave_ech_rel`/`wave_lines`/`wave_queue`); wave-plate names the drill phase.
+  `lull_secs → quiet_secs` seam fixed across probe_bosses/probe_sonar/Main attract; `probe_waves`
+  re-targeted + 4 C16 checks (cohesion, echelon separation, same-seed reproduction, ambush
+  validity), 11 green; all pre-C16 probes pass untouched. **Remaining open threads are
+  narrative/naming only** (#1 water-mystery, #4 working title); anything new starts fresh.
 - **2026-07-10 — C16 spec interview: pressure = ECHELONS + REAL QUIET.** Each wave lands in
   2–3 echelons (vanguard → main body ~15 s behind → a sting), building to a crescendo; between
   waves a genuinely longer quiet (the sonar-sweep breather). With the earlier C16 interview

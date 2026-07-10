@@ -124,7 +124,7 @@ func _start_attract() -> void:
 	cfgs.waves.first_wave_delay = 1.5
 	cfgs.waves.base_budget = 30
 	cfgs.waves.budget_per_wave = 14
-	cfgs.waves.lull_secs = 2.0          # the demo doesn't breathe — the player isn't in it
+	cfgs.waves.quiet_secs = 2.0         # C16: the demo doesn't breathe — the player isn't in it (the real quiet)
 	cfgs.waves.spawn_ring_min = 900.0   # arrivals land in frame instead of a horizon away
 	cfgs.waves.spawn_ring_max = 1300.0
 	cfgs.waves.cluster_min = 3          # every bearing at once — the crowded ocean
