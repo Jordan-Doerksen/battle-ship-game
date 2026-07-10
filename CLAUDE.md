@@ -20,6 +20,9 @@ IS the project (same as fulfillment).
 - No Godot in the container? The verify.sh header has the SourceForge install one-liner.
 - `gdparse` (pip install gdtoolkit) checks SYNTAX ONLY — a method can parse and still not exist at
   runtime. Reason about method/property existence yourself; the probes catch it.
+- gdparse also tolerates things Godot's parser REJECTS — e.g. nested `for i` loops shadowing the
+  same variable name (a hard parse error in Godot 4, found at C12). A clean gdparse is necessary,
+  never sufficient; only the import/boot gate proves a script compiles.
 
 ## Non-negotiables (from DECISIONS.md)
 - **Determinism is sacred.** ALL gameplay randomness through `world.rng` (seeded, stable order). Same

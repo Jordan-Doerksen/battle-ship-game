@@ -142,13 +142,19 @@ ghost, 120u snap; tree now 37 nodes / 65 pts / level 66 = everything). Probes re
 (`probe_tech` totals, `probe_hardpoints` check 5); deaf-deep untouched; no rng. Spec:
 `docs/specs/fire-control.md`.
 
-**The founding brief is SYSTEMS-COMPLETE; the arc's last chunk (owner-approved 2026-07-09):**
-C12 READABILITY & FEEL — torpedo blip distinction, DC arm-ring + rack cooldown on the scope,
-pause, lost-card misclick guard, onboarding hints, wounded-enemy tells, minimal procedural SFX
-on the existing effect events. Interview → spec → gate → port, as always. Remaining open
-threads are narrative/naming only: #1 water-mystery payoff, #4 working-title trademark check.
-New systems beyond the arc (a win mode? new hulls? D1.12 says one hull until revisited) start
-with fresh `/spec-feature` interviews.
+**C12 — READABILITY & FEEL is BUILT (2026-07-10) — THE POLISH ARC IS COMPLETE.** Gate approved
+as-is (`design/readability-feel.html`). Sound: 13 baked WAVs (`tools/gen_sfx.py`, seeded) +
+`SfxPlayer` on the effect channel (`AudioConfig`/`audio.tres`); klaxon (machine arrival),
+waveclear, and the new cosmetic `torpwater` horn all sound. Scope: torpedo dash + wake sparks;
+dashed DC arm ring + rack dial. Flow: `P` pause (the war waits, the sea doesn't), key-only lost
+card, five once-per-profile drip hints (`Profile.seen_hints`). Render: wounded tells. Spec:
+`docs/specs/readability-feel.md`.
+
+**The founding brief is SYSTEMS-COMPLETE and the 2026-07-09 polish directive fully discharged**
+(C8 bugs · C9 living sea · C10 tactical zoom · CREWED GUNS · C11 fire control · C12 feel).
+Remaining open threads are narrative/naming only: #1 water-mystery payoff, #4 working-title
+trademark check. New systems (a win mode? new hulls? D1.12 says one hull until revisited)
+start with fresh `/spec-feature` interviews.
 
 ## 3. Tree layout
 

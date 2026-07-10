@@ -3,7 +3,9 @@ extends Control
 # The gauge bank + sortie HUD — 1:1 with the owner-approved mockups (C2 LOOK-LOCK carried into C3):
 # hull pips + grace flicker, engine order, way bar, helm, batteries line; the wave plate (top-left);
 # the radar scope with fire-control bearing (bottom-right, C3 gate revisions 1–2); the force-fire
-# reticle; and the SHIP LOST card. Reads the world one-way each frame; writes nothing back. Layout
+# reticle; and the SHIP LOST card. C12 readability/flow: torpedo wake-dash blips, the DC arm ring +
+# rack dial, the PAUSED plate, the advisory plate, and the lost-card misclick guard. Reads the world
+# one-way each frame; writes nothing back (Main sets `paused`/`hint`/`lost_report`). Layout
 # constants are cosmetic plate geometry, not tunables.
 
 const PLATE_BG := Color(0.051, 0.125, 0.157, 0.88)
@@ -28,10 +30,17 @@ var _sans: Font
 var _shot_flashes: Array = []   # C11 fall-of-shot: own main-battery bursts flash on the scope
 const FLASH_LIFE := 1.2         # seconds a burst flash lives on the scope
 
+# C12 flow: Main sets both per frame (one-way, same channel as everything else here)
+var paused: bool = false        # true while the sim holds — the PAUSED plate shows
+var hint: String = ""           # the active advisory line ("" = none) — the drip-onboarding plate
+var _lost_shown_ms: int = -1    # C12 misclick guard: first frame the lost card drew this run
+const LOST_GUARD_MS := 1500     # the card holds this long before the restart prompt reveals
+
 func bind(world: GameWorld, cfgs: Configs) -> void:
 	_world = world
 	_cfgs = cfgs
 	_shot_flashes.clear()
+	_lost_shown_ms = -1
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var mono := SystemFont.new()
 	mono.font_names = PackedStringArray(["DejaVu Sans Mono", "Cascadia Mono", "Menlo", "Consolas", "monospace"])
@@ -71,7 +80,12 @@ func _draw() -> void:
 	if _world.run_over:
 		_draw_lost_card()
 	else:
+		_lost_shown_ms = -1   # self-heals across restarts even if bind() isn't re-run
 		_draw_reticle()
+		if hint != "":
+			_draw_hint_plate()
+		if paused:
+			_draw_pause_plate()
 
 func _draw_gauge_plate() -> void:
 	var origin := Vector2(PAD, size.y - PAD - PLATE_H)
@@ -262,6 +276,8 @@ func _draw_radar() -> void:
 	# C5: the sonar radius — a soft filled ring, the only part of the scope that hears the deep
 	draw_circle(c, _cfgs.sonar.radius * k, Color(FOAM.r, FOAM.g, FOAM.b, 0.045))
 	draw_arc(c, _cfgs.sonar.radius * k, 0.0, TAU, 48, Color(FOAM.r, FOAM.g, FOAM.b, 0.28), 1.0, true)
+	# C12: the depth-charge arm range — DASHED foam, unmistakably a weapon ring, not ears
+	_dashed_arc(c, _cfgs.sonar.dc_range * k, Color(FOAM.r, FOAM.g, FOAM.b, 0.6))
 	# viewport extent
 	var view: Vector2 = get_viewport_rect().size
 	var cam := get_viewport().get_camera_2d()
@@ -306,7 +322,21 @@ func _draw_radar() -> void:
 		if off.length() > RADAR_R:
 			continue
 		if p.hostile:
-			draw_rect(Rect2(c.x + off.x - 0.8, c.y + off.y - 0.8, 1.6, 1.6), Color(ORANGE.r, ORANGE.g, ORANGE.b, 0.8))
+			if p.wid == "torpedo":
+				# C12: the C5-promised tell, finally paid — a bright foam dash laid along the run
+				# plus two wake sparks fading astern (mockup panel 1). Jitter is cosmetic-clock only.
+				var tb := c + off
+				var dv: Vector2 = p.vel.normalized() if p.vel.length_squared() > 0.001 else Vector2.UP
+				var perp := Vector2(-dv.y, dv.x)
+				draw_line(tb - dv * 3.5, tb + dv * 3.5, Color(FOAM.r, FOAM.g, FOAM.b, 0.95), 2.0)
+				var jbase: int = Time.get_ticks_msec() / 66 + i * 31
+				for si in range(2):
+					var j: float = (float((jbase + si * 17) % 7) / 3.0 - 1.0) * 1.2
+					var sp: Vector2 = tb - dv * (5.0 + 4.5 * float(si + 1)) + perp * j
+					draw_rect(Rect2(sp.x - 0.7, sp.y - 0.7, 1.4, 1.4),
+						Color(FOAM.r, FOAM.g, FOAM.b, 0.65 if si == 0 else 0.4))
+			else:
+				draw_rect(Rect2(c.x + off.x - 0.8, c.y + off.y - 0.8, 1.6, 1.6), Color(ORANGE.r, ORANGE.g, ORANGE.b, 0.8))
 		elif p.wid == "mb16":   # C11 fall-of-shot: your own salvo exists on the scope
 			draw_rect(Rect2(c.x + off.x - 0.8, c.y + off.y - 0.8, 1.6, 1.6), Color(FOAM.r, FOAM.g, FOAM.b, 0.85))
 	# C11: burst flashes — each main-battery splash blooms briefly where it landed
@@ -351,6 +381,18 @@ func _draw_radar() -> void:
 	var f := Vector2(sin(_world.ship_heading), -cos(_world.ship_heading))
 	draw_line(c - f * 4.0, c + f * 7.0, FOAM, 1.6)
 	draw_circle(c, 2.0, FOAM)
+	# C12: rack state — a small cooldown dial below the own-ship blip. Fills over the volley
+	# cooldown in dim brass; blinks gently in foam when the racks are ready. Nothing labeled —
+	# the scope stays quiet (mockup panel 2).
+	var ac := c + Vector2(0.0, 26.0)
+	var rack_fill: float = 1.0 - clampf(_world.dc_cool / maxf(_cfgs.sonar.dc_cooldown, 0.001), 0.0, 1.0)
+	draw_arc(ac, 9.0, 0.0, TAU, 24, Color(FOAM.r, FOAM.g, FOAM.b, 0.15), 2.5, true)
+	if _world.dc_cool > 0.0:
+		if rack_fill > 0.0:
+			draw_arc(ac, 9.0, -PI / 2.0, -PI / 2.0 + TAU * rack_fill, 24, BRASS_DIM, 2.5, true)
+	else:
+		var blink: bool = (Time.get_ticks_msec() / 400) % 2 == 0
+		draw_arc(ac, 9.0, 0.0, TAU, 24, Color(FOAM.r, FOAM.g, FOAM.b, 0.95 if blink else 0.5), 2.5, true)
 	_label(c.x - 26.0, c.y - RADAR_R - 8.0, "RADAR")
 
 func _dashed_arc(c: Vector2, r: float, col: Color) -> void:
@@ -359,8 +401,12 @@ func _dashed_arc(c: Vector2, r: float, col: Color) -> void:
 		if i % 2 == 0:
 			draw_arc(c, r, TAU * i / segs, TAU * (i + 1) / segs, 4, col, 1.0, true)
 
-# ── SHIP LOST card (C3 + C4 XP report) ──
+# ── SHIP LOST card (C3 + C4 XP report; C12 misclick guard — the card holds 1.5 s, a quiet
+#    "…" where the prompt goes, then the key-only restart line reveals. Main ignores clicks;
+#    this side only paints the hold.) ──
 func _draw_lost_card() -> void:
+	if _lost_shown_ms < 0:
+		_lost_shown_ms = Time.get_ticks_msec()
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.08, 0.024, 0.016, 0.55))
 	var cw := 460.0
 	var chh := 176.0
@@ -383,7 +429,10 @@ func _draw_lost_card() -> void:
 		xp_line += " · LEVEL UP → %d" % int(lost_report["leveled_to"])
 	draw_string(_mono, Vector2(cxr - _mono.get_string_size(xp_line, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x * 0.5, origin.y + 116.0),
 		xp_line, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, BRASS)
-	_centered_spaced(cxr, origin.y + 150.0, "[ R ]  NEW SORTIE      [ T ]  TECH TREE", 11, BRASS, 3.0)
+	if Time.get_ticks_msec() - _lost_shown_ms < LOST_GUARD_MS:
+		_centered_spaced(cxr, origin.y + 150.0, "…", 11, Color(BRASS.r, BRASS.g, BRASS.b, 0.55), 3.0)
+	else:
+		_centered_spaced(cxr, origin.y + 150.0, "R — NEW SORTIE · T — THE TREE", 11, BRASS, 3.0)
 
 func _centered_spaced(cx: float, y: float, text: String, px: int, col: Color, tracking: float) -> void:
 	var total := 0.0
@@ -393,6 +442,32 @@ func _centered_spaced(cx: float, y: float, text: String, px: int, col: Color, tr
 	for ch in text:
 		draw_string(_sans, Vector2(x, y), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px, col)
 		x += _sans.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x + tracking
+
+# ── C12 PAUSED plate — the sim holds; the sea keeps drifting on the render clock by design ──
+func _draw_pause_plate() -> void:
+	var pw := 340.0
+	var ph := 96.0
+	var origin := Vector2((size.x - pw) * 0.5, (size.y - ph) * 0.5)
+	_draw_plate(origin, Vector2(pw, ph))
+	var cx := origin.x + pw * 0.5
+	_centered_spaced(cx, origin.y + 40.0, "PAUSED", 22, FOAM, 7.0)
+	var sub := "The war waits. The sea doesn't."
+	draw_string(_mono, Vector2(cx - _mono.get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x * 0.5, origin.y + 62.0),
+		sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, BRASS)
+	_centered_spaced(cx, origin.y + 82.0, "P — RESUME", 8, BRASS_DIM, 2.5)
+
+# ── C12 advisory plate — the contextual-drip onboarding line. Main decides WHAT and WHEN
+#    (once per profile); this side only paints. FIXED 560×54 whatever the text — the UI never
+#    reflows (house rule). Deadpan; no border flash. Sits below the boss-plate zone (ends y 88). ──
+func _draw_hint_plate() -> void:
+	var pw := 560.0
+	var ph := 54.0
+	var origin := Vector2((size.x - pw) * 0.5, 96.0)
+	_draw_plate(origin, Vector2(pw, ph))
+	var cx := origin.x + pw * 0.5
+	_centered_spaced(cx, origin.y + 20.0, "ADVISORY", 9, BRASS_DIM, 2.5)
+	draw_string(_mono, Vector2(cx - _mono.get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x * 0.5, origin.y + 40.0),
+		hint, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, FOAM)
 
 # ── force-fire reticle (+ C11: flight time, the MAX RANGE telltale, the RANGEKEEPER ghost) ──
 func _draw_reticle() -> void:

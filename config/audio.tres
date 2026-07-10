@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="AudioConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://config/AudioConfig.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+master_volume = 0.8
+muted = false
+min_gap = {
+"contact_ping": 1.0,
+"dc_blast": 0.3,
+"dc_volley": 0.5,
+"dp5_fire": 0.12,
+"gunsplash": 0.08,
+"machine_swell": 2.0,
+"mb16_fire": 0.12,
+"mg_burst": 0.9,
+"ship_hit": 0.2,
+"ship_lost": 2.0,
+"splash_column": 0.25,
+"torp_klaxon": 3.0,
+"wave_clear": 1.0
+}

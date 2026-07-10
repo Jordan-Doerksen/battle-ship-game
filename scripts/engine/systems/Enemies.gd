@@ -47,6 +47,8 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 				p.life = (def.torp_run if torp else def.fire_range * 1.4) / def.shell_speed
 				if not torp:   # no gunflash from under the water
 					world.effects.append({ "type": "gunflash", "pos": e.pos, "ang": ang })
+				else:   # C12 cosmetic-only append, no rng — the torpedo klaxon needs a trigger (precedent: the C9 miss splashes)
+					world.effects.append({ "type": "torpwater", "pos": p.pos })
 				if torp and cfg.tech.helo:   # C6: the bird heard the launch — worth investigating
 					world.helo_mark = e.pos
 					world.helo_mark_until = world.elapsed + cfg.airwing.investigate_hold

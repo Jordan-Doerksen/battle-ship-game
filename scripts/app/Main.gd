@@ -4,14 +4,28 @@ extends Node2D
 # still the ONLY door input enters the sim through. Each sortie derives its Configs from the base
 # .tres values + the profile's unlocked tech (Tech.apply) BEFORE the world is created, so
 # determinism per (seed, unlock set) holds. The DEV test kit exists only in debug builds.
+# C12 (docs/specs/readability-feel.md): pause (the war waits, the sea doesn't), the key-only lost
+# card, the contextual-drip hints, and the SfxPlayer fed off the same one-way effect batch.
+
+const LOST_HOLD_MS := 1500   # C12 lost-card guard: the card holds this long before R/T answer
+const HINT_HOLD_MS := 6000   # C12 drip: one plate, this long, then gone
+const HINTS := {             # copy ports verbatim from the approved mockup
+	"helm": "W A S D — the helm answers slowly. That's the ship, not you.",
+	"force": "HOLD LMB — every gun answers the cursor. RMB, the main battery only.",
+	"deep": "The deep is deaf to gunfire. Drive the stern over the diamond.",
+	"torpedo": "TORPEDO IN THE WATER — turn into it, or outrun it.",
+	"machine": "PRIORITY TARGET — shoot the parts off first. The core is soft-gated.",
+}
 
 var world: GameWorld
 var sim_cfg: SimConfig
 var field_cfg: FieldConfig
 var cam_cfg: CameraConfig
+var audio_cfg: AudioConfig
 var base_cfgs: Configs
 var cfgs: Configs
 var profile: Profile
+var paused: bool = false          # C12: P toggles mid-sortie; sim/input/effects hold, render runs
 var god_guns: bool = false        # DEV kit weapon override, rebuilt into cfgs per toggle/sortie
 var state: String = "title"       # title | tree | game
 var _accum: float = 0.0
@@ -21,6 +35,9 @@ var _banked_xp: int = 0           # this run's XP already in the profile (posthu
 var _level_before_bank: int = 1   # career level when this run's banking began (for the LEVEL UP line)
 var _sea_t: float = 0.0           # the C9 sea clock — cosmetic, frozen under reduced motion
 var _target_zoom: float = 0.51    # C10: the wheel drives this; the camera lerps toward it
+var _lost_ms: int = -1            # C12: tick when run_over was first observed (-1 = alive)
+var _hint_id: String = ""         # C12: the one active drip hint ("" = none)
+var _hint_ms: int = 0             # C12: tick the active hint went up
 @onready var _field: FieldRenderer = $Field
 @onready var _cam: Camera2D = $Cam
 @onready var _sea: ColorRect = $SeaLayer/Sea
@@ -28,6 +45,7 @@ var _target_zoom: float = 0.51    # C10: the wheel drives this; the camera lerps
 @onready var _title: TitleScreen = $HUD/Title
 @onready var _tree: TechTreeScreen = $HUD/Tree
 @onready var _devkit: DevKit = $HUD/DevKit
+@onready var _sfx: SfxPlayer = $Sfx
 
 func _ready() -> void:
 	sim_cfg = load("res://config/sim.tres") as SimConfig
@@ -39,6 +57,10 @@ func _ready() -> void:
 	cam_cfg = load("res://config/camera.tres") as CameraConfig
 	if cam_cfg == null:
 		cam_cfg = CameraConfig.new()
+	audio_cfg = load("res://config/audio.tres") as AudioConfig
+	if audio_cfg == null:
+		audio_cfg = AudioConfig.new()
+	_sfx.bind(audio_cfg)
 	_target_zoom = cam_cfg.zoom_home
 	_cam.zoom = Vector2.ONE * _target_zoom   # C10: the .tscn hardcode died; config rules the camera
 	base_cfgs = Configs.load_all()
@@ -86,6 +108,8 @@ func start_sortie() -> void:
 	world = GameWorld.new(int(Time.get_ticks_usec()))
 	_accum = 0.0
 	_banked = false
+	paused = false
+	_lost_ms = -1
 	_target_zoom = cam_cfg.zoom_home   # sorties start at the home view (C10 gate)
 	_gauges.lost_report = {}
 	_field.bind(world, field_cfg, cam_cfg, cfgs)
@@ -124,7 +148,7 @@ func toggle_god_guns() -> void:   # DEV kit: rebuild the derived configs so the 
 	_gauges.bind(world, cfgs)
 
 func dev_max_level() -> void:     # DEV kit: enough XP for the whole tree, computed from the catalog
-	var points: int = 0            # Σ node costs (63 today); 1 point per level past 1 ⇒ level = cost + 1
+	var points: int = 0            # Σ node costs (65 today); 1 point per level past 1 ⇒ level = cost + 1
 	for n in base_cfgs.tech.catalog:
 		points += n.cost
 	var xp: int = 0
@@ -144,6 +168,33 @@ func _unhandled_input(event: InputEvent) -> void:
 			"tree":
 				if event.is_action("ui_cancel"):
 					show_screen("title")
+
+func _check_hints() -> void:   # C12 contextual drip — mid-fight triggers only, each once per profile
+	if world.run_over:
+		return
+	if world.elapsed > 1.0:
+		_try_hint("helm")
+	if world.elapsed > 9.0:
+		_try_hint("force")
+	for e in world.effects:
+		match e["type"]:
+			"contact":
+				_try_hint("deep")
+			"torpwater":
+				_try_hint("torpedo")
+			"klaxon":
+				_try_hint("machine")
+
+func _try_hint(id: String) -> void:   # one plate at a time, no queue — a missed trigger simply
+	if _hint_active() or profile.seen_hints.has(id):   # re-fires on a later sortie if still unseen
+		return
+	_hint_id = id
+	_hint_ms = Time.get_ticks_msec()
+	profile.seen_hints.append(id)
+	profile.save()
+
+func _hint_active() -> bool:
+	return _hint_id != "" and Time.get_ticks_msec() - _hint_ms < HINT_HOLD_MS
 
 func _update_sea(delta: float) -> void:   # C9: one-way render plumbing, runs in every state —
 	if not field_cfg.reduced_motion:       # the water lives behind the menus too
@@ -177,33 +228,43 @@ func _process(delta: float) -> void:
 	if OS.is_debug_build() and Input.is_action_just_pressed("dev_toggle"):
 		_devkit.visible = not _devkit.visible
 		_devkit.queue_redraw()
+	if Input.is_action_just_pressed("pause") and not world.run_over:   # C12: the war waits…
+		paused = not paused
+	_gauges.paused = paused
 	if world.run_over:
 		_bank_run()   # every frame: shells still in the air keep landing, so keep banking the delta
-		if Input.is_action_just_pressed("new_sortie") or Input.is_action_just_pressed("force_fire_all"):
-			start_sortie()
-			return
-		if Input.is_action_just_pressed("open_tree"):
-			show_screen("tree")
-			return
-	# input snapshot first, then step — held-key throttle/helm + hold-only force-fire
-	world.input.thrust = Input.get_axis("helm_astern", "helm_ahead")
-	world.input.rudder = Input.get_axis("helm_port", "helm_starboard")
-	var all_guns: bool = Input.is_action_pressed("force_fire_all")
-	world.input.force_all = all_guns
-	world.input.force_large = Input.is_action_pressed("force_fire_large") and not all_guns
-	world.input.force_medium = Input.is_action_pressed("force_fire_medium") and not all_guns
-	world.input.aim_world = get_global_mouse_position()
-	var steps: int = 0
-	_accum += delta
-	while _accum >= _step and steps < sim_cfg.max_frame_catchup:
-		Sim.step(world, _step, cfgs)
-		_accum -= _step
-		steps += 1
-	if steps >= sim_cfg.max_frame_catchup:
-		_accum = 0.0   # don't spiral-of-death catch up past the cap
-	_field.consume_effects(world.effects)   # one-way effect plumbing: sim wrote, render consumes,
-	_gauges.consume_effects(world.effects)  # the scope takes the same batch (C11 fall-of-shot),
-	world.effects.clear()                   # and the app layer clears — render never touches the world
+		if _lost_ms < 0:
+			_lost_ms = Time.get_ticks_msec()   # C12 lost-card guard starts its hold
+		if Time.get_ticks_msec() - _lost_ms >= LOST_HOLD_MS:   # key-only restart, never the combat button
+			if Input.is_action_just_pressed("new_sortie"):
+				start_sortie()
+				return
+			if Input.is_action_just_pressed("open_tree"):
+				show_screen("tree")
+				return
+	if not paused:   # C12: …but the sea below keeps drifting (camera/sea/redraws run either way)
+		# input snapshot first, then step — held-key throttle/helm + hold-only force-fire
+		world.input.thrust = Input.get_axis("helm_astern", "helm_ahead")
+		world.input.rudder = Input.get_axis("helm_port", "helm_starboard")
+		var all_guns: bool = Input.is_action_pressed("force_fire_all")
+		world.input.force_all = all_guns
+		world.input.force_large = Input.is_action_pressed("force_fire_large") and not all_guns
+		world.input.force_medium = Input.is_action_pressed("force_fire_medium") and not all_guns
+		world.input.aim_world = get_global_mouse_position()
+		var steps: int = 0
+		_accum += delta
+		while _accum >= _step and steps < sim_cfg.max_frame_catchup:
+			Sim.step(world, _step, cfgs)
+			_accum -= _step
+			steps += 1
+		if steps >= sim_cfg.max_frame_catchup:
+			_accum = 0.0   # don't spiral-of-death catch up past the cap
+		_check_hints()                          # C12 drip triggers read the batch before it clears
+		_field.consume_effects(world.effects)   # one-way effect plumbing: sim wrote, render consumes,
+		_gauges.consume_effects(world.effects)  # the scope takes the same batch (C11 fall-of-shot),
+		_sfx.consume_effects(world.effects, world.elapsed)   # C12: the same batch, now audible
+		world.effects.clear()                   # and the app layer clears — render never touches the world
+	_gauges.hint = HINTS[_hint_id] if _hint_active() else ""
 	_cam.position = world.ship_pos
 	_field.queue_redraw()
 	_gauges.queue_redraw()

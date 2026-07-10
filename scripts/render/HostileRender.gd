@@ -10,7 +10,8 @@ const SHADOW_COL := Color(0.016, 0.047, 0.063, 0.35)
 static func draw_enemies(r: FieldRenderer) -> void:
 	var now: float = Time.get_ticks_msec() * 1.0
 	var cfg: FieldConfig = r._field_cfg
-	for e in r._world.enemies:
+	for i in range(r._world.enemies.size()):
+		var e: Enemy = r._world.enemies[i]
 		if not e.active:
 			continue
 		if e.layer == "sub":
@@ -31,6 +32,12 @@ static func draw_enemies(r: FieldRenderer) -> void:
 			var bob: float = SeaRender.swell_h(cfg, e.pos.x, e.pos.y, r.sea_t) * cfg.heave_px * 0.8
 			draw_pos = e.pos + FieldRenderer.SUN_DIR * bob
 			rock = sin(r.sea_t * 0.9 + e.pos.x * 0.01) * 0.05 * cfg.roll_deg
+		# C12 wounded tells: toughs below half hp read as wounded (render-only, hp/hp_max one-way)
+		var wounded: bool = e.hp_max > 2 and e.hp * 2 <= e.hp_max
+		if wounded and e.layer != "air":
+			# a wounded LIST — a constant ~7° heel on top of the rock; side picked deterministically
+			# per roster slot (array order is stable within a wave) — never the sim's rng
+			rock += (1.0 if i % 2 == 0 else -1.0) * deg_to_rad(7.0)
 		r.draw_set_transform(draw_pos, e.heading + rock, Vector2.ONE * boost)
 		if e.type_id == "swarmer":
 			r.draw_colored_polygon(PackedVector2Array([Vector2(0, -8), Vector2(6, 6), Vector2(0, 3), Vector2(-6, 6)]),
@@ -38,13 +45,19 @@ static func draw_enemies(r: FieldRenderer) -> void:
 			r.draw_circle(Vector2(0, -1), 1.4, FieldRenderer.FOAM)
 		elif e.type_id == "gunboat":
 			var boat := PackedVector2Array([Vector2(0, -16), Vector2(8, -6), Vector2(8, 12), Vector2(-8, 12), Vector2(-8, -6)])
-			r.draw_colored_polygon(boat, Color(0.118, 0.180, 0.212))
+			var hull_col := Color(0.118, 0.180, 0.212)
+			if wounded:
+				hull_col = hull_col.darkened(0.25)   # wounded hull chars toward black (C12)
+			r.draw_colored_polygon(boat, hull_col)
 			var bc := PackedVector2Array(boat); bc.append(boat[0])
 			r.draw_polyline(bc, Color(0.851, 0.310, 0.169, 0.8), r.lw(1.2), true)
 			r.draw_rect(Rect2(-1.5, -10, 3, 8), FieldRenderer.RED)
 		else:   # bomber
 			var wing := PackedVector2Array([Vector2(0, -14), Vector2(16, 10), Vector2(0, 4), Vector2(-16, 10)])
-			r.draw_colored_polygon(wing, Color(0.588, 0.176, 0.098, 0.95))
+			var wing_col := Color(0.588, 0.176, 0.098, 0.95)
+			if wounded:
+				wing_col = wing_col.darkened(0.15)   # air craft only darken slightly — no list, it flies (C12)
+			r.draw_colored_polygon(wing, wing_col)
 			var wc := PackedVector2Array(wing); wc.append(wing[0])
 			r.draw_polyline(wc, Color(0.851, 0.310, 0.169, 0.9), r.lw(1.2), true)
 			r.draw_circle(Vector2(-6, 6), 1.6, FieldRenderer.FLASH)
@@ -52,10 +65,25 @@ static func draw_enemies(r: FieldRenderer) -> void:
 		if e.burn_left > 0:   # INCENDIARY (C4): flame flicker on burning drones
 			r.draw_circle(Vector2.ZERO, 4.0 + sin(now * 0.05) * 1.5,
 				Color(FieldRenderer.FLASH.r, FieldRenderer.FLASH.g, FieldRenderer.FLASH.b, 0.6 + 0.4 * sin(now * 0.03)))
+		if wounded and e.hp == 1:
+			# last pip: a small flame at the hull center (C12) — deliberately smaller than the
+			# INCENDIARY burn flicker above so the two never read as the same effect; both may coexist
+			var fr: float = 2.6 if cfg.reduced_motion else 2.6 + sin(r.sea_t * 30.0) * 0.8
+			r.draw_circle(Vector2.ZERO, fr,
+				Color(FieldRenderer.FLASH.r, FieldRenderer.FLASH.g, FieldRenderer.FLASH.b,
+					0.7 if cfg.reduced_motion else 0.6 + 0.35 * sin(r.sea_t * 18.0)))
 		r.draw_set_transform(e.pos, 0.0, Vector2.ONE)
+		if wounded:
+			# drifting smoke wisps (C12) — same language as the boss part-death smoke in draw_boss,
+			# world-aligned so they rise screen-up off the hull; frozen mid-drift under reduced motion
+			for k in range(2):
+				var sm: float = (0.25 + float(k) * 0.3) if cfg.reduced_motion \
+					else fmod(r.sea_t * 0.55 + float(i) * 0.37 + float(k) * 0.5, 1.0)
+				r.draw_circle(Vector2(sm * 6.0, -8.0 - sm * 14.0 - float(k) * 2.0), 2.0 + sm * 3.0,
+					Color(0.157, 0.196, 0.22, 0.5 * (1.0 - sm)))
 		if e.hp < e.hp_max and e.hp_max > 2:   # hp pips under damaged toughs
-			for i in range(e.hp):
-				r.draw_rect(Rect2(-10 + i * 4, 16, 2.6, 2.2),
+			for pip in range(e.hp):
+				r.draw_rect(Rect2(-10 + pip * 4, 16, 2.6, 2.2),
 					Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.7))
 		r.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 

@@ -1,7 +1,9 @@
-# C12 — READABILITY & FEEL (spec — AT THE GATE)
+# C12 — READABILITY & FEEL (spec)
 
-> Status: mockup gate (`design/readability-feel.html` — the FEEL BOARD: the SFX palette playable
-> in-browser plus live demos of every readability fix). The polish arc's last chunk, from the
+> Status: BUILT 2026-07-10 — gate passed "approved as-is". Note vs §3: `klaxon` turned out to be
+> the MACHINE-ARRIVAL event (Waves.gd), so it maps to the ominous swell; the torpedo horn rides a
+> new cosmetic `torpwater` emission at launch. Gate artifact: `design/readability-feel.html`
+> (the FEEL BOARD: the SFX palette playable in-browser plus live demos of every readability fix). The polish arc's last chunk, from the
 > owner-approved directive (research-pass interview 2026-07-09). Spec interview 2026-07-10:
 > onboarding = **CONTEXTUAL DRIP** (one-line plates, once per profile, at the moment each thing
 > matters). Everything here is app/render/UI + audio assets — **zero sim changes**; the

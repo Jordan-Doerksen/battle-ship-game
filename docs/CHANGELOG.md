@@ -4,6 +4,36 @@ Chunk log, newest first. Each chunk ships only after it passes the cross-check a
 
 ---
 
+## C12 — READABILITY & FEEL · 2026-07-10 · Built
+
+The instruments learn to speak. The polish arc's closer — zero sim changes beyond two
+cosmetic-only effect appends; the determinism probes never noticed. Gate: the FEEL BOARD
+(`design/readability-feel.html`) approved as-is with sound on.
+
+- **The game has a voice.** Thirteen procedural sounds baked offline (`tools/gen_sfx.py`,
+  stdlib-only, seeded — reruns are byte-identical) from the board's exact recipes →
+  `audio/*.wav`; `SfxPlayer` (a node under Main) consumes the same one-way effect batch as the
+  renderer and the scope, with per-sound rate limits so the crewed MGs can't flood the mixer.
+  The long-dropped events finally sound: `klaxon` (machine arrival — the ominous swell) and
+  `waveclear` (two dry notes, no fanfare). Torpedo launches now emit a cosmetic `torpwater`
+  event — the two-tone navy horn. `AudioConfig`/`audio.tres`: master volume, mute, gaps.
+- **The scope got legible.** Torpedoes are a bright foam dash with trailing wake sparks (the
+  C5 promise, kept at last) — never again the same mote as a shell. The 220u depth-charge arm
+  range draws as a dashed ring beside the solid sonar ring, and a small rack dial fills over
+  the volley cooldown and blinks READY.
+- **The war waits; the sea doesn't.** `P` pauses mid-sortie — the sim holds, the water keeps
+  drifting (it lives on the render clock by design).
+- **The lost card is key-only.** Clicks bounce off; after 1.5 s the card offers
+  `R — NEW SORTIE · T — THE TREE`. The XP report can no longer be skipped by the combat button.
+- **The contextual drip** (owner interview): five one-line advisories, each shown once per
+  profile at the moment it matters — the helm, force-fire, the deaf deep, the first torpedo,
+  the first machine. Seen-flags persist in the profile beside XP.
+- **Wounded enemies read wounded:** below half hp a gunboat lists ~7° (side picked per roster
+  slot — stable, deterministic, rng-free), chars darker, and trails smoke; at the last pip, a
+  small flame. Bombers smoke without listing. All render-only.
+- Gotcha recorded in CLAUDE.md: gdparse tolerates nested same-name loop variables that Godot's
+  parser hard-rejects — a clean gdparse is necessary, never sufficient.
+
 ## C11 — LONG-RANGE FIRE CONTROL · 2026-07-10 · Built
 
 The cursor was taught distance; the battery is expected to use it. Formal CR: the C3 "cursor

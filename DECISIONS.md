@@ -237,15 +237,26 @@ treated as locked:
   mounts, reach-roll stitching, air+surface; the AA nerf the owner asked for.
 - **C11 — LONG-RANGE FIRE CONTROL.** BUILT 2026-07-10 (see Change Log): burst-at-cursor within
   range, fall-of-shot on the scope, flight-time readout, RANGEKEEPER as ord7.
-- **Next — the arc's last chunk (owner-approved 2026-07-09):** C12 READABILITY & FEEL — torpedo
-  blip distinction, DC arm-ring + rack cooldown on the scope, pause, lost-card misclick guard,
-  onboarding hints, wounded-enemy tells, minimal procedural SFX on the existing effect events
-  (klaxon/waveclear are still emitted-and-dropped). Spec interview + gate first, as always.
-  Remaining founding threads are narrative/naming only (#1 water-mystery, #4 working title).
+- **C12 — READABILITY & FEEL.** BUILT 2026-07-10 (see Change Log): the scope speaks, the game
+  sounds, the drip teaches, the wounded list. **The polish arc (C8–C12 + CREWED GUNS) is
+  COMPLETE.** Remaining founding threads are narrative/naming only (#1 water-mystery,
+  #4 working title); anything new starts with a fresh `/spec-feature` interview.
 
 ---
 
 ## Change Log
+- **2026-07-10 — C12 READABILITY & FEEL built; THE POLISH ARC IS COMPLETE.** Gate approved
+  as-is (`design/readability-feel.html`, the FEEL BOARD). Sound: 13 procedural WAVs baked
+  offline (`tools/gen_sfx.py`, seeded/stdlib — the mockup's recipes verbatim) + `SfxPlayer` on
+  the one-way effect channel with per-sound rate limits + `AudioConfig`/`audio.tres`; the
+  dropped `klaxon` (= machine arrival) and `waveclear` events finally sound; torpedo launches
+  emit a cosmetic `torpwater` (the horn) — the arc's only sim touches are that append and
+  nothing else, probes byte-identical. Scope: torpedo dash + wake sparks (the C5 promise),
+  dashed DC arm ring + rack dial. Flow: `P` pause (sim holds, sea drifts), key-only lost card
+  (1.5 s guard, R/T), contextual-drip hints ×5 once-per-profile (`Profile.seen_hints`).
+  Render: wounded tells (list/char/smoke/flame, deterministic heel side). CLAUDE.md gotcha:
+  gdparse tolerates nested same-name loop vars that Godot hard-rejects. With C8–C12 all built,
+  the 2026-07-09 research-pass directive is fully discharged.
 - **2026-07-10 — C12 spec interview: onboarding = CONTEXTUAL DRIP.** One-line deadpan hint
   plates, each shown ONCE PER PROFILE the first time it matters (first sortie: helm +
   force-fire; first sub contact: the deaf-deep rule; first torpedo; first machine) — no menus,

@@ -7,7 +7,8 @@ extends RefCounted
 const PATH := "user://profile.cfg"
 
 var xp: int = 0
-var unlocked: Array = []   # tech node id strings, in purchase order
+var unlocked: Array = []     # tech node id strings, in purchase order
+var seen_hints: Array = []   # C12 contextual-drip hint ids already shown, once per profile
 
 static func load_profile(path: String = PATH) -> Profile:
 	var p := Profile.new()
@@ -17,12 +18,16 @@ static func load_profile(path: String = PATH) -> Profile:
 		var u: Array = f.get_value("career", "unlocked", [])
 		for id in u:
 			p.unlocked.append(String(id))
+		var h: Array = f.get_value("career", "seen_hints", [])
+		for id in h:
+			p.seen_hints.append(String(id))
 	return p
 
 func save(path: String = PATH) -> void:
 	var f := ConfigFile.new()
 	f.set_value("career", "xp", xp)
 	f.set_value("career", "unlocked", unlocked)
+	f.set_value("career", "seen_hints", seen_hints)
 	f.save(path)
 
 func respec() -> void:
