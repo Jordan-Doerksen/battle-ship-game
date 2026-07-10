@@ -244,6 +244,12 @@ treated as locked:
 ---
 
 ## Change Log
+- **2026-07-10 — C11 spec interview: LEAD-ASSIST is IN, as a tech node.** Owner chose the
+  advisory version over deferral: a late-tree fire-control node (working name **RANGEKEEPER**,
+  the USN's actual gun computer) — while force-firing, a ghost marker shows the computed
+  intercept for the radar contact nearest the cursor; the player still lays the gun and pulls
+  the trigger. HUD-side read of sim state only (render one-way, no sim change, no rng); the
+  tree grows one node (probe_tech's full-catalog totals re-target with it).
 - **2026-07-09 — CREWED GUNS built (the mid-C10 directive, CR complete): the S mounts are
   person-manned machine guns.** Bursts with rest gaps (10 rounds at 12/s, 1.5 s re-lay), wild
   0.14 spread, per-round 40–100% reach rolls through `world.rng` (short rounds stitch the water
