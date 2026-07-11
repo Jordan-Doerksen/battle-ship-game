@@ -9,7 +9,7 @@ static func draw_wave(g: HelmGauges) -> void:
 	var origin := Vector2(HelmGauges.PAD, HelmGauges.PAD)
 	g._draw_plate(origin, Vector2(HelmGauges.PLATE_W, 104.0))
 	var x := origin.x + HelmGauges.INNER
-	g._label(x, origin.y + 24.0, "★ EARTH DEFENSE FORCE · SORTIE COMMAND")
+	g._label(x, origin.y + 24.0, "★ THE STRAIT OF HORMUZ · STRAIT PICKET")
 	var line := ""
 	if g._world.run_over:
 		line = "WAVE %d — SHIP LOST" % g._world.wave

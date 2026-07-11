@@ -61,11 +61,11 @@ func _draw() -> void:
 	# legible while the war shows around it
 	draw_rect(Rect2(cx - 300.0, cy - 140.0, 600.0, 416.0), Color(0.02, 0.078, 0.102, 0.72))
 	draw_rect(Rect2(cx - 300.0, cy - 140.0, 600.0, 416.0), Color(0.804, 0.729, 0.557, 0.25), false, 1.0)
-	_spaced(cx, cy - 110.0, "★ NAVAL TRIALS BUREAU · RESTRICTED", 10, BRASS_DIM, 3.0)
-	_spaced(cx, cy - 62.0, "EARTH", 52, FOAM, 14.0)
-	_spaced(cx, cy - 6.0, "DEFENSE FORCE", 52, FOAM, 14.0)
-	_spaced(cx, cy + 28.0, "SORTIE COMMAND", 13, RED, 8.0)
-	_spaced(cx, cy + 48.0, "THEY CAME FOR OUR WATER. WE ANSWERED WITH THE FLEET.", 9, BRASS_DIM, 2.5)
+	_spaced(cx, cy - 110.0, "★ TASK FORCE 50 · STRAIT PICKET", 10, BRASS_DIM, 3.0)
+	_spaced(cx, cy - 62.0, "THE STRAIT", 52, FOAM, 14.0)
+	_spaced(cx, cy - 6.0, "OF HORMUZ", 52, FOAM, 14.0)
+	_spaced(cx, cy + 28.0, "HOLD THE LINE", 13, RED, 8.0)
+	_spaced(cx, cy + 48.0, "CUT OFF IN THE STRAIT. HOLD UNTIL THE FLEET ARRIVES.", 9, BRASS_DIM, 2.5)
 	# level + XP bar
 	var lv: Dictionary = _pc.level_info(_profile.xp)
 	var bar := Rect2(cx - 190.0, cy + 86.0, 380.0, 10.0)
@@ -82,10 +82,10 @@ func _draw() -> void:
 	_btn_sortie = Rect2(cx - 210.0, cy + 128.0, 220.0, 48.0)
 	_btn_tree = Rect2(cx + 30.0, cy + 128.0, 180.0, 48.0)
 	_btn_manual = Rect2(cx - 120.0, cy + 190.0, 240.0, 36.0)
-	_button(_btn_sortie, "BEGIN SORTIE", true)
+	_button(_btn_sortie, "STAND TO", true)
 	_button(_btn_tree, "TECH TREE", false)
 	_button(_btn_manual, "FIELD MANUAL", false)
-	_spaced(cx, cy + 252.0, "ENTER — SORTIE     T — TECH TREE     M — MANUAL", 9, BRASS_DIM, 2.0)
+	_spaced(cx, cy + 252.0, "ENTER — STAND TO     T — TECH TREE     M — MANUAL", 9, BRASS_DIM, 2.0)
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:

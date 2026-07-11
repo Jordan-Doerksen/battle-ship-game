@@ -10,8 +10,8 @@ config_version=5
 
 [application]
 
-config/name="Earth Defense Force (working title)"
-config/description="A deterministic naval wave-survival roguelite. Single battleship, AI-piloted swarms, hardpoint hull."
+config/name="The Strait of Hormuz"
+config/description="A deterministic naval wave-survival roguelite. A lone battleship, cut off holding the Strait of Hormuz against improvised swarms from air, surface, and the deep — until the relief fleet arrives."
 run/main_scene="res://scenes/Main.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
