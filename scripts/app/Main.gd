@@ -6,18 +6,12 @@ extends Node2D
 # .tres values + the profile's unlocked tech (Tech.apply) BEFORE the world is created, so
 # determinism per (seed, unlock set) holds. The DEV test kit exists only in debug builds.
 # C12 (docs/specs/readability-feel.md): pause (the war waits, the sea doesn't), the key-only lost
-# card, the contextual-drip hints, and the SfxPlayer fed off the same one-way effect batch.
+# card, and the SfxPlayer fed off the same one-way effect batch. The FLEET RADIO (RadioComms) now
+# owns the contextual-drip teaching — absorbed into TF50 ACTUAL's narrative comms feed.
 
 const LOST_HOLD_MS := 1500   # C12 lost-card guard: the card holds this long before R/T answer
-const HINT_HOLD_MS := 6000   # C12 drip: one plate, this long, then gone
-const HINTS := {             # copy ports verbatim from the approved mockup
-	"helm": "W A S D — the helm answers slowly. That's the ship, not you.",
-	"force": "HOLD LMB — every gun answers the cursor. RMB, the main battery only.",
-	"deep": "The deep is deaf to gunfire. Drive the stern over the diamond.",
-	"torpedo": "TORPEDO IN THE WATER — turn into it, or outrun it.",
-	"machine": "PRIORITY TARGET — shoot the parts off first. The core is soft-gated.",
-}
 
+var radio: RadioComms = RadioComms.new()   # the FLEET RADIO message engine (app layer; one-way reads)
 var world: GameWorld
 var sim_cfg: SimConfig
 var field_cfg: FieldConfig
@@ -38,8 +32,6 @@ var _sea_t: float = 0.0           # the C9 sea clock — cosmetic, frozen under 
 var _target_zoom: float = 0.51    # C10: the wheel drives this; the camera lerps toward it
 var _lost_ms: int = -1            # C12: tick when run_over was first observed (-1 = alive)
 var _attract_wait: float = 0.0    # C12 attract: seconds since the demo ship died (relaunch timer)
-var _hint_id: String = ""         # C12: the one active drip hint ("" = none)
-var _hint_ms: int = 0             # C12: tick the active hint went up
 @onready var _field: FieldRenderer = $Field
 @onready var _cam: Camera2D = $Cam
 @onready var _sea: ColorRect = $SeaLayer/Sea
@@ -176,6 +168,7 @@ func start_sortie() -> void:
 	_banked = false
 	paused = false
 	_lost_ms = -1
+	radio.reset()                      # fresh comms net for the new picket (FLEET RADIO)
 	_target_zoom = cam_cfg.zoom_home   # sorties start at the home view (C10 gate)
 	_gauges.lost_report = {}
 	_field.bind(world, field_cfg, cam_cfg, cfgs)
@@ -244,33 +237,6 @@ func _unhandled_input(event: InputEvent) -> void:
 				elif event.physical_keycode == KEY_RIGHT or event.physical_keycode == KEY_D:
 					_manual.flip(1)
 
-func _check_hints() -> void:   # C12 contextual drip — mid-fight triggers only, each once per profile
-	if world.run_over:
-		return
-	if world.elapsed > 1.0:
-		_try_hint("helm")
-	if world.elapsed > 9.0:
-		_try_hint("force")
-	for e in world.effects:
-		match e["type"]:
-			"contact":
-				_try_hint("deep")
-			"torpwater":
-				_try_hint("torpedo")
-			"klaxon":
-				_try_hint("machine")
-
-func _try_hint(id: String) -> void:   # one plate at a time, no queue — a missed trigger simply
-	if _hint_active() or profile.seen_hints.has(id):   # re-fires on a later sortie if still unseen
-		return
-	_hint_id = id
-	_hint_ms = Time.get_ticks_msec()
-	profile.seen_hints.append(id)
-	profile.save()
-
-func _hint_active() -> bool:
-	return _hint_id != "" and Time.get_ticks_msec() - _hint_ms < HINT_HOLD_MS
-
 func _update_sea(delta: float) -> void:   # C9: one-way render plumbing, runs in every state —
 	if not field_cfg.reduced_motion:       # the water lives behind the menus too
 		_sea_t += delta
@@ -336,12 +302,16 @@ func _process(delta: float) -> void:
 			steps += 1
 		if steps >= sim_cfg.max_frame_catchup:
 			_accum = 0.0   # don't spiral-of-death catch up past the cap
-		_check_hints()                          # C12 drip triggers read the batch before it clears
 		_field.consume_effects(world.effects)   # one-way effect plumbing: sim wrote, render consumes,
 		_gauges.consume_effects(world.effects)  # the scope takes the same batch (C11 fall-of-shot),
 		_sfx.consume_effects(world.effects, world.elapsed)   # C12: the same batch, now audible
 		world.effects.clear()                   # and the app layer clears — render never touches the world
-	_gauges.hint = HINTS[_hint_id] if _hint_active() else ""
+		if not world.run_over:                  # FLEET RADIO: evaluate comms triggers (one-way reads),
+			radio.tick(world, cfgs, profile, self)   # then chime + pulse the dish on a fresh line
+			if radio.consume_signal():
+				_field.radio_signal_t = _sea_t
+				_sfx.play_ui("radio")
+	_gauges.radio_lines = radio.display_lines()   # the panel keeps typing even while paused (render clock)
 	_cam.position = world.ship_pos
 	_field.queue_redraw()
 	_gauges.queue_redraw()

@@ -228,6 +228,13 @@ def fx_machine(buf, t):     # MACHINE ON SCOPE -- low boss-arrival swell, ~1.5 s
     noise_burst(buf, t, {"type": "lowpass", "freq": 130, "dur": 1.50, "a": 0.900, "gain": 0.30})
 
 
+def fx_radio(buf, t):       # RADIO CHIME -- soft two-tone comms blip (UI cue on incoming traffic), ~0.18 s
+    # a gentle high sine squelch: two quick blips, low gain, lowpassed so it reads as a friendly
+    # net chirp, never an alarm. Not a sim effect -- Main plays it directly via SfxPlayer.play_ui.
+    tone(buf, t,         {"wave": "sine", "f0": 1660, "dur": 0.07, "a": 0.004, "gain": 0.17, "lp": 3200})
+    tone(buf, t + 0.075, {"wave": "sine", "f0": 2200, "dur": 0.09, "a": 0.004, "gain": 0.15, "lp": 3600})
+
+
 def fx_ship_lost(buf, t):   # SHIP LOST -- descending settle, ~2 s
     tone(buf, t, {"wave": "sine", "f0": 220, "f1": 46, "sweepT": 1.7, "dur": 2.00, "a": 0.050, "gain": 0.50})
     tone(buf, t, {"wave": "sine", "f0": 110, "f1": 24, "sweepT": 1.8, "dur": 2.00, "a": 0.080, "gain": 0.30})
@@ -248,6 +255,7 @@ SOUNDS = [
     ("wave_clear",    1.00, fx_wave_clear),
     ("machine_swell", 1.55, fx_machine),
     ("ship_lost",     2.05, fx_ship_lost),
+    ("radio",         0.18, fx_radio),
 ]
 
 
@@ -270,7 +278,7 @@ def main():
         path = os.path.join(OUT_DIR, name + ".wav")
         write_wav(path, buf)
         print("%-14s %5.2fs  %7d bytes" % (name + ".wav", dur + 0.05, os.path.getsize(path)))
-    print("13 WAVs -> %s" % os.path.normpath(OUT_DIR))
+    print("%d WAVs -> %s" % (len(SOUNDS), os.path.normpath(OUT_DIR)))
 
 
 if __name__ == "__main__":

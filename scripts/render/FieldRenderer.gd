@@ -53,6 +53,9 @@ var _death_ms: int = -1                      # when the shipdeath effect landed 
 var show_ship: bool = true                   # Main clears it behind the title/tree screens (C4)
 var sea_t: float = 0.0                       # the render sea clock — Main pushes it (frozen under
                                              # reduced motion; never the sim clock, cosmetics only)
+var radio_signal_t: float = -100.0           # FLEET RADIO: sea_t when the last comms line arrived —
+                                             # Main stamps it on RadioComms.consume_signal(); the dish
+                                             # pulses off (sea_t − this). -100 = "long ago" (no ring)
 var target_zoom: float = 0.51                # C10: Main pushes the wheel TARGET — fades key off it
 
 func bind(world: GameWorld, field_cfg: FieldConfig, cam_cfg: CameraConfig, cfgs: Configs) -> void:

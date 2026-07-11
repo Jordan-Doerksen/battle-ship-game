@@ -1,9 +1,10 @@
 class_name HudOverlays
 extends RefCounted
-# Full-screen / cursor overlays — the SHIP LOST card (+ its misclick guard), the PAUSED plate, the
-# advisory plate, and the force-fire reticle (flight time, MAX RANGE telltale, the RANGEKEEPER
-# ghost). Static draw funcs called by HelmGauges._draw; all state lives on the host (the C9
-# render-domain split pattern). draw_lost_card reads/writes g._lost_shown_ms.
+# Full-screen / cursor overlays — the SHIP LOST card (+ its misclick guard), the PAUSED plate, and
+# the force-fire reticle (flight time, MAX RANGE telltale, the RANGEKEEPER ghost). Static draw funcs
+# called by HelmGauges._draw; all state lives on the host (the C9 render-domain split pattern).
+# draw_lost_card reads/writes g._lost_shown_ms. (The C12 advisory plate was retired here when the
+# FLEET RADIO teletype absorbed the drip hints — see RadioPanel.)
 
 # ── SHIP LOST card (C3 + C4 XP report; C12 misclick guard — the card holds 1.5 s, a quiet
 #    "…" where the prompt goes, then the key-only restart line reveals. Main ignores clicks;
@@ -50,19 +51,6 @@ static func draw_pause(g: HelmGauges) -> void:
 	g.draw_string(g._mono, Vector2(cx - g._mono.get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x * 0.5, origin.y + 62.0),
 		sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, HelmGauges.BRASS)
 	g._centered_spaced(cx, origin.y + 82.0, "P — RESUME", 8, HelmGauges.BRASS_DIM, 2.5)
-
-# ── C12 advisory plate — the contextual-drip onboarding line. Main decides WHAT and WHEN
-#    (once per profile); this side only paints. FIXED 560×54 whatever the text — the UI never
-#    reflows (house rule). Deadpan; no border flash. Sits below the boss-plate zone (ends y 88). ──
-static func draw_hint(g: HelmGauges) -> void:
-	var pw := 560.0
-	var ph := 54.0
-	var origin := Vector2((g.size.x - pw) * 0.5, 96.0)
-	g._draw_plate(origin, Vector2(pw, ph))
-	var cx := origin.x + pw * 0.5
-	g._centered_spaced(cx, origin.y + 20.0, "ADVISORY", 9, HelmGauges.BRASS_DIM, 2.5)
-	g.draw_string(g._mono, Vector2(cx - g._mono.get_string_size(g.hint, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x * 0.5, origin.y + 40.0),
-		g.hint, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, HelmGauges.FOAM)
 
 # ── force-fire reticle (+ C11: flight time, the MAX RANGE telltale, the RANGEKEEPER ghost) ──
 static func draw_reticle(g: HelmGauges) -> void:

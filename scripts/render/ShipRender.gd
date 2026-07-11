@@ -80,6 +80,14 @@ static func draw_hull(r: FieldRenderer, rd: Dictionary) -> void:
 	r.draw_circle(dish_hub, 2.0, r.wreck_fade(FieldRenderer.STEEL, fade))
 	r.draw_line(dish_hub - dd * 1.5, dish_tip, r.wreck_fade(FieldRenderer.STEEL, fade), r.lw(1.4))
 	r.draw_line(dish_tip - dp * 3.0, dish_tip + dp * 3.0, r.wreck_fade(FieldRenderer.FOAM, fade), r.lw(1.4))
+	# FLEET RADIO: incoming traffic pulses a foam ring out of the dish, growing + fading over ~0.8 s.
+	# Cosmetic, held still under reduced motion (like the dish sweep + the sea). Anchored to the hub.
+	if not r._field_cfg.reduced_motion:
+		var sig_age: float = r.sea_t - r.radio_signal_t
+		if sig_age >= 0.0 and sig_age < 0.8:
+			var sig_k: float = sig_age / 0.8
+			r.draw_arc(dish_hub, 2.0 + 15.0 * sig_k, 0.0, TAU, 24,
+				r.wreck_fade(Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, (1.0 - sig_k) * 0.5), fade), r.lw(1.2), true)
 	r.draw_arc(Vector2(0, 65), 14.0, 0.0, TAU, 32, r.wreck_fade(FieldRenderer.STEEL, fade), r.lw(1.0), true)
 	r.draw_line(Vector2(-8, 65), Vector2(8, 65), r.wreck_fade(FieldRenderer.STEEL, fade), r.lw(1.0))
 	r.draw_line(Vector2(0, -137.5), Vector2(0, -103.0), r.wreck_fade(FieldRenderer.STEEL, fade), r.lw(1.0))   # bow jack rides the C14 stem

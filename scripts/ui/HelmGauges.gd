@@ -4,13 +4,14 @@ extends Control
 # hull pips + grace flicker, engine order, way bar, helm, batteries line; the wave plate (top-left);
 # the radar scope with fire-control bearing (bottom-right, C3 gate revisions 1–2); the force-fire
 # reticle; and the SHIP LOST card. C12 readability/flow: torpedo wake-dash blips, the DC arm ring +
-# rack dial, the PAUSED plate, the advisory plate, and the lost-card misclick guard. Reads the world
-# one-way each frame; writes nothing back (Main sets `paused`/`hint`/`lost_report`). Layout
-# constants are cosmetic plate geometry, not tunables. This node is the orchestrator: it owns the
-# shared consts/state/primitives and dispatches _draw to the render-domain helpers (split per the
+# rack dial, the PAUSED plate, and the lost-card misclick guard. The FLEET RADIO teletype (top-right,
+# RadioPanel) is the narrative comms feed — it absorbed the retired single advisory plate. Reads the
+# world one-way each frame; writes nothing back (Main sets `paused`/`radio_lines`/`lost_report`).
+# Layout constants are cosmetic plate geometry, not tunables. This node is the orchestrator: it owns
+# the shared consts/state/primitives and dispatches _draw to the render-domain helpers (split per the
 # house 500-line rule, mirroring FieldRenderer/SeaRender at C9) — GaugePanel (bottom-left gauges),
-# StatusPlates (wave + boss plates), RadarScope (the scope + blips), HudOverlays (lost card, pause,
-# advisory, reticle). The helpers reach back into `self` via `g.` (the sanctioned house pattern).
+# StatusPlates (wave + boss plates), RadarScope (the scope + blips), RadioPanel (the comms teletype),
+# HudOverlays (lost card, pause, reticle). The helpers reach back into `self` via `g.` (the pattern).
 
 const PLATE_BG := Color(0.051, 0.125, 0.157, 0.88)
 const PLATE_EDGE := Color(0.804, 0.729, 0.557, 0.5)
@@ -36,9 +37,9 @@ var _mono: Font
 var _sans: Font
 var _shot_flashes: Array = []   # C11 fall-of-shot: own main-battery bursts flash on the scope
 
-# C12 flow: Main sets both per frame (one-way, same channel as everything else here)
+# C12 flow: Main sets these per frame (one-way, same channel as everything else here)
 var paused: bool = false        # true while the sim holds — the PAUSED plate shows
-var hint: String = ""           # the active advisory line ("" = none) — the drip-onboarding plate
+var radio_lines: Array = []     # the FLEET RADIO log (RadioComms.display_lines()) — RadioPanel paints it
 var _lost_shown_ms: int = -1    # C12 misclick guard: first frame the lost card drew this run
 var _boss_seen_ms: int = -1     # render-side: when the current machine first appeared (plate flash)
 var lost_report: Dictionary = {}   # Main fills at run end: { xp: int, leveled_to: int (0 = none) }
@@ -87,8 +88,7 @@ func _draw() -> void:
 	else:
 		_lost_shown_ms = -1   # self-heals across restarts even if bind() isn't re-run
 		HudOverlays.draw_reticle(self)
-		if hint != "":
-			HudOverlays.draw_hint(self)
+		RadioPanel.draw(self)   # the FLEET RADIO teletype (top-right) — supersedes the old advisory plate
 		if paused:
 			HudOverlays.draw_pause(self)
 

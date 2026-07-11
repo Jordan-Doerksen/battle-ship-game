@@ -12,6 +12,9 @@ const SOUND_NAMES := [
 	"mb16_fire", "dp5_fire", "mg_burst", "splash_column", "gunsplash", "torp_klaxon",
 	"contact_ping", "dc_volley", "dc_blast", "ship_hit", "wave_clear", "machine_swell", "ship_lost",
 ]
+# UI cues — played directly by Main (play_ui), NOT routed through the sim's effect channel. The
+# FLEET RADIO chime on incoming comms traffic lives here.
+const UI_NAMES := ["radio"]
 # event type → sound name; "muzzle" routes by its size tag instead (L/M/S per Turrets.gd)
 const EVENT_SOUND := {
 	"splash": "splash_column", "gunsplash": "gunsplash",
@@ -30,6 +33,8 @@ var _last_ms: Dictionary = {}     # sound name → last play tick (ms), the min-
 
 func _ready() -> void:
 	for snd in SOUND_NAMES:
+		_streams[snd] = load("res://audio/%s.wav" % snd)
+	for snd in UI_NAMES:
 		_streams[snd] = load("res://audio/%s.wav" % snd)
 	for i in POOL_SIZE:
 		var p := AudioStreamPlayer.new()
@@ -51,6 +56,15 @@ func consume_effects(events: Array, world_elapsed: float) -> void:
 			sound = EVENT_SOUND.get(e["type"], "")   # unmapped events stay silent by design
 		if sound != "":
 			_play(sound)
+
+# A direct UI cue (the FLEET RADIO chime) — Main calls this on incoming comms, bypassing the sim
+# effect channel. Same pool + master_volume/mute as everything else; naturally rate-limited by the
+# radio (one line per frame max), so it needs no min-gap ledger entry.
+func play_ui(key: String) -> void:
+	if _cfg == null or _cfg.muted:
+		return
+	if _streams.has(key):
+		_play(key)
 
 func _play(sound: String) -> void:
 	var now: int = Time.get_ticks_msec()
