@@ -163,33 +163,28 @@ func _initialize() -> void:
 	fails += _check(paid == 500 and patched == 7 and w6b.hull == c6.waves.hull_pips and w6.boss == null,
 		"rewards: lap-2 bounty %d XP; hull 5 -> %d (+2); patch capped; machine cleared" % [paid, patched])
 
-	# 7 — K-gun spread (C7 owner tune): the volley blankets the aft arc — stations port beam →
-	#     stern → starboard beam, none forward of amidships, spread across both sides
+	# 7 — DC RANGING (rework 2026-07-10, supersedes the C7 blind aft-arc K-gun geometry): the volley
+	#     RANGES onto the detected contact wherever it is — a full dc_count cluster within the scatter
+	#     of the sub's position, NOT blanketing the stern. Sub off the starboard bow proves it.
 	var c7 := _quiet()
 	c7.enemies.by_id("sub").speed = 0.0
 	c7.enemies.by_id("sub").fire_range = 0.0
-	c7.sonar.dc_scatter = 0.0   # stations only — the geometry is the test
 	var w7 := GameWorld.new(15)
 	Sim.step(w7, DT, c7)
-	_place(w7, "sub", Vector2(0, 120), 999999, c7)
+	var sub_pos := Vector2(140, 60)   # off the starboard bow, well inside dc_range 260 — not astern
+	_place(w7, "sub", sub_pos, 999999, c7)
 	_run(w7, c7, 1.0)   # one volley
-	var port_side: int = 0
-	var stbd_side: int = 0
-	var forward: int = 0
 	var n_dc: int = 0
+	var on_contact: int = 0
 	for i in range(w7.projectiles.items.size()):
 		var p: Projectile = w7.projectiles.items[i]
 		if not p.active or p.wid != "dc":
 			continue
 		n_dc += 1
-		if p.pos.y < w7.ship_pos.y - 1.0:   # heading 0: forward = -y
-			forward += 1
-		if p.pos.x < -1.0:
-			port_side += 1
-		if p.pos.x > 1.0:
-			stbd_side += 1
-	fails += _check(n_dc == c7.sonar.dc_count and forward == 0 and port_side >= 1 and stbd_side >= 1,
-		"K-gun spread: %d charges — %d port / %d starboard / %d forward of beam (want 0)" % [n_dc, port_side, stbd_side, forward])
+		if p.pos.distance_to(sub_pos) <= c7.sonar.dc_scatter * 1.5:   # clustered on the contact
+			on_contact += 1
+	fails += _check(n_dc == c7.sonar.dc_count and on_contact == n_dc,
+		"DC ranging: %d charges, all %d clustered on the contact off the bow (not the stern)" % [n_dc, on_contact])
 
 	# 8 — names: every roster entry + machine carries its reporting name
 	var c8 := Configs.defaults()
@@ -197,8 +192,8 @@ func _initialize() -> void:
 	for d in c8.enemies.roster:
 		reps.append(d.rep)
 	var names_ok: bool = "/".join(reps) == "GNAT/JACKAL/VULTURE/WASP/LAMPREY"   # AIR THREAT: the WASP enlisted
-	for d in c8.bosses.defs:
-		names_ok = names_ok and d.display_name.begins_with("THE ")
+	# the three machines carry their Persian-folklore codenames (Strait of Hormuz reskin)
+	names_ok = names_ok and "/".join([c8.bosses.defs[0].display_name, c8.bosses.defs[1].display_name, c8.bosses.defs[2].display_name]) == "FULAD/KAMAK/GANDAREVA"
 	fails += _check(names_ok, "names: %s; machines %s, %s, %s" \
 		% ["/".join(reps), c8.bosses.defs[0].display_name, c8.bosses.defs[1].display_name, c8.bosses.defs[2].display_name])
 

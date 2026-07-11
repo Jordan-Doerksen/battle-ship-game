@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="Resource_kwk6w"]
 script = ExtResource("1_kwy3u")
 id = "juggernaut"
-display_name = "THE JUGGERNAUT"
+display_name = "FULAD"
 parts = Array[Dictionary]([{
 "hp": 10.0,
 "ox": 0.0,
@@ -42,7 +42,7 @@ phase_spawn_n = 2
 [sub_resource type="Resource" id="Resource_7pcch"]
 script = ExtResource("1_kwy3u")
 id = "canopy"
-display_name = "THE CANOPY"
+display_name = "KAMAK"
 layer = "air"
 core_hp = 50.0
 radius = 34.0
@@ -87,7 +87,7 @@ hive_death_n = 2
 [sub_resource type="Resource" id="Resource_0jnfj"]
 script = ExtResource("1_kwy3u")
 id = "maw"
-display_name = "THE MAW"
+display_name = "GANDAREVA"
 layer = "sub"
 core_hp = 45.0
 radius = 36.0

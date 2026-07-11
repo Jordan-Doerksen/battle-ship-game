@@ -245,6 +245,37 @@ treated as locked:
 ---
 
 ## Change Log
+- **2026-07-10 — Owner directive: THE STRAIT OF HORMUZ (the game's real identity; reskin-first).**
+  The working title "Earth Defense Force" retires. The game is **The Strait of Hormuz**: a lone
+  battleship, cut off holding the strait, surviving until the relief fleet arrives (the WIN
+  CONDITION is a coming chunk — interviewed separately; this pass is identity/copy only, no sim
+  change). The enemy re-frames from B-movie aliens to improvised, mass-produced asymmetric
+  forces — jury-rigged drones/small-craft/midget-subs thrown in numbers (the in-fiction reason
+  the contacts are individually weak). **Voice: grounded holdout thriller** (drop the camp),
+  strictly tactical/hardware register — never caricature of a people. Reporting names
+  GNAT/JACKAL/VULTURE/WASP/LAMPREY KEPT (they read as NATO callsigns). The three machines get
+  **Persian-folklore codenames** (owner: "research Persian folklore and name the bosses after
+  that") — BUILT below. Resolves open threads #1 (water-mystery) and #4 (working title). Repo
+  folder name kept for now (display name only); a full repo rename is an optional later step.
+- **2026-07-10 — Bosses renamed to Persian-folklore codenames (part of the reskin).** Sourced
+  from the Shahnameh/Avesta monster-bestiary (sensitivity-vetted — no sacred/benevolent figures):
+  THE JUGGERNAUT → **FULAD** (Fulad-zereh, the steel-clad demon with one weak point — the myth is
+  the boss mechanic), THE CANOPY → **KAMAK** (the sky-blotting evil bird that plucks up all
+  beneath it), THE MAW → **GANDAREVA** (the sea-dragon "half in air, half in ocean" that breaches
+  then dives). Mechanical ids (juggernaut/canopy/maw) UNCHANGED — display_name only. **ZAHHAK**
+  (the arch-dragon they serve) reserved as the future final boss for the win-mode chunk.
+  `probe_bosses` name check re-targeted.
+- **2026-07-10 — DC REWORK (owner: the depth charges were too hard to land; chose "aim the
+  blanket + reach farther"). Supersedes the C7 blind K-gun aft-arc tune.** The racks now RANGE the
+  scattered pattern onto the DETECTED contact (toward it, clamped to `dc_range` reach, at least
+  `dc_ring` so it clears the hull) instead of blanketing the stern blind — you did the finding +
+  closing, the pattern rewards it; still scattered area denial, just centered where the contact
+  is. Reach levers: sonar radius 350→440 (closes the torpedo-range gap), `dc_range` 220→260
+  (arm + reach), `contact_hold` 2.5→3.5, `dc_scatter` 90→75. rng draw count per volley UNCHANGED
+  (2/charge) — two-world determinism holds; only WHERE charges land moved. `probe_sonar` (deaf-guns
+  isolates the racks; SONAR-tree re-baselined) + `probe_bosses` (K-gun geometry → DC-ranging)
+  re-targeted; full gate green. Also: a cosmetic sweeping radio/radar dish on the bridge
+  (render-only, rides the render clock, holds under reduced motion).
 - **2026-07-10 — Housekeeping CR: HelmGauges split (no behavior change).** `HelmGauges.gd`
   (623 lines, past the 500 split guide since the C11/C12/C16 HUD growth) reduced to a slim
   orchestrator over render-domain helpers, exactly the C9 FieldRenderer precedent (static funcs

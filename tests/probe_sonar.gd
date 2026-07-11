@@ -35,6 +35,8 @@ func _initialize() -> void:
 	var c2 := _quiet()
 	c2.enemies.by_id("sub").speed = 0.0
 	c2.enemies.by_id("sub").fire_range = 0.0
+	c2.sonar.dc_range = 0.0   # DC rework: the racks now range onto any detected contact — disable them
+	                          # here so this check isolates GUN deafness, not the (working) ASW
 	var w2 := GameWorld.new(5)
 	Sim.step(w2, DT, c2)
 	_place(w2, "sub", Vector2(0, -200), 999999, c2)
@@ -155,12 +157,12 @@ func _initialize() -> void:
 
 	# 7 — SONAR tree derivation: son1..son5 land exactly on the spec numbers
 	var derived := Tech.apply(Configs.defaults(), ["son1", "son2", "son3", "son4", "son5"])
-	var d_ok: bool = absf(derived.sonar.radius - 437.5) < 1e-4 \
-		and absf(derived.sonar.contact_hold - 4.5) < 1e-4 \
+	var d_ok: bool = absf(derived.sonar.radius - 550.0) < 1e-4 \
+		and absf(derived.sonar.contact_hold - 5.5) < 1e-4 \
 		and derived.sonar.dc_count == 6 \
 		and absf(derived.sonar.dc_cooldown - 2.8) < 1e-4 \
-		and absf(derived.sonar.dc_scatter - 45.0) < 1e-4 \
-		and absf(derived.sonar.dc_blast - 71.5) < 1e-4
+		and absf(derived.sonar.dc_scatter - 37.5) < 1e-4 \
+		and absf(derived.sonar.dc_blast - 71.5) < 1e-4   # DC rework re-baselined the sonar base
 	fails += _check(d_ok, "SONAR tree: radius %.1f, hold %.1f, count %d, cd %.1f, scatter %.0f, blast %.1f" \
 		% [derived.sonar.radius, derived.sonar.contact_hold, derived.sonar.dc_count, derived.sonar.dc_cooldown, derived.sonar.dc_scatter, derived.sonar.dc_blast])
 

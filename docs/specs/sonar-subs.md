@@ -29,9 +29,12 @@ else in the game: you don't shoot at it, you *listen* for it, then drive your st
 5. **DC trigger: DETECTED subs only** (owner supersession of D1.11's blind-backstop clause).
    Charges stay free / always-on / automatic / deliberately inaccurate — but without a sonar
    contact they never arm. No contact, no ASW: the SONAR branch is load-bearing.
-6. **Pattern: stern rolls + side throwers.** A volley scatters charges behind/around the aft half;
-   they sink on a fuse, then detonate in underwater blast rings. Bad accuracy = wide scatter — subs
-   are fought by DRIVING the stern over the contact.
+6. **Pattern: the plot ranges the volley onto the contact** (DC rework 2026-07-10 — the C7 blind
+   aft-arc K-gun spread was too hard to land). A volley scatters `dc_count` charges toward the
+   DETECTED contact (up to `dc_range` reach, at least `dc_ring` so they clear the hull); they sink
+   on a fuse, then detonate in underwater blast rings. Still deliberately inaccurate (wide scatter)
+   — but centered where the contact is, so getting the sub within ASW range is what matters, not
+   parking it dead astern.
 7. **Sub is an elite:** budget cost 6, unlocks at wave 7 — one or two per wave changes how you sail
    the whole wave.
 8. **Torpedoes are slow + relentless:** ~130 u/s with a ~900 u run — seconds of warning off the
@@ -66,8 +69,9 @@ else in the game: you don't shoot at it, you *listen* for it, then drive your st
   `contact_hold` seconds after leaving. Detection state lives on the Enemy (`detected_until`) — pure
   arithmetic, no draws. Emits a `contact` effect on first acquisition (HUD ping).
 - **`DepthCharges.gd`** (new system, after Sonar): when any DETECTED sub is within `dc_range` of
-  the ship and the rack cooldown is idle, drop a volley of `dc_count` charges at seeded scatter
-  offsets around the aft half (stern arc); each charge inherits a stern position, sinks for
+  the ship and the rack cooldown is idle, aim a point toward that contact (clamped to `dc_range`
+  reach, ≥ `dc_ring`) and drop a volley of `dc_count` charges at seeded scatter around it (DC
+  rework 2026-07-10 — ranged onto the contact, not the blind stern arc); each sinks for
   `dc_fuse` seconds, then detonates: damage `dc_dmg` to SUBS within `dc_blast` (underwater blast —
   surface/air enemies and the ship are unaffected). Scatter draws from `world.rng` in volley order.
   Charges are pooled `Projectile`s (`wid: "dc"`, near-zero velocity, life = fuse).
@@ -80,13 +84,13 @@ else in the game: you don't shoot at it, you *listen* for it, then drive your st
 
 | Tunable | Start | Meaning |
 |---|---|---|
-| `radius` | `350` | base passive detection radius (torpedo range is 800 — close the gap in the tree) |
-| `contact_hold` | `2.5` | seconds a contact persists after leaving the radius |
+| `radius` | `440` | base passive detection radius (DC rework: was 350 — closes the 800u torpedo-range gap) |
+| `contact_hold` | `3.5` | seconds a contact persists after leaving the radius (was 2.5) |
 | `ripple_range` | `260` | undetected-sub cosmetic tell distance |
-| `dc_range` | `220` | contact distance that arms the racks |
+| `dc_range` | `260` | contact distance that arms the racks AND the pattern's max reach (was 220) |
 | `dc_count` | `4` | charges per volley |
-| `dc_ring` | `85` | throw-station ring radius (added 2026-07-09, owner tune at the C7 gate: the volley became a K-GUN SPREAD — stations evenly around the beams and stern, scatter jittering each station — because the auto-firing racks were "too hard" when piled on one stern point) |
-| `dc_scatter` | `90` | jitter around each throw station (was: scatter around the single stern point) |
+| `dc_ring` | `97` | MINIMUM throw distance — a close contact still lands clear of the hull (DC rework repurposed this from the C7 K-gun aft-arc ring radius) |
+| `dc_scatter` | `75` | jitter around the aim point (was 90; the ranging-onto-contact does the rest) |
 | `dc_fuse` | `1.5` | sink time before detonation |
 | `dc_blast` | `55` | underwater blast radius |
 | `dc_dmg` | `3` | damage per blast (hp-6 sub ≈ two good volleys) |

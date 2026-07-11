@@ -4,13 +4,13 @@
 
 [resource]
 script = ExtResource("1")
-radius = 350.0
-contact_hold = 2.5
+radius = 440.0
+contact_hold = 3.5
 ripple_range = 260.0
-dc_range = 220.0
+dc_range = 260.0
 dc_count = 4
 dc_ring = 97.0
-dc_scatter = 90.0
+dc_scatter = 75.0
 dc_fuse = 1.5
 dc_blast = 55.0
 dc_dmg = 3

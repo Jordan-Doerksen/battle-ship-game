@@ -19,7 +19,7 @@ static func _part(pn: String, hp: float, ox: float, oy: float, r: float, role: S
 static func spec_defaults() -> BossConfig:
 	var c := BossConfig.new()
 	var jug := BossDef.new()
-	jug.id = "juggernaut"; jug.display_name = "THE JUGGERNAUT"; jug.layer = "surf"
+	jug.id = "juggernaut"; jug.display_name = "FULAD"; jug.layer = "surf"   # Fulad-zereh: the steel-clad demon, one weak point
 	jug.core_hp = 40.0; jug.radius = 30.0; jug.speed = 30.0; jug.turn = 0.4; jug.standoff = 550.0
 	jug.parts = [
 		_part("FORE TURRET", 10.0, 0.0, -34.0, 12.0, "gun"),
@@ -30,7 +30,7 @@ static func spec_defaults() -> BossConfig:
 	jug.lead = 0.7; jug.spread = 0.04; jug.panic_rate = 1.3
 	jug.phase_speed = 10.0; jug.phase_spawn = "swarmer"; jug.phase_spawn_n = 2
 	var can := BossDef.new()
-	can.id = "canopy"; can.display_name = "THE CANOPY"; can.layer = "air"
+	can.id = "canopy"; can.display_name = "KAMAK"; can.layer = "air"   # the sky-blotting bird that plucks up all beneath it
 	can.core_hp = 50.0; can.radius = 34.0; can.speed = 55.0; can.turn = 0.5; can.standoff = 480.0
 	can.parts = [
 		_part("PORT BAY", 9.0, -30.0, 0.0, 11.0, "bay"),
@@ -42,7 +42,7 @@ static func spec_defaults() -> BossConfig:
 	can.hive_period = 5.0; can.hive_spawn = "swarmer"; can.hive_spawn_n = 3
 	can.phase_rate = 0.75; can.hive_death_spawn = "bomber"; can.hive_death_n = 2
 	var maw := BossDef.new()
-	maw.id = "maw"; maw.display_name = "THE MAW"; maw.layer = "sub"
+	maw.id = "maw"; maw.display_name = "GANDAREVA"; maw.layer = "sub"   # the sea-dragon "half in air, half in ocean" — breaches, then dives
 	maw.core_hp = 45.0; maw.radius = 36.0; maw.speed = 45.0; maw.turn = 0.5; maw.standoff = 500.0
 	maw.parts = [
 		_part("VENT COWL A", 8.0, -18.0, -22.0, 9.0, "vent"),

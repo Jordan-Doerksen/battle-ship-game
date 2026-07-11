@@ -70,6 +70,16 @@ static func draw_hull(r: FieldRenderer, rd: Dictionary) -> void:
 	r.draw_rect(Rect2(-13, -31, 26, 41), r.wreck_fade(FieldRenderer.DECK, fade))
 	r.draw_rect(Rect2(-8, -43, 16, 12), r.wreck_fade(FieldRenderer.DECK, fade))
 	r.draw_rect(Rect2(-4, -18, 8, 8), r.wreck_fade(Color(0.290, 0.373, 0.408), fade))
+	# a radio/radar dish sweeping on the bridge — cosmetic, rides the render clock (holds still under
+	# reduced motion like the sea). A pedestal + a rotating antenna arm with a perpendicular dish face.
+	var dish_hub := Vector2(0, -37)
+	var dish_ang: float = 0.0 if r._field_cfg.reduced_motion else r.sea_t * 1.6
+	var dd := Vector2(sin(dish_ang), -cos(dish_ang))
+	var dp := Vector2(-dd.y, dd.x)
+	var dish_tip := dish_hub + dd * 6.0
+	r.draw_circle(dish_hub, 2.0, r.wreck_fade(FieldRenderer.STEEL, fade))
+	r.draw_line(dish_hub - dd * 1.5, dish_tip, r.wreck_fade(FieldRenderer.STEEL, fade), r.lw(1.4))
+	r.draw_line(dish_tip - dp * 3.0, dish_tip + dp * 3.0, r.wreck_fade(FieldRenderer.FOAM, fade), r.lw(1.4))
 	r.draw_arc(Vector2(0, 65), 14.0, 0.0, TAU, 32, r.wreck_fade(FieldRenderer.STEEL, fade), r.lw(1.0), true)
 	r.draw_line(Vector2(-8, 65), Vector2(8, 65), r.wreck_fade(FieldRenderer.STEEL, fade), r.lw(1.0))
 	r.draw_line(Vector2(0, -137.5), Vector2(0, -103.0), r.wreck_fade(FieldRenderer.STEEL, fade), r.lw(1.0))   # bow jack rides the C14 stem
