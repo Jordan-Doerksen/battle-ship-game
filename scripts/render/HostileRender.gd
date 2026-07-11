@@ -39,35 +39,72 @@ static func draw_enemies(r: FieldRenderer) -> void:
 			# per roster slot (array order is stable within a wave) — never the sim's rng
 			rock += (1.0 if i % 2 == 0 else -1.0) * deg_to_rad(7.0)
 		r.draw_set_transform(draw_pos, e.heading + rock, Vector2.ONE * boost)
-		if e.type_id == "swarmer":
-			r.draw_colored_polygon(PackedVector2Array([Vector2(0, -8), Vector2(6, 6), Vector2(0, 3), Vector2(-6, 6)]),
+		if e.type_id == "swarmer":   # AIR THREAT: GNAT — a suicide drone, a slim delta with a live seeker
+			r.draw_colored_polygon(PackedVector2Array([Vector2(0, -8), Vector2(5.5, 6), Vector2(0, 2.5), Vector2(-5.5, 6)]),
 				Color(0.851, 0.310, 0.169, 0.95))
-			r.draw_circle(Vector2(0, -1), 1.4, FieldRenderer.FOAM)
-		elif e.type_id == "wasp":   # AIR THREAT: the rocket plane — a slim dart with rails
-			r.draw_colored_polygon(PackedVector2Array([Vector2(0, -10), Vector2(4, 7), Vector2(0, 4), Vector2(-4, 7)]),
+			# a hot seeker core in the belly — pulses on the render clock, holds still under reduced motion
+			var glow: float = 1.9 if cfg.reduced_motion else 1.6 + 0.5 * sin(now * 0.012)
+			r.draw_circle(Vector2(0, -1), glow, Color(FieldRenderer.FLASH.r, FieldRenderer.FLASH.g, FieldRenderer.FLASH.b, 0.5))
+			r.draw_circle(Vector2(0, -1), 1.0, FieldRenderer.FOAM)   # sensor dot
+		elif e.type_id == "wasp":   # AIR THREAT: WASP — the rocket plane, a slim dart on swept wings
+			r.draw_colored_polygon(PackedVector2Array([Vector2(0, -11), Vector2(2.2, 2), Vector2(5.5, 7), Vector2(0, 4.5), Vector2(-5.5, 7), Vector2(-2.2, 2)]),
 				Color(0.851, 0.310, 0.169, 0.95))
-			r.draw_rect(Rect2(-6.0, 0.0, 1.6, 5.0), FieldRenderer.STEEL)
-			r.draw_rect(Rect2(4.4, 0.0, 1.6, 5.0), FieldRenderer.STEEL)
-			r.draw_circle(Vector2(0, -2), 1.2, FieldRenderer.FOAM)
-		elif e.type_id == "gunboat":
-			var boat := PackedVector2Array([Vector2(0, -16), Vector2(8, -6), Vector2(8, 12), Vector2(-8, 12), Vector2(-8, -6)])
+			for wx in [-5.0, 5.0]:   # underwing rocket rails, each slung with a red warhead
+				r.draw_rect(Rect2(wx - 0.8, -1.0, 1.6, 6.0), FieldRenderer.STEEL)
+				r.draw_circle(Vector2(wx, -1.5), 1.1, Color(FieldRenderer.RED.r, FieldRenderer.RED.g, FieldRenderer.RED.b, 0.9))
+			r.draw_circle(Vector2(0, -3), 1.2, FieldRenderer.FOAM)   # canopy glint
+		elif e.type_id == "gunboat":   # SURFACE THREAT: JACKAL — an improvised fast-attack craft
+			# a hard-chine planing hull — fine pointed bow, full midships, a transom stern
+			var boat := PackedVector2Array([
+				Vector2(0, -16), Vector2(3.5, -11), Vector2(7, -3), Vector2(8, 4),
+				Vector2(6.5, 11), Vector2(6, 12), Vector2(-6, 12), Vector2(-6.5, 11),
+				Vector2(-8, 4), Vector2(-7, -3), Vector2(-3.5, -11),
+			])
 			var hull_col := Color(0.118, 0.180, 0.212)
+			var sup_col := Color(0.176, 0.247, 0.286)   # low wheelhouse — reads lighter than the hull
 			if wounded:
 				hull_col = hull_col.darkened(0.25)   # wounded hull chars toward black (C12)
+				sup_col = sup_col.darkened(0.25)
+			# bow spray — it runs fast and low, throwing a foam mustache off the stem (drawn under the
+			# hull so the stem overlaps its root, same language as the ship's bow wave)
+			r.draw_colored_polygon(PackedVector2Array([Vector2(1.5, -13.5), Vector2(7.5, -6.5), Vector2(2.5, -10.0)]),
+				Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.4))
+			r.draw_colored_polygon(PackedVector2Array([Vector2(-1.5, -13.5), Vector2(-7.5, -6.5), Vector2(-2.5, -10.0)]),
+				Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.4))
 			r.draw_colored_polygon(boat, hull_col)
 			var bc := PackedVector2Array(boat); bc.append(boat[0])
-			r.draw_polyline(bc, Color(0.851, 0.310, 0.169, 0.8), r.lw(1.2), true)
-			r.draw_rect(Rect2(-1.5, -10, 3, 8), FieldRenderer.RED)
-		else:   # bomber
-			var wing := PackedVector2Array([Vector2(0, -14), Vector2(16, 10), Vector2(0, 4), Vector2(-16, 10)])
+			r.draw_polyline(bc, Color(0.851, 0.310, 0.169, 0.8), r.lw(1.2), true)   # signal-red edge accent
+			# jury-rigged rocket rail welded to the starboard rail — asymmetric on purpose
+			r.draw_rect(Rect2(5.2, 0.5, 2.4, 7.0), Color(0.129, 0.184, 0.216))
+			r.draw_circle(Vector2(6.4, 1.6), 0.9, FieldRenderer.RED)   # rocket tips
+			r.draw_circle(Vector2(6.4, 4.2), 0.9, FieldRenderer.RED)
+			# low wheelhouse / superstructure aft of amidships, with a lit windscreen strip
+			r.draw_rect(Rect2(-3.5, 1.5, 7.0, 6.5), sup_col)
+			r.draw_rect(Rect2(-3.5, 1.5, 7.0, 1.6), Color(FieldRenderer.STEEL.r, FieldRenderer.STEEL.g, FieldRenderer.STEEL.b, 0.4))
+			# the deck gun — a real little turret + barrel trained forward on the foredeck
+			r.draw_circle(Vector2(0, -3.5), 2.6, Color(0.098, 0.149, 0.180))
+			r.draw_arc(Vector2(0, -3.5), 2.6, 0.0, TAU, 16, Color(FieldRenderer.RED.r, FieldRenderer.RED.g, FieldRenderer.RED.b, 0.75), r.lw(1.0), true)
+			r.draw_rect(Rect2(-0.8, -13.0, 1.6, 9.5), FieldRenderer.STEEL)   # barrel
+		else:   # AIR THREAT: VULTURE — the torpedo bomber, a heavy twin-boom airframe with engine glow
+			var wing := PackedVector2Array([Vector2(0, -14), Vector2(16, 8), Vector2(9, 12), Vector2(-9, 12), Vector2(-16, 8)])
 			var wing_col := Color(0.588, 0.176, 0.098, 0.95)
+			var boom_col := Color(0.318, 0.106, 0.063)
+			var body_col := Color(0.427, 0.137, 0.078)
 			if wounded:
 				wing_col = wing_col.darkened(0.15)   # air craft only darken slightly — no list, it flies (C12)
+				boom_col = boom_col.darkened(0.15)
+				body_col = body_col.darkened(0.15)
 			r.draw_colored_polygon(wing, wing_col)
 			var wc := PackedVector2Array(wing); wc.append(wing[0])
 			r.draw_polyline(wc, Color(0.851, 0.310, 0.169, 0.9), r.lw(1.2), true)
-			r.draw_circle(Vector2(-6, 6), 1.6, FieldRenderer.FLASH)
-			r.draw_circle(Vector2(6, 6), 1.6, FieldRenderer.FLASH)
+			for bx in [-7.0, 7.0]:   # twin engine booms running fore-aft
+				r.draw_rect(Rect2(bx - 1.3, -6.0, 2.6, 16.0), boom_col)
+			r.draw_line(Vector2(-8, 11), Vector2(8, 11), boom_col, r.lw(1.6))   # tailplane joining the booms
+			r.draw_rect(Rect2(-2.2, -10.0, 4.4, 20.0), body_col)   # central fuselage
+			r.draw_rect(Rect2(-1.4, 4.0, 2.8, 9.0), FieldRenderer.STEEL)   # the slung torpedo
+			for ex in [-7.0, 7.0]:   # engine glow at the nacelle fronts
+				var eg: float = 0.6 if cfg.reduced_motion else 0.55 + 0.35 * sin(now * 0.01 + ex)
+				r.draw_circle(Vector2(ex, -5.0), 1.7, Color(FieldRenderer.FLASH.r, FieldRenderer.FLASH.g, FieldRenderer.FLASH.b, eg))
 		if e.burn_left > 0:   # INCENDIARY (C4): flame flicker on burning drones
 			r.draw_circle(Vector2.ZERO, 4.0 + sin(now * 0.05) * 1.5,
 				Color(FieldRenderer.FLASH.r, FieldRenderer.FLASH.g, FieldRenderer.FLASH.b, 0.6 + 0.4 * sin(now * 0.03)))
