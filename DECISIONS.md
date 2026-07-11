@@ -245,6 +245,24 @@ treated as locked:
 ---
 
 ## Change Log
+- **2026-07-10 — FLEET RADIO built (owner: the dish is the story engine — animated fleet comms
+  that warn/teach and promise a relief that never comes).** `RadioComms.gd` (app-layer, one-way
+  reads of world/cfg/profile — sim untouched, probes byte-identical) drives TF50 ACTUAL traffic:
+  sortie-open, wave-forming (reads the C16 formation + a bearing), boss-arrival (the folklore
+  names), wave-clear, obstacle (near terrain), the 5 teaching lines (the C12 drip-hints ABSORBED
+  and reworded as fleet guidance, once/profile via `profile.seen_hints`), and the RELIEF cycle
+  that never resolves. `RadioPanel.gd` (new HUD helper, C9 pattern) types it into a 300×92 comms
+  panel top-right (typewriter + caret, last 3 lines, fixed dims). The dish pulses a foam ring on
+  incoming (`ShipRender` + `FieldRenderer.radio_signal_t`); a soft chime plays (`radio.wav` from
+  `gen_sfx.py`, `SfxPlayer.play_ui`, outside the sim effect channel). The old single drip-hint
+  plate + `Main._check_hints` removed (superseded). The RELIEF thread is FLAVOR — the actual win
+  condition ("hold until the fleet arrives") is still its own coming chunk.
+- **2026-07-10 — Enemy craft art polished + game-copy reskin applied.** The four enemy branches in
+  `HostileRender` got menacing improvised-craft silhouettes (JACKAL fast-attack boat w/ welded
+  rocket rail + deck-gun turret; GNAT seeker core; WASP rocket rails; VULTURE twin-boom torpedo
+  bomber) — render-only, all C9/C10/C12 hooks preserved. Title/wave-plate/project.godot carry the
+  grounded voice (THE STRAIT OF HORMUZ / HOLD THE LINE / STAND TO / TASK FORCE 50). Name audit:
+  weapons + tech + manual were already grounded — kept.
 - **2026-07-10 — Owner directive: THE STRAIT OF HORMUZ (the game's real identity; reskin-first).**
   The working title "Earth Defense Force" retires. The game is **The Strait of Hormuz**: a lone
   battleship, cut off holding the strait, surviving until the relief fleet arrives (the WIN
