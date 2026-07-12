@@ -17,8 +17,8 @@
   condition is a future chunk).
 - **Where the code is:** `C:\projects\battle-ship-game` (git, branch `main`, origin
   `github.com/Jordan-Doerksen/battle-ship-game`).
-- **Repo state (2026-07-11):** **fully pushed and in sync** — `origin/main = 867d022`. Nothing
-  uncommitted, nothing ahead.
+- **Repo state (2026-07-11):** **fully pushed and in sync** with `origin/main` — nothing uncommitted,
+  nothing ahead or behind.
 - **Built:** C0–C16 (the founding brief, systems-complete) + the polish arc + the world arc + the
   **identity pivot/reskin** + the **DC rework** + the **FLEET RADIO** + enemy-craft polish + the
   HelmGauges housekeeping split. All shipped, all gated green, all pushed.
@@ -174,7 +174,7 @@ gitignored) builds a single self-contained ~110 MB exe (`embed_pck`, excludes te
 ## 4. Where it stands & what's next
 
 **The founding brief is SYSTEMS-COMPLETE; the polish, world-arc, and reskin directives are all
-discharged and pushed.** `origin/main = 867d022`, working tree clean.
+discharged and pushed.** `main` is in sync with `origin/main`, working tree clean.
 
 **Next (open, not started):**
 - **The WIN-MODE chunk** — the payoff of the relief-fleet promise ("hold until the fleet arrives").
@@ -302,7 +302,7 @@ project; window title may still say the old working title — cosmetic only).
 
 **Git convention (owner):** finished work goes **direct to `main`, then push — no PRs** (git is
 backup, not process). Only branch/PR if explicitly asked. Currently `main` is in sync with
-`origin/main` (`867d022`).
+`origin/main` (no ahead/behind).
 
 ---
 
