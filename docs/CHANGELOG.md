@@ -4,6 +4,32 @@ Chunk log, newest first. Each chunk ships only after it passes the cross-check a
 
 ---
 
+## C19 — THE DETAIL PASS · 2026-07-12 · Built
+
+The "one more 1%" layer — the TEMPEST arc closes. Three packs approved at the 2026-07-12
+interview (HUD grit declined); spec `docs/specs/detail-pass.md`; looks per the approved
+`design/the-tempest.html` toggles. ENTIRELY render-side — the acceptance gate IS every probe
+staying byte-identical, and all 11 suites passed untouched (the C9 render-only proof).
+
+- **Ship liveliness:** throttle-responsive funnel smoke streaming downwind (reads the C17 wind
+  table when a front is up) · ejected brass off the M mounts · the bridge Aldis blinking
+  morse-ish triplets · bow spray at speed in weather · heel spray on hard rudder.
+- **Battle aftermath (persistence — the fight marks the sea):** oil slick + drifting debris field
+  where a surface enemy sank (lobed dark slick, faint sheen rim, ~75 s fade) · cordite haze
+  wreathing the mounts until wind clears it · a sub-death boil of rising bubble rings.
+- **Ambient world (reactivity — the strait is a place):** a gull pair circling the stern that
+  SCATTERS at gunfire and leaves in the rain · drifting flotsam (a free speed/heading parallax
+  cue) · channel buoys seeded off the islets with blinking lamps · cloud shadows sliding across
+  the sea downwind.
+- One helper owns the layer: `AmbienceRender` (C9 split family) — on_event off the same one-way
+  effect batch (death/muzzle/gunflash), draw hooks at three depths (clouds under the flecks,
+  water furniture under the hulls, ship fx above them). State on the host, cosmetic rng only,
+  alpha ceilings in `AmbienceConfig`/`ambience.tres` (the readability law: gameplay marks always
+  win). `reduced_motion`: spawning/bobbing/circling die, static marks stay. *(Spec deviation,
+  noted: pack 1 rides AmbienceRender rather than extending ShipRender — one file owns the layer.)*
+- Deferred without a CR (spec-sanctioned): gull-cry/plop audio, the glint mask inside slicks,
+  the optional neutral tanker silhouette — all owner calls at a future play-test.
+
 ## C18 — THE WHIRLPOOL · 2026-07-12 · Built
 
 Every strait has THE whirlpool. Second system of the TEMPEST arc (spec `docs/specs/whirlpools.md`,

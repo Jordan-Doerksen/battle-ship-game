@@ -245,6 +245,14 @@ treated as locked:
 ---
 
 ## Change Log
+- **2026-07-12 — C19 THE DETAIL PASS built (three packs approved at interview; HUD grit
+  declined). THE TEMPEST ARC IS COMPLETE.** Ship liveliness (funnel smoke, casings, signal lamp,
+  bow/heel spray) + battle aftermath (oil slicks + debris, cordite haze, sub boils) + ambient
+  world (scattering gulls, flotsam, channel buoys, cloud shadows). One render-domain helper
+  (`AmbienceRender`) owns the layer off the one-way effect batch; `AmbienceConfig`/`ambience.tres`
+  carries the dials incl. the readability alpha ceilings; reduced_motion honored. Render-only:
+  all 11 probe suites byte-identical (the C9 proof). Deviation noted in the changelog (pack 1
+  rides AmbienceRender, not ShipRender).
 - **2026-07-12 — C18 THE WHIRLPOOL built (four owner forks locked at interview).** One charted
   vortex per seed at a scored island constriction (pure geometry + substream fallback, zero
   `world.rng` draws); wave-keyed tide clock (floor 0.15 → full churn at period/2, radio-called);

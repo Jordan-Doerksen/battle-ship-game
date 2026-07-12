@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="AmbienceConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://config/AmbienceConfig.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+enabled = true
+smoke_alpha = 0.11
+smoke_life = 2.6
+casing_life = 1.2
+lamp_period = 11.0
+spray_speed_frac = 0.55
+heel_rudder = 0.7
+slick_life = 75.0
+slick_alpha = 0.45
+haze_alpha = 0.08
+haze_life = 2.8
+bubble_life = 2.5
+gull_count = 2
+gull_scatter_r = 200.0
+gull_calm_secs = 15.0
+flotsam_count = 10
+buoy_count = 2
+cloud_alpha = 0.05
+cloud_count = 3

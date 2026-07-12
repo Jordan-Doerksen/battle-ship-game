@@ -20,6 +20,7 @@ static func apply(base: Configs, unlocked: Array) -> Configs:
 	c.bosses = base.bosses.duplicate(true)
 	c.weather = base.weather.duplicate()   # C17: the fronts ride it too
 	c.whirlpool = base.whirlpool.duplicate()   # C18: and the vortex
+	c.ambience = base.ambience.duplicate()     # C19: render dials ride along (sim-blind)
 	for node in c.tech.catalog:
 		if node.locked or not unlocked.has(node.id):
 			continue

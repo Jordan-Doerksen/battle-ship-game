@@ -60,6 +60,8 @@ var radio_signal_t: float = -100.0           # FLEET RADIO: sea_t when the last 
 var target_zoom: float = 0.51                # C10: Main pushes the wheel TARGET — fades key off it
 var _wx: Dictionary = {}                     # C17 weather-render state (drops/dimples/bolts/flash) —
                                              # WeatherRender owns it; lazily built, cosmetic rng only
+var _amb: Dictionary = {}                    # C19 detail-pass state (slicks/haze/gulls/…) —
+                                             # AmbienceRender owns it; same rules
 
 func bind(world: GameWorld, field_cfg: FieldConfig, cam_cfg: CameraConfig, cfgs: Configs) -> void:
 	_world = world
@@ -83,6 +85,7 @@ func bind(world: GameWorld, field_cfg: FieldConfig, cam_cfg: CameraConfig, cfgs:
 func consume_effects(events: Array) -> void:
 	var now: int = Time.get_ticks_msec()
 	for e in events:
+		AmbienceRender.on_event(self, e, now)   # C19: slicks/haze/casings/gull-scatter (non-consuming)
 		if e["type"] == "muzzle" and e["idx"] < _recoil.size():
 			_recoil[e["idx"]] = 1.0
 		if e["type"] == "shipdeath":
@@ -120,6 +123,7 @@ func _draw() -> void:
 	if _world == null:
 		return
 	SeaRender.draw_grid(self)
+	AmbienceRender.draw_clouds(self)   # C19: cloud shadows on the water, under everything alive
 	SeaRender.draw_flecks(self)
 	SeaRender.draw_streaks(self)
 	SeaRender.draw_wake(self)
@@ -127,6 +131,7 @@ func _draw() -> void:
 	                           # the menus/attract like the sea does, so it sits above the wake
 	                           # but BEFORE the show_ship gate
 	WhirlpoolRender.draw(self) # C18: the vortex is water furniture too — under everything that floats
+	AmbienceRender.draw_water(self)   # C19: slicks/boils/flotsam/buoys — the strait is a place
 	if not show_ship:   # open sea only behind the menus (C4/C8): no dead-run combat layers
 		return
 	FxRender.draw_splash_water(self)          # discs + column shadows — water level, under hulls
@@ -137,6 +142,7 @@ func _draw() -> void:
 	ShipRender.draw_hull(self, rd)
 	ShipRender.draw_mounts(self, rd)
 	ShipRender.draw_helo(self)
+	AmbienceRender.draw_ship_fx(self)         # C19: smoke/casings/sprays/lamp/gulls — the crewed read
 	FxRender.draw_splash_plumes(self)         # the columns occlude what they land on
 	FxRender.draw_fx(self)
 	WeatherRender.draw(self)                  # C17: rain/veil/lightning — over everything (the sky)

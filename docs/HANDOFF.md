@@ -24,8 +24,10 @@
   HelmGauges housekeeping split + **C17 WEATHER FRONTS** (the TEMPEST arc's first system — seeded
   fronts, symmetric detection attenuation, the MET SECTION on the radio, rain/lightning render).
   All shipped, all gated green.
-- **What's NOT built / next:** **C18 THE WHIRLPOOL** (spec locked — `docs/specs/whirlpools.md`),
-  the **C19 detail pass** (packs approved), the queued **night + thermal layer** interview, and the
+- **Also built (2026-07-12): the TEMPEST arc — C17 WEATHER FRONTS, C18 THE WHIRLPOOL, C19 THE
+  DETAIL PASS** — all gated green (11 probe suites) against `design/the-tempest.html` (approved
+  as-is) and `docs/research/naval-systems.md`.
+- **What's NOT built / next:** the queued **night + thermal layer** interview, and the
   **WIN-MODE chunk** ("hold until the fleet arrives" payoff; ZAHHAK reserved as the final boss) —
   its own future interview.
 - **Recently scrapped (do not rebuild unprompted):** an **RPG-depth card-draft arc** (a between-wave
@@ -187,8 +189,11 @@ the full narrative is `docs/CHANGELOG.md`.
   the capsize grinder (full XP, spin-under fx) in `Enemies`, torpedo bend ×1.6 in `Projectiles`;
   helm fight in the eye at high tide; hull NEVER pays. `WhirlpoolRender` + scope glyph +
   `vortex_roar`. `WhirlpoolConfig`/`whirlpool.tres`; `probe_whirlpool` (7 checks) — 11 suites.
-- **C19 DETAIL PASS** — three packs approved (ship liveliness · battle aftermath · ambient world);
-  spec in `docs/specs/detail-pass.md`. Render-only.
+- **C19 DETAIL PASS** — BUILT, gated green (`docs/specs/detail-pass.md`). All three approved
+  packs in one render-domain helper (`AmbienceRender` + `AmbienceConfig`/`ambience.tres`):
+  funnel smoke/casings/lamp/sprays · slicks+debris/cordite haze/sub boils · scattering
+  gulls/flotsam/buoys/cloud shadows. Render-only — all 11 suites byte-identical.
+  **THE TEMPEST ARC IS COMPLETE.**
 - Research base: `docs/research/naval-systems.md` (genre survey + owner picks; night + thermal
   layer interview queued).
 
