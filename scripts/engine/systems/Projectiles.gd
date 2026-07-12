@@ -16,6 +16,12 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 		if not p.active:
 			continue
 		var prev: Vector2 = p.pos
+		# C18 THE WHIRLPOOL — torpedoes run shallow: the vortex bends them off their line (mass
+		# tier ×1.6) — a shield you keep between yourself and the wolfpack. Shells fly over.
+		if p.wid == "torpedo":
+			var vbend: Vector2 = Whirlpool.field(world, cfg, p.pos)
+			if vbend != Vector2.ZERO:
+				p.vel += vbend * cfg.whirlpool.mult_torp * dt
 		p.pos += p.vel * dt
 		p.life -= dt
 		# C15 land rules (DECISIONS Change Log 2026-07-10, verbatim owner rule): terrain blocks

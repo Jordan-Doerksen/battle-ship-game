@@ -30,6 +30,13 @@ static func step(world: GameWorld, dt: float, cfgs: Configs) -> void:
 	#    just sluggishly when slow. Screen-fixed: D is clockwise even astern.
 	var speed: float = world.ship_vel.length()
 	var authority: float = maxf(cfg.turn_speed_floor, minf(1.0, speed / cfg.max_speed_ahead))
+	# C18 THE WHIRLPOOL — the helm fight (spec fork 5): inside the core at high tide the wheel
+	# answers at half authority and the swirl torques the bow. Pure arithmetic; NEVER hull damage.
+	if Whirlpool.in_core(world, cfgs, world.ship_pos):
+		var vtide: float = Whirlpool.tide(world, cfgs)
+		if vtide >= cfgs.whirlpool.capsize_tide:
+			authority *= cfgs.whirlpool.helm_mult
+			world.ship_heading += cfgs.whirlpool.yaw_torque * vtide * dt
 	world.ship_heading += cfg.turn_rate_max * turn_mult * authority * inp.rudder * dt
 
 	# 2. Decompose velocity on the NEW keel axes.
@@ -54,6 +61,11 @@ static func step(world: GameWorld, dt: float, cfgs: Configs) -> void:
 
 	# 6. Recompose and integrate.
 	world.ship_vel = fwd * along + right * lat
+	# C18 THE WHIRLPOOL — the pull, battleship mass tier: a course bend, never a trap (the field
+	# is capped and tide-scaled; a hull at speed crosses with a bend, only a parked hull spirals).
+	var vpull: Vector2 = Whirlpool.field(world, cfgs, world.ship_pos)
+	if vpull != Vector2.ZERO:
+		world.ship_vel += vpull * cfgs.whirlpool.mult_ship * dt
 	world.ship_pos += world.ship_vel * dt
 
 	# 7. C15 THE WATERS — the keel capsule vs the terrain circles (design/the-waters.html port).

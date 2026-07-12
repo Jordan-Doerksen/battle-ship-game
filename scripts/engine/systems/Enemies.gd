@@ -42,6 +42,22 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 		e.pos += Vector2(sin(e.heading), -cos(e.heading)) * def.speed * dt
 		if def.layer != "air" and not world.terrain.is_empty():
 			e.pos = Terrain.push_out(world, e.pos, def.radius)   # hard safety: never park in a rock
+		# C18 THE WHIRLPOOL — surface small craft ride the current hard (mass tier ×1.0, applied as
+		# drift: kinematic hulls carry no velocity to accelerate), and the core at high tide
+		# CAPSIZES them — the grinder, at full XP (spec fork 4: herding is play and pays like
+		# play). A grounded spin-under, not a fireball. Subs run beneath the surface phenomenon;
+		# air never feels it. Own bookkeeping (not damage_enemy) so no death blast draws.
+		if def.layer == "surf":
+			var vdrift: Vector2 = Whirlpool.field(world, cfg, e.pos)
+			if vdrift != Vector2.ZERO:
+				e.pos += vdrift * cfg.whirlpool.mult_small * dt
+				if Whirlpool.in_core(world, cfg, e.pos) \
+						and Whirlpool.tide(world, cfg) >= cfg.whirlpool.capsize_tide:
+					e.active = false
+					world.kills += 1
+					world.xp_run += cfg.progress.xp_for_kill(e.type_id)
+					world.effects.append({ "type": "capsize", "pos": e.pos })
+					continue
 		if def.standoff > 0.0:
 			e.cool -= dt
 			if dist_ship <= def.fire_range * world.wx_mult and e.cool <= 0.0:

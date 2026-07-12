@@ -12,6 +12,7 @@ const SOUND_NAMES := [
 	"mb16_fire", "dp5_fire", "mg_burst", "splash_column", "gunsplash", "torp_klaxon",
 	"contact_ping", "dc_volley", "dc_blast", "ship_hit", "wave_clear", "machine_swell", "ship_lost",
 	"rain_bed", "thunder",   # C17 weather fronts — the bed loops, thunder rumbles on its own clock
+	"vortex_roar",           # C18 — the charted vortex, heard for miles (loops; tide × proximity)
 ]
 # UI cues — played directly by Main (play_ui), NOT routed through the sim's effect channel. The
 # FLEET RADIO chime on incoming comms traffic lives here.
@@ -23,6 +24,7 @@ const EVENT_SOUND := {
 	"dcvolley": "dc_volley", "dcblast": "dc_blast",
 	"shiphit": "ship_hit", "shipdeath": "ship_lost",
 	"waveclear": "wave_clear", "klaxon": "machine_swell",   # the klaxon event IS the machine arrival (Waves.gd)
+	"capsize": "splash_column",   # C18: the grinder's watery whump — the splash voice fits
 }
 const MUZZLE_SOUND := { "L": "mb16_fire", "M": "dp5_fire", "S": "mg_burst" }
 
@@ -58,12 +60,37 @@ func _ready() -> void:
 		bed.loop_begin = 0
 		bed.loop_end = bed.data.size() / 2
 		_wx_bed.stream = bed
+	_vx_roar = AudioStreamPlayer.new()
+	add_child(_vx_roar)
+	var roar: AudioStreamWAV = _streams.get("vortex_roar") as AudioStreamWAV
+	if roar != null:
+		roar.loop_mode = AudioStreamWAV.LOOP_FORWARD
+		roar.loop_begin = 0
+		roar.loop_end = roar.data.size() / 2
+		_vx_roar.stream = roar
+
+var _vx_roar: AudioStreamPlayer   # C18 — the vortex loop voice
+var _vx_last_set: int = -100000
 
 func _process(_dt: float) -> void:
-	# the watchdog: leaving the game state (menus, manual, restart) silences the front
+	# the watchdog: leaving the game state (menus, manual, restart) silences the front + the vortex
 	if _wx_state != "clear" and Time.get_ticks_msec() - _wx_last_set > 600:
 		_wx_state = "clear"
 		_wx_bed.stop()
+	if _vx_roar != null and _vx_roar.playing and Time.get_ticks_msec() - _vx_last_set > 600:
+		_vx_roar.stop()
+
+# C18 — Main pushes the roar intensity (tide × proximity, 0..1) every game frame; the loop voice
+# rides it and the shared watchdog stops it when the frames stop coming.
+func set_vortex(intensity: float) -> void:
+	_vx_last_set = Time.get_ticks_msec()
+	if _cfg == null or _cfg.muted or intensity < 0.03:
+		if _vx_roar.playing:
+			_vx_roar.stop()
+		return
+	_vx_roar.volume_db = linear_to_db(clampf(_cfg.master_volume * intensity * 0.45, 0.0001, 1.0))
+	if not _vx_roar.playing:
+		_vx_roar.play()
 
 # Main pushes the current weather state every game frame (C17). Bed volume rides the state;
 # THUNDERHEAD schedules low rumbles on the render clock (cosmetic — never the sim's).

@@ -61,6 +61,9 @@ var wx_state: String = "clear"           # C17 WEATHER FRONTS: current state (cl
 var wx_mult: float = 1.0                 # the detection multiplier for wx_state (1.0 = clear); the whole sim surface
 var wx_schedule: Dictionary = {}         # wave → state, built ONCE by Weather.generate (dedicated substream —
                                          # zero world.rng draws); empty = clear skies forever (pre-C17 probes)
+var vortex_pos: Vector2 = Vector2.INF    # C18 THE WHIRLPOOL: the one charted vortex — Main calls
+                                         # Whirlpool.generate ONCE at world setup; INF = open water,
+                                         # every field query no-ops (pre-C18 probes)
 var godmode: bool = false                # DEV test kit only (debug builds); guards Hull.damage
 var freeze_waves: bool = false           # DEV test kit only (debug builds); pauses the director
 

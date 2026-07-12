@@ -33,6 +33,7 @@ const FX_LIFE := {
 	"helodrop": 0.35, "helodown": 0.5,
 	"partdown": 0.6, "bossdown": 2.0, "breach": 1.0, "dive": 0.8,
 	"klaxon": 0.0, "waveclear": 0.0,
+	"capsize": 1.4, "wx": 0.0,   # C18: the grinder's spin-under · C17: front edges (sfx/plate only)
 }
 
 var _world: GameWorld
@@ -125,6 +126,7 @@ func _draw() -> void:
 	TerrainRender.draw(self)   # C15: the waters are world furniture — land stays visible behind
 	                           # the menus/attract like the sea does, so it sits above the wake
 	                           # but BEFORE the show_ship gate
+	WhirlpoolRender.draw(self) # C18: the vortex is water furniture too — under everything that floats
 	if not show_ship:   # open sea only behind the menus (C4/C8): no dead-run combat layers
 		return
 	FxRender.draw_splash_water(self)          # discs + column shadows — water level, under hulls

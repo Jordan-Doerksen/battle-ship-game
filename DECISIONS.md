@@ -245,6 +245,15 @@ treated as locked:
 ---
 
 ## Change Log
+- **2026-07-12 — C18 THE WHIRLPOOL built (four owner forks locked at interview).** One charted
+  vortex per seed at a scored island constriction (pure geometry + substream fallback, zero
+  `world.rng` draws); wave-keyed tide clock (floor 0.15 → full churn at period/2, radio-called);
+  mass-tiered analytic field (ship ×0.25 / small craft ×1.0 / torpedoes ×1.6; subs beneath, air
+  immune); the grinder capsizes small craft in the peak core at FULL XP (spin-under fx, no
+  fireball); the helm fight (half rudder authority + bow torque in the eye at high tide); the
+  hull NEVER pays (probe-gated). WhirlpoolConfig/whirlpool.tres; scope glyph; vortex_roar;
+  `probe_whirlpool` gates it (11 suites). Declined at interview, on the record: >1 vortex
+  (CR to raise), weather-coupled tide, hull damage, any AIR WING effect.
 - **2026-07-12 — C17 WEATHER FRONTS built (the TEMPEST arc opens; owner interview locked four
   forks).** Mockup gate `design/the-tempest.html` approved as-is; spec `docs/specs/weather-fronts.md`.
   A seeded front schedule (dedicated substream, zero `world.rng` draws — the C16 discipline) lands

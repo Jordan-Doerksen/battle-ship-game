@@ -4,6 +4,38 @@ Chunk log, newest first. Each chunk ships only after it passes the cross-check a
 
 ---
 
+## C18 — THE WHIRLPOOL · 2026-07-12 · Built
+
+Every strait has THE whirlpool. Second system of the TEMPEST arc (spec `docs/specs/whirlpools.md`,
+four owner forks locked; mockup `design/the-tempest.html` approved as-is). Restrained by decision:
+a charted tactical terrain feature, never a black hole.
+
+- **Charted, not spawned:** `Whirlpool.generate` scores island constrictions (narrowest navigable
+  gap, midpoint clear of the opening water) and charts ONE vortex per seed — pure geometry over
+  seed-pure terrain, an open-water eddy fallback on a dedicated substream, ZERO `world.rng` draws.
+  The C15 idiom: an unset vortex no-ops every query, pre-C18 probes never notice.
+- **The tide clock (owner fork 3):** a pure cosine of the WAVE COUNT — floor 0.15 at wave 0, full
+  churn at period/2. Dormant = a crossable lane with a lazy foam ring; peak = lane denied. The
+  MET SECTION calls the transitions ("vortex at full churn — that lane is closed" / "slack water").
+- **Mass tiers (owner fork 1):** the analytic field (clockwise swirl ~3:1 over a CAPPED inward
+  pull, smoothstep rim) bends the battleship ×0.25 (a course bend, never a trap — applied to
+  `ship_vel` in Movement), rides surface small craft ×1.0 (kinematic drift in Enemies), and bends
+  torpedoes ×1.6 in flight (Projectiles) — a shield you keep between yourself and the wolfpack.
+  Subs run beneath it; air never feels it.
+- **The grinder (owner fork 4):** a small craft in the core at tide ≥ 0.8 CAPSIZES — the player's
+  kill at full XP (herding is play and pays like play), a grounded spin-under fx, no fireball.
+  Subs and machines immune. **The hull NEVER pays** — probe-gated.
+- **The helm fight (owner fork 5):** inside the eye at high tide the rudder answers at half
+  authority and the swirl torques the bow — you fight the wheel while the waves keep coming.
+- **The look:** `WhirlpoolRender` — stepped darkening well whose radius IS the influence radius,
+  three spiral arms of foam dashes (rotation speed encodes the tide), small eye, circling debris;
+  reduced-motion freezes the spiral. Charted swirl glyph + faint ring on the scope (bathymetry,
+  never a blip). `vortex_roar` loop rides tide × proximity (heard for miles — Corryvreckan).
+  First-encounter teach line via the radio, once per profile.
+- **Verify:** `probe_whirlpool` (7 checks) joins `verify.sh` — 11 suites. Two probe fixes at the
+  gate (a control-world torpedo spawned off an unset vortex; unkillable targets so the ship's own
+  turrets can't end a drift measurement). All pre-C18 probes pass untouched.
+
 ## C17 — WEATHER FRONTS · 2026-07-12 · Built
 
 The strait grew a sky. First system of the TEMPEST arc (research: `docs/research/naval-systems.md`;

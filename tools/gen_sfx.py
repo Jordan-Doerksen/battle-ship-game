@@ -247,6 +247,13 @@ def fx_rain_bed(buf, t):    # RAIN BED (C17) -- loopable hiss on the deck, ~2.4 
     noise_burst(buf, t + 0.3, {"type": "bandpass", "freq": 2400, "q": 0.7, "dur": 2.05, "a": 0.600, "gain": 0.12})
 
 
+def fx_vortex_roar(buf, t): # VORTEX ROAR (C18) -- the charted whirlpool, heard for miles: a low
+    # churning water bed, loopable; SfxPlayer rides its volume on tide x proximity
+    noise_burst(buf, t, {"type": "lowpass", "freq": 260, "dur": 2.40, "a": 0.500, "gain": 0.40})
+    noise_burst(buf, t + 0.2, {"type": "bandpass", "freq": 90, "q": 0.8, "dur": 2.10, "a": 0.700, "gain": 0.35})
+    tone(buf, t, {"wave": "sine", "f0": 38, "f1": 44, "sweepT": 2.0, "dur": 2.40, "a": 0.600, "gain": 0.18})
+
+
 def fx_thunder(buf, t):     # THUNDER (C17) -- distant rolling rumble, ~2.3 s; decoupled from the
     # visual bolt by design (SfxPlayer rumbles on its own clock -- thunder lags lightning in life)
     tone(buf, t, {"wave": "sine", "f0": 48, "f1": 26, "sweepT": 1.9, "dur": 2.30, "a": 0.120, "gain": 0.60})
@@ -271,6 +278,7 @@ SOUNDS = [
     ("radio",         0.18, fx_radio),
     ("rain_bed",      2.40, fx_rain_bed),
     ("thunder",       2.30, fx_thunder),
+    ("vortex_roar",   2.40, fx_vortex_roar),
 ]
 
 

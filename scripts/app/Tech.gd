@@ -19,6 +19,7 @@ static func apply(base: Configs, unlocked: Array) -> Configs:
 	c.terrain = base.terrain.duplicate()   # C15: the waters ride the derivation like every system
 	c.bosses = base.bosses.duplicate(true)
 	c.weather = base.weather.duplicate()   # C17: the fronts ride it too
+	c.whirlpool = base.whirlpool.duplicate()   # C18: and the vortex
 	for node in c.tech.catalog:
 		if node.locked or not unlocked.has(node.id):
 			continue

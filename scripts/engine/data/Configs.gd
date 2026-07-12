@@ -17,6 +17,7 @@ var airwing: AirWingConfig
 var bosses: BossConfig
 var terrain: TerrainConfig
 var weather: WeatherConfig
+var whirlpool: WhirlpoolConfig
 
 # Class-default values (which mirror every .tres) — probes use this so they run without the
 # resource files; Main uses load_all() for the real tunables.
@@ -34,6 +35,7 @@ static func defaults() -> Configs:
 	c.bosses = BossConfig.spec_defaults()
 	c.terrain = TerrainConfig.new()
 	c.weather = WeatherConfig.new()
+	c.whirlpool = WhirlpoolConfig.new()
 	return c
 
 static func load_all() -> Configs:
@@ -62,4 +64,6 @@ static func load_all() -> Configs:
 	if tr != null: c.terrain = tr
 	var wx := load("res://config/weather.tres") as WeatherConfig
 	if wx != null: c.weather = wx
+	var wp := load("res://config/whirlpool.tres") as WhirlpoolConfig
+	if wp != null: c.whirlpool = wp
 	return c

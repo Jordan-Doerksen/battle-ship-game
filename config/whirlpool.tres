@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="WhirlpoolConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://config/WhirlpoolConfig.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+enabled = true
+count = 1
+radius = 170.0
+tang = 30.0
+inward = 11.0
+mult_ship = 0.25
+mult_small = 1.0
+mult_torp = 1.6
+core_frac = 0.15
+tide_period = 6
+tide_floor = 0.15
+capsize_tide = 0.8
+helm_mult = 0.5
+yaw_torque = 0.25
+nav_min = 120.0
+nav_max = 700.0
+start_clear = 450.0
+spin = 0.5

@@ -181,9 +181,12 @@ the full narrative is `docs/CHANGELOG.md`.
   dimples, veil, WCAG-capped lightning — flash ≤ 0.16, ≥ 4 s gaps, reduced-motion kills it);
   `rain_bed`/`thunder` WAVs + the SfxPlayer weather bed. `WeatherConfig`/`weather.tres`;
   `probe_weather` (7 checks) gates it in `verify.sh` (10 suites now).
-- **C18 THE WHIRLPOOL** — spec locked (`docs/specs/whirlpools.md`), NOT built: one seeded vortex
-  per map at a constriction, wave-keyed tide clock, mass-tiered pull, grinder kills at full XP,
-  helm fight at the eye. Build next.
+- **C18 THE WHIRLPOOL** — BUILT, gated green (`docs/specs/whirlpools.md`). One charted vortex per
+  seed at a scored constriction (`Whirlpool.generate`, zero `world.rng` draws); wave-keyed tide
+  clock (radio-called); mass-tiered field — ship ×0.25 in `Movement`, small-craft drift ×1.0 +
+  the capsize grinder (full XP, spin-under fx) in `Enemies`, torpedo bend ×1.6 in `Projectiles`;
+  helm fight in the eye at high tide; hull NEVER pays. `WhirlpoolRender` + scope glyph +
+  `vortex_roar`. `WhirlpoolConfig`/`whirlpool.tres`; `probe_whirlpool` (7 checks) — 11 suites.
 - **C19 DETAIL PASS** — three packs approved (ship liveliness · battle aftermath · ambient world);
   spec in `docs/specs/detail-pass.md`. Render-only.
 - Research base: `docs/research/naval-systems.md` (genre survey + owner picks; night + thermal
@@ -304,8 +307,8 @@ GODOT="/c/Users/Doerk/Downloads/Godot_v4.7-stable_win64.exe/Godot_v4.7-stable_wi
   to stdout). Without the `GODOT=` override, verify.sh looks for a bare `godot` on PATH (absent here)
   and aborts.
 - **Quick (syntax only, after every edit):** `./verify.sh quick`
-- **Full stack:** gdparse sweep → import (.godot/.uid regen) → boot the real game 300 frames → all 10
-  probe suites: `probe_{sim,movement,hardpoints,waves,tech,sonar,airwing,bosses,terrain,weather}.gd`.
+- **Full stack:** gdparse sweep → import (.godot/.uid regen) → boot the real game 300 frames → all 11
+  probe suites: `probe_{sim,movement,hardpoints,waves,tech,sonar,airwing,bosses,terrain,weather,whirlpool}.gd`.
 - **What FAILS the gate:** any nonzero Godot exit, OR the string **`SCRIPT ERROR`** or **`SHADER
   ERROR`** anywhere in stdout/stderr (the grep exists because Godot exits 0 even on runtime script
   errors). Quick mode fails on any gdparse `PARSE FAIL`.

@@ -75,6 +75,16 @@ static func draw(g: HelmGauges) -> void:
 		g.draw_line(c, c + bd * mb_r, Color(HelmGauges.RED.r, HelmGauges.RED.g, HelmGauges.RED.b, 0.7), 1.4)
 		g.draw_line(c + bd * mb_r, c + bd * HelmGauges.RADAR_R, Color(HelmGauges.RED.r, HelmGauges.RED.g, HelmGauges.RED.b, 0.3), 1.4)
 		g.draw_arc(c + bd * mb_r, 2.6, 0.0, TAU, 12, Color(HelmGauges.RED.r, HelmGauges.RED.g, HelmGauges.RED.b, 0.9), 1.0, true)
+	# C18: the charted vortex — a small foam swirl glyph + a faint influence ring. Bathymetry,
+	# not a contact: always drawn, never a blip (it's on the chart, not the scope's returns).
+	if g._world.vortex_pos.x != INF:
+		var voff: Vector2 = (g._world.vortex_pos - g._world.ship_pos) * k
+		if voff.length() <= HelmGauges.RADAR_R - 6.0:
+			var vc := c + voff
+			g.draw_arc(vc, 4.5, 0.0, 4.7, 12, Color(HelmGauges.FOAM.r, HelmGauges.FOAM.g, HelmGauges.FOAM.b, 0.75), 1.2, true)
+			g.draw_arc(vc, 2.2, 2.0, 6.3, 8, Color(HelmGauges.FOAM.r, HelmGauges.FOAM.g, HelmGauges.FOAM.b, 0.55), 1.0, true)
+			RadarScope._dashed_arc(g, vc, g._cfgs.whirlpool.radius * k,
+				Color(HelmGauges.FOAM.r, HelmGauges.FOAM.g, HelmGauges.FOAM.b, 0.22))
 	# C17: under a front the radar picture shortens — a dashed arc marks the degraded horizon and
 	# air/surface blips beyond it drop off the scope (symmetric with the sim's acquisition cut)
 	var wx_r: float = HelmGauges.RADAR_R * g._world.wx_mult

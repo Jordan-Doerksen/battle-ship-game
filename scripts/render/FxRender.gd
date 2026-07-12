@@ -228,6 +228,16 @@ static func draw_fx(r: FieldRenderer) -> void:
 			"death":
 				r.draw_arc(e["pos"], 4.0 + 26.0 * k, 0.0, TAU, 32,
 					Color(FieldRenderer.RED.r, FieldRenderer.RED.g, FieldRenderer.RED.b, 0.85 * (1.0 - k)), 2.0, true)
+			"capsize":   # C18: the vortex takes a small craft — a grounded spin-under, no fireball:
+				# a shrinking dark hull disc rotating down + a contracting foam swirl + one last ring
+				var cs: float = 1.0 - k
+				r.draw_circle(e["pos"], 7.0 * cs, Color(0.12, 0.2, 0.24, 0.8 * cs))
+				for csa in range(2):
+					var ca: float = k * 7.0 + float(csa) * PI
+					r.draw_arc(e["pos"], 4.0 + 9.0 * cs, ca, ca + 2.2, 12,
+						Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.6 * cs), r.lw(1.2), true)
+				r.draw_arc(e["pos"], 6.0 + 18.0 * k, 0.0, TAU, 24,
+					Color(FieldRenderer.FOAM.r, FieldRenderer.FOAM.g, FieldRenderer.FOAM.b, 0.35 * cs), r.lw(1.0), true)
 			"shiphit":
 				r.draw_arc(e["pos"], 10.0 + 40.0 * k, 0.0, TAU, 32,
 					Color(FieldRenderer.RED.r, FieldRenderer.RED.g, FieldRenderer.RED.b, 0.9 * (1.0 - k)), 3.0, true)

@@ -24,6 +24,7 @@ const HINTS := {
 	"deep": "no gun reaches the deep. drive your stern over the contact — the racks do the rest.",
 	"torpedo": "torpedo in the water. turn into it, or outrun it.",
 	"machine": "big return — that's no drone. shoot its parts off first; the core's soft until they fall.",
+	"vortex": "that swirl will take the helm from you — cross it at speed, or wait for slack water.",
 }
 
 # The relief cycle — the holdout's heartbeat. Advances one line each period, loops forever.
@@ -49,6 +50,7 @@ var _relief_idx: int = 0            # which relief line comes next
 var _relief_next: float = RELIEF_PERIOD   # sortie elapsed at which the next relief line fires
 var _prev_wx: String = "clear"      # C17 MET SECTION: last-seen weather state, to catch front edges
 var _forecast_wave: int = -1        # the wave whose front was already forecast (one call per front)
+var _tide_high: bool = false        # C18: the vortex tide latch — full-churn / slack-water calls
 
 # C17 — how the MET SECTION names the states on the net
 const WX_NAMES := { "rain": "passing rain", "squall": "a squall line", "thunder": "a thunderhead" }
@@ -65,6 +67,7 @@ func reset() -> void:   # Main calls this in start_sortie — a fresh net for ev
 	_relief_next = RELIEF_PERIOD
 	_prev_wx = "clear"
 	_forecast_wave = -1
+	_tide_high = false
 
 # Append a line to the log (cap at LOG_CAP), stamp it, and flag a fresh signal for the dish + chime.
 func push(text: String) -> void:
@@ -115,6 +118,18 @@ func _evaluate(world: GameWorld, cfg: Configs, profile: Profile) -> void:
 			_emit("%s overhead — every set on the water is degraded. eyes sharp." % WX_NAMES[world.wx_state])
 			if cfg.weather.grounds_bird(world.wx_state) and cfg.tech.helo:
 				_emit("deck crew lashing the bird — air wing grounded till this blows through.")
+	# C18 THE WHIRLPOOL — tide calls on the charted vortex (MET SECTION owns the water), and the
+	# first time the pull touches the hull, the teach line (once per profile).
+	if world.vortex_pos.x != INF:
+		var vt: float = Whirlpool.tide(world, cfg)
+		if vt >= cfg.whirlpool.capsize_tide and not _tide_high:
+			_tide_high = true
+			_emit("vortex at full churn — that lane is closed.")
+		elif vt <= cfg.whirlpool.tide_floor + 0.1 and _tide_high:
+			_tide_high = false
+			_emit("slack water over the vortex. cross now if you're crossing.")
+		if world.ship_pos.distance_to(world.vortex_pos) <= cfg.whirlpool.radius:
+			_teach("vortex", profile)
 	# BOSS ARRIVAL — once per machine (re-arms when the current machine is down)
 	if world.boss != null:
 		if not _boss_announced:
