@@ -108,7 +108,23 @@ Rejected on tone/legibility: jellyfish glow, crew silhouettes (illegible at 0.40
 shoals. All of the above are render-only or ride existing effects — determinism untouched;
 tunables belong in `field.tres` or a small `AmbienceConfig`.
 
-## 5. Process notes
+## 5. Owner picks (interview 2026-07-12 — direction only; each chunk still gets its /spec-feature)
+
+- **Weather → LIGHT TACTICAL LAYER.** Seeded front schedule rolled at run start; rain attenuates
+  detection (radar/sonar/visual ×0.5–0.7, symmetric); FLEET RADIO forecasts the front. Lightning
+  stays spectacle-only (the contact-reveal variant was offered and NOT taken).
+- **Whirlpools → FULL TACTICAL TERRAIN.** Seeded at island constrictions, tide clock keyed to wave
+  count, mass-tiered pull (battleship ×0.25 / small craft ×1.0 / torpedoes ×1.6), capped radial,
+  no player hull damage.
+- **Detail pass → three packs greenlit:** ship liveliness (funnel smoke, casings, signal lamp, bow
+  spray, heel spray) + battle aftermath (oil slick + debris, cordite haze, sub bubble column) +
+  ambient world (gulls-that-scatter, flotsam, buoys, cloud shadows; the neutral tanker silhouette
+  stays optional). HUD grit (phosphor/needle jitter) was offered and NOT taken.
+- **Next system interview queued: NIGHT + THERMAL LAYER** (dark waves + star shells; sonar layer
+  subs hide under). Tankers, countermeasures, and ammo selection were offered and left on the
+  shelf for now. Subsystem damage stays owner-reserved (scrapped RPG-depth territory).
+
+## 6. Process notes
 
 - `design/the-tempest.html` demos: 4 weather states (CLEAR / PASSING RAIN / SQUALL LINE /
   THUNDERHEAD with safe lightning), the restrained whirlpool with a live pull demo (ship, torpedo,
