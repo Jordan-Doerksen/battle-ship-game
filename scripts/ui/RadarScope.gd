@@ -47,9 +47,12 @@ static func draw(g: HelmGauges) -> void:
 		RadarScope._dashed_arc(g, c, mb.range_u * k, Color(HelmGauges.BRASS.r, HelmGauges.BRASS.g, HelmGauges.BRASS.b, 0.35))
 		RadarScope._micro_label(g, Vector2(c.x, c.y - mb.range_u * k - 3.0), "16-IN", 0)
 	# C5: the sonar radius — a soft filled ring, the only part of the scope that hears the deep
-	g.draw_circle(c, g._cfgs.sonar.radius * k, Color(HelmGauges.FOAM.r, HelmGauges.FOAM.g, HelmGauges.FOAM.b, 0.045))
-	g.draw_arc(c, g._cfgs.sonar.radius * k, 0.0, TAU, 48, Color(HelmGauges.FOAM.r, HelmGauges.FOAM.g, HelmGauges.FOAM.b, 0.28), 1.0, true)
-	RadarScope._micro_label(g, Vector2(c.x + g._cfgs.sonar.radius * k + 4.0, c.y + 3.0), "SONAR", 1)
+	# C17: the sonar ring draws at its ATTENUATED radius — the scope never promises ears the
+	# weather took away (the art is the truth). ×1.0 in clear skies = the C12 ring verbatim.
+	var sonar_r: float = g._cfgs.sonar.radius * g._world.wx_mult * k
+	g.draw_circle(c, sonar_r, Color(HelmGauges.FOAM.r, HelmGauges.FOAM.g, HelmGauges.FOAM.b, 0.045))
+	g.draw_arc(c, sonar_r, 0.0, TAU, 48, Color(HelmGauges.FOAM.r, HelmGauges.FOAM.g, HelmGauges.FOAM.b, 0.28), 1.0, true)
+	RadarScope._micro_label(g, Vector2(c.x + sonar_r + 4.0, c.y + 3.0), "SONAR", 1)
 	# C12: the depth-charge arm range — DASHED foam, unmistakably a weapon ring, not ears
 	RadarScope._dashed_arc(g, c, g._cfgs.sonar.dc_range * k, Color(HelmGauges.FOAM.r, HelmGauges.FOAM.g, HelmGauges.FOAM.b, 0.6))
 	RadarScope._micro_label(g, Vector2(c.x - g._cfgs.sonar.dc_range * k - 4.0, c.y + 3.0), "DC", -1)
@@ -72,12 +75,18 @@ static func draw(g: HelmGauges) -> void:
 		g.draw_line(c, c + bd * mb_r, Color(HelmGauges.RED.r, HelmGauges.RED.g, HelmGauges.RED.b, 0.7), 1.4)
 		g.draw_line(c + bd * mb_r, c + bd * HelmGauges.RADAR_R, Color(HelmGauges.RED.r, HelmGauges.RED.g, HelmGauges.RED.b, 0.3), 1.4)
 		g.draw_arc(c + bd * mb_r, 2.6, 0.0, TAU, 12, Color(HelmGauges.RED.r, HelmGauges.RED.g, HelmGauges.RED.b, 0.9), 1.0, true)
+	# C17: under a front the radar picture shortens — a dashed arc marks the degraded horizon and
+	# air/surface blips beyond it drop off the scope (symmetric with the sim's acquisition cut)
+	var wx_r: float = HelmGauges.RADAR_R * g._world.wx_mult
+	if g._world.wx_mult < 1.0:
+		RadarScope._dashed_arc(g, c, wx_r, Color(HelmGauges.RED.r, HelmGauges.RED.g, HelmGauges.RED.b, 0.30))
+		RadarScope._micro_label(g, Vector2(c.x, c.y - wx_r - 3.0), "WX", 0)
 	# blips (clipped by range check)
 	for e in g._world.enemies:
 		if not e.active:
 			continue
 		var off: Vector2 = (e.pos - g._world.ship_pos) * k
-		if off.length() > HelmGauges.RADAR_R:
+		if off.length() > wx_r:
 			continue
 		var b := c + off
 		if e.layer == "sub":   # detected subs only, as a foam diamond (D1.10 radar gating)

@@ -245,6 +245,16 @@ treated as locked:
 ---
 
 ## Change Log
+- **2026-07-12 — C17 WEATHER FRONTS built (the TEMPEST arc opens; owner interview locked four
+  forks).** Mockup gate `design/the-tempest.html` approved as-is; spec `docs/specs/weather-fronts.md`.
+  A seeded front schedule (dedicated substream, zero `world.rng` draws — the C16 discipline) lands
+  CLEAR/RAIN/SQUALL/THUNDERHEAD at wave boundaries; `world.wx_mult` cuts ALL detection symmetrically
+  (sonar/dip/auto-acquire/enemy fire gates; forced fire weather-blind); boss waves stay clear;
+  squall+ grounds the bird. MET SECTION radio traffic, attenuated scope rings, `WeatherRender`
+  (WCAG-capped lightning, reduced-motion honored), weather bed + thunder audio.
+  `WeatherConfig`/`weather.tres`; `probe_weather` gates it (10 suites). Same interview also locked
+  C18 THE WHIRLPOOL (spec'd, unbuilt) and approved the C19 detail packs. The un-taken options are
+  recorded in the specs (lightning-reveal, dispersion, storm pay, weather-coupled tide — declined).
 - **2026-07-10 — FLEET RADIO built (owner: the dish is the story engine — animated fleet comms
   that warn/teach and promise a relief that never comes).** `RadioComms.gd` (app-layer, one-way
   reads of world/cfg/profile — sim untouched, probes byte-identical) drives TF50 ACTUAL traffic:

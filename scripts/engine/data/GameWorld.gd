@@ -56,6 +56,11 @@ var terrain: Array = []                  # C15 THE WATERS: static features { "po
                                          # "islet": bool } — Main calls Terrain.generate ONCE at world
                                          # setup; empty = open water, every query no-ops (pre-C15 probes)
 var grind_next: float = 0.0              # next allowed cosmetic grind-effect time (Movement.gd rate limit, no rng)
+var wx_state: String = "clear"           # C17 WEATHER FRONTS: current state (clear|rain|squall|thunder),
+                                         # set by Waves._begin_wave from the schedule at wave boundaries
+var wx_mult: float = 1.0                 # the detection multiplier for wx_state (1.0 = clear); the whole sim surface
+var wx_schedule: Dictionary = {}         # wave → state, built ONCE by Weather.generate (dedicated substream —
+                                         # zero world.rng draws); empty = clear skies forever (pre-C17 probes)
 var godmode: bool = false                # DEV test kit only (debug builds); guards Hull.damage
 var freeze_waves: bool = false           # DEV test kit only (debug builds); pauses the director
 

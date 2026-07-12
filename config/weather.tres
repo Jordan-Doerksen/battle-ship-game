@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="WeatherConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://config/WeatherConfig.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+enabled = true
+first_front_min = 4
+first_front_max = 6
+squall_from = 8
+thunder_from = 14
+dur_start = 1
+dur_max = 3
+gap_start = 4
+gap_floor = 2
+gap_step_every = 8
+boss_clear = true
+detect_rain = 0.75
+detect_squall = 0.6
+detect_thunder = 0.5
+ground_bird = true
+rain_amount = {
+"rain": 0.35,
+"squall": 0.8,
+"thunder": 0.65
+}
+veil_amount = {
+"rain": 0.16,
+"squall": 0.36,
+"thunder": 0.4
+}
+wind_amount = {
+"rain": 0.45,
+"squall": 0.85,
+"thunder": 0.8
+}
+bolt_period = 9.0

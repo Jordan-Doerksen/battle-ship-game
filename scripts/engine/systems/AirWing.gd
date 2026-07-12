@@ -21,13 +21,18 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 	if not cfg.tech.helo:
 		return
 	var aw: AirWingConfig = cfg.airwing
+	# C17 WEATHER FRONTS (owner fork 5): squall+ grounds the bird — airborne it turns for the pad,
+	# and a lashed bird never lifts while the front holds. RAIN keeps it flying (attenuated ears).
+	var grounded: bool = cfg.weather.grounds_bird(world.wx_state)
+	if grounded and world.helo_state == "air":
+		world.helo_state = "rtb"
 	world.helo_drop_cool -= dt
 	world.helo_gun_cool -= dt
 	if world.helo_state == "pad":
 		world.helo_pos = _pad(world)
 		world.helo_heading = world.ship_heading   # lashed to the pad
 		world.helo_rearm -= dt
-		if world.helo_rearm <= 0.0:
+		if world.helo_rearm <= 0.0 and not grounded:
 			world.helo_state = "air"
 			world.helo_fuel = aw.patrol_secs
 		return
@@ -85,12 +90,12 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 	for e in world.enemies:
 		if not e.active or e.layer != "sub":
 			continue
-		if e.pos.distance_to(world.helo_pos) <= aw.dip_radius:
+		if e.pos.distance_to(world.helo_pos) <= aw.dip_radius * world.wx_mult:   # C17: weather shortens the dip too
 			if world.elapsed >= e.detected_until:
 				world.effects.append({ "type": "contact", "pos": e.pos })
 			e.detected_until = 1e12 if cfg.tech.mad_gear else world.elapsed + cfg.sonar.contact_hold
 	if world.boss != null and Bosses.domain_of(world, cfg) == "sub" \
-			and world.boss.pos.distance_to(world.helo_pos) <= aw.dip_radius:
+			and world.boss.pos.distance_to(world.helo_pos) <= aw.dip_radius * world.wx_mult:
 		if world.elapsed >= world.boss.detected_until:
 			world.effects.append({ "type": "contact", "pos": world.boss.pos })
 		world.boss.detected_until = 1e12 if cfg.tech.mad_gear else world.elapsed + cfg.sonar.contact_hold

@@ -1,8 +1,44 @@
-# Changelog — Earth Defense Force (working title)
+# Changelog — The Strait of Hormuz
 
 Chunk log, newest first. Each chunk ships only after it passes the cross-check against `DECISIONS.md`.
 
 ---
+
+## C17 — WEATHER FRONTS · 2026-07-12 · Built
+
+The strait grew a sky. First system of the TEMPEST arc (research: `docs/research/naval-systems.md`;
+mockup gate `design/the-tempest.html` approved as-is 2026-07-12; spec `docs/specs/weather-fronts.md`
+— four owner forks locked at interview). A light tactical layer, not a physics sim.
+
+- **The schedule:** `Weather.generate` rolls the run's fronts ONCE on a dedicated substream
+  (`seed ^ "WX17"`) — ZERO `world.rng` draws, the C16 director discipline. Escalating cadence:
+  first front ~wave 4–6, then heavier (RAIN → SQUALL → THUNDERHEAD), longer, and closer with
+  depth. Called by Main beside `Terrain.generate` (the C15 pattern: probes that never generate
+  run clear-sky byte-identical). States land at wave boundaries in `Waves._begin_wave`; a `wx`
+  effect fires on each front edge only.
+- **One sim surface, symmetric:** `world.wx_mult` (1.0/0.75/0.6/0.5) cuts ALL detection both
+  ways — sonar radius, the bird's dip, turret AUTO acquisition, and the enemy side's standoff +
+  fire gates (they close in before they can engage: the knife-fight effect). Forced fire is
+  weather-blind (the cursor doesn't need eyes). Gunnery dispersion explicitly not taken.
+- **Boss waves stay clear** (the schedule parts around every-Nth machine waves — weather and
+  machine difficulty never stack) and **squall+ grounds the bird** (airborne → rtb → lashed to
+  the pad until it blows through; RAIN keeps it up on shortened ears).
+- **The MET SECTION joins TF50:** forecast during the quiet ("squall line on the front — next
+  wave"), arrival/clear lines, the bird-lashed call. Wave plate carries the state tag; the scope
+  draws the sonar ring at its ATTENUATED radius (the art never promises ears the weather took)
+  plus a dashed red WX horizon that clips air/surface blips.
+- **The look (approved TEMPEST values):** `WeatherRender` — wind-angled rain streaks, sea dimple
+  rings, visibility veil, THUNDERHEAD lightning under hard photosensitivity caps (flash ≤ 0.16
+  alpha, ≥ 4 s between strikes, pre-rolled jag). `reduced_motion` kills streaks/dimples/flash;
+  the veil and strike-point water glow stay. `rain_bed` (looping) + `thunder` (decoupled rumble —
+  thunder lags lightning in life too) join `gen_sfx.py`; SfxPlayer grew a weather bed with a
+  self-stopping watchdog.
+- **Verify:** `probe_weather` (7 checks: determinism under fronts, zero-draw baseline, schedule
+  shape, boss-clear, symmetric attenuation both sides, grounding cycle, forced-fire blindness)
+  joins `verify.sh` — 10 suites. Two probe-design fixes at the gate (the boss-clear rule
+  legitimately eats a front that rolls onto a machine wave — shape-check isolated with the
+  ladder off; hostile-fire counted by gunflash events, not surviving shells). All pre-C17
+  probes pass untouched.
 
 ## C16 — THE WAR, REPACKED · 2026-07-10 · Built
 

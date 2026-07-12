@@ -21,9 +21,13 @@
   nothing ahead or behind.
 - **Built:** C0–C16 (the founding brief, systems-complete) + the polish arc + the world arc + the
   **identity pivot/reskin** + the **DC rework** + the **FLEET RADIO** + enemy-craft polish + the
-  HelmGauges housekeeping split. All shipped, all gated green, all pushed.
-- **What's NOT built / next:** the **WIN-MODE chunk** ("hold until the fleet arrives" payoff; ZAHHAK
-  reserved as the final boss) — its own future interview.
+  HelmGauges housekeeping split + **C17 WEATHER FRONTS** (the TEMPEST arc's first system — seeded
+  fronts, symmetric detection attenuation, the MET SECTION on the radio, rain/lightning render).
+  All shipped, all gated green.
+- **What's NOT built / next:** **C18 THE WHIRLPOOL** (spec locked — `docs/specs/whirlpools.md`),
+  the **C19 detail pass** (packs approved), the queued **night + thermal layer** interview, and the
+  **WIN-MODE chunk** ("hold until the fleet arrives" payoff; ZAHHAK reserved as the final boss) —
+  its own future interview.
 - **Recently scrapped (do not rebuild unprompted):** an **RPG-depth card-draft arc** (a between-wave
   card draft + progressive damage + doubled waves) was researched, spec'd, and mockup'd on 2026-07-11,
   then **scrapped at the owner's request — he is reworking that direction himself.** Zero Godot code
@@ -165,6 +169,26 @@ the full narrative is `docs/CHANGELOG.md`.
   helpers `GaugePanel` / `StatusPlates` / `RadarScope` / `HudOverlays` / `RadioPanel` (the C9
   FieldRenderer precedent). No behavior change.
 
+**The TEMPEST arc (2026-07-12, mockup gate `design/the-tempest.html` approved as-is):**
+- **C17 WEATHER FRONTS** — BUILT, gated green (`docs/specs/weather-fronts.md`). A seeded front
+  schedule (`Weather.generate`, dedicated substream, ZERO `world.rng` draws — the C15/C16
+  precedent: probes that never generate run clear-sky byte-identical) lands states at wave
+  boundaries via `Waves._begin_wave`: CLEAR/RAIN/SQUALL/THUNDERHEAD. One sim surface —
+  `world.wx_mult` cuts ALL detection symmetrically (sonar + dip radius, turret auto-acquire,
+  enemy standoff/fire gates; forced fire weather-blind); squall+ grounds the bird; boss waves
+  always clear. MET SECTION forecast/arrival/clear lines on the radio; wave-plate state tag;
+  scope draws the attenuated sonar ring + a dashed WX horizon; `WeatherRender` (rain streaks,
+  dimples, veil, WCAG-capped lightning — flash ≤ 0.16, ≥ 4 s gaps, reduced-motion kills it);
+  `rain_bed`/`thunder` WAVs + the SfxPlayer weather bed. `WeatherConfig`/`weather.tres`;
+  `probe_weather` (7 checks) gates it in `verify.sh` (10 suites now).
+- **C18 THE WHIRLPOOL** — spec locked (`docs/specs/whirlpools.md`), NOT built: one seeded vortex
+  per map at a constriction, wave-keyed tide clock, mass-tiered pull, grinder kills at full XP,
+  helm fight at the eye. Build next.
+- **C19 DETAIL PASS** — three packs approved (ship liveliness · battle aftermath · ambient world);
+  spec in `docs/specs/detail-pass.md`. Render-only.
+- Research base: `docs/research/naval-systems.md` (genre survey + owner picks; night + thermal
+  layer interview queued).
+
 **Demo packaging (works):** 4.7 Windows export templates are installed; `export_presets.cfg` (local,
 gitignored) builds a single self-contained ~110 MB exe (`embed_pck`, excludes tests/design/docs). See
 §8 for the recipe. A first demo zip shipped to Downloads.
@@ -280,8 +304,8 @@ GODOT="/c/Users/Doerk/Downloads/Godot_v4.7-stable_win64.exe/Godot_v4.7-stable_wi
   to stdout). Without the `GODOT=` override, verify.sh looks for a bare `godot` on PATH (absent here)
   and aborts.
 - **Quick (syntax only, after every edit):** `./verify.sh quick`
-- **Full stack:** gdparse sweep → import (.godot/.uid regen) → boot the real game 300 frames → all 9
-  probe suites: `probe_{sim,movement,hardpoints,waves,tech,sonar,airwing,bosses,terrain}.gd`.
+- **Full stack:** gdparse sweep → import (.godot/.uid regen) → boot the real game 300 frames → all 10
+  probe suites: `probe_{sim,movement,hardpoints,waves,tech,sonar,airwing,bosses,terrain,weather}.gd`.
 - **What FAILS the gate:** any nonzero Godot exit, OR the string **`SCRIPT ERROR`** or **`SHADER
   ERROR`** anywhere in stdout/stderr (the grep exists because Godot exits 0 even on runtime script
   errors). Quick mode fails on any gdparse `PARSE FAIL`.

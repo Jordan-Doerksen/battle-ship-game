@@ -108,7 +108,7 @@ static func _pick_target(world: GameWorld, cfg: Configs, wpn: WeaponDef, mpos: V
 		if not wpn.domains.has(domain):
 			continue
 		var dist: float = e.pos.distance_to(mpos)
-		if dist > wpn.range_u:
+		if dist > wpn.range_u * world.wx_mult:   # C17: weather shortens AUTO acquisition — forced fire never routes here
 			continue
 		# STRONG: toughest first, ties by distance; CLOSE: nearest
 		var key: float = (-e.hp_max * 1e6 + dist) if wpn.policy == "STRONG" else dist
@@ -131,7 +131,7 @@ static func _pick_target(world: GameWorld, cfg: Configs, wpn: WeaponDef, mpos: V
 			cand.append({ "pos": b.pos, "heading": b.heading, "spd": bspd, "hp_max": b.core_max })
 			for t in cand:
 				var dist: float = Vector2(t["pos"]).distance_to(mpos)
-				if dist > wpn.range_u:
+				if dist > wpn.range_u * world.wx_mult:   # C17: same weather gate as the drone loop
 					continue
 				var key: float = (-t["hp_max"] * 1e6 + dist) if wpn.policy == "STRONG" else dist
 				if key < best_key:

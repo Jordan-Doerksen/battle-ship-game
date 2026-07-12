@@ -123,6 +123,7 @@ func _start_attract() -> void:
 	cfgs.bosses.every_n = 2
 	world = GameWorld.new(int(Time.get_ticks_usec()))
 	Terrain.generate(world, cfgs)   # C15: the demo fights in real waters too (first rng draws, stable)
+	Weather.generate(world, cfgs)   # C17: the attract weathers the same fronts (substream, zero rng draws)
 	world.godmode = true
 	_accum = 0.0
 	_attract_wait = 0.0
@@ -164,6 +165,7 @@ func start_sortie() -> void:
 		_apply_god_guns()
 	world = GameWorld.new(int(Time.get_ticks_usec()))
 	Terrain.generate(world, cfgs)   # C15: same seed = same archipelago (the world's first rng draws)
+	Weather.generate(world, cfgs)   # C17: same seed = same fronts (dedicated substream, zero rng draws)
 	_accum = 0.0
 	_banked = false
 	paused = false
@@ -305,6 +307,7 @@ func _process(delta: float) -> void:
 		_field.consume_effects(world.effects)   # one-way effect plumbing: sim wrote, render consumes,
 		_gauges.consume_effects(world.effects)  # the scope takes the same batch (C11 fall-of-shot),
 		_sfx.consume_effects(world.effects, world.elapsed)   # C12: the same batch, now audible
+		_sfx.set_weather(world.wx_state)        # C17: the rain bed + thunder ride the state (self-stopping watchdog)
 		world.effects.clear()                   # and the app layer clears — render never touches the world
 		if not world.run_over:                  # FLEET RADIO: evaluate comms triggers (one-way reads),
 			radio.tick(world, cfgs, profile, self)   # then chime + pulse the dish on a fresh line

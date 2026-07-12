@@ -60,6 +60,14 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 # BEFORE composition, but composition rides the substream — the two never interfere.
 static func _begin_wave(world: GameWorld, cfg: Configs) -> void:
 	var wc: WaveConfig = cfg.waves
+	# C17 WEATHER FRONTS: the schedule lands at wave boundaries (an empty schedule reads "clear"
+	# forever — pre-C17 probes never notice). The wx effect fires only on a state FLIP, so the
+	# render/audio layers get one cue per front edge, not one per wave.
+	var wx: String = String(world.wx_schedule.get(world.wave, "clear"))
+	if wx != world.wx_state:
+		world.effects.append({ "type": "wx", "state": wx })
+	world.wx_state = wx
+	world.wx_mult = cfg.weather.detect_mult(wx)
 	var budget: int = wc.base_budget + wc.budget_per_wave * (world.wave - 1)
 	var boss_wave: bool = cfg.bosses.every_n > 0 and world.wave % cfg.bosses.every_n == 0
 	if boss_wave:

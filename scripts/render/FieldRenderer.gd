@@ -57,6 +57,8 @@ var radio_signal_t: float = -100.0           # FLEET RADIO: sea_t when the last 
                                              # Main stamps it on RadioComms.consume_signal(); the dish
                                              # pulses off (sea_t − this). -100 = "long ago" (no ring)
 var target_zoom: float = 0.51                # C10: Main pushes the wheel TARGET — fades key off it
+var _wx: Dictionary = {}                     # C17 weather-render state (drops/dimples/bolts/flash) —
+                                             # WeatherRender owns it; lazily built, cosmetic rng only
 
 func bind(world: GameWorld, field_cfg: FieldConfig, cam_cfg: CameraConfig, cfgs: Configs) -> void:
 	_world = world
@@ -135,6 +137,7 @@ func _draw() -> void:
 	ShipRender.draw_helo(self)
 	FxRender.draw_splash_plumes(self)         # the columns occlude what they land on
 	FxRender.draw_fx(self)
+	WeatherRender.draw(self)                  # C17: rain/veil/lightning — over everything (the sky)
 
 func view_rect() -> Rect2:
 	# culls around the CAMERA, not the ship — identical in a sortie (the cam is ship-locked),

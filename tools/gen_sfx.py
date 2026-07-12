@@ -241,6 +241,19 @@ def fx_ship_lost(buf, t):   # SHIP LOST -- descending settle, ~2 s
     noise_burst(buf, t, {"type": "lowpass", "freq": 320, "f1": 90, "sweepT": 1.6, "dur": 1.90, "a": 0.150, "gain": 0.25})
 
 
+def fx_rain_bed(buf, t):    # RAIN BED (C17) -- loopable hiss on the deck, ~2.4 s; two noise bands
+    # layered so the loop's envelope breathing reads as gusts, not a glitch
+    noise_burst(buf, t, {"type": "lowpass", "freq": 950, "dur": 2.40, "a": 0.400, "gain": 0.30})
+    noise_burst(buf, t + 0.3, {"type": "bandpass", "freq": 2400, "q": 0.7, "dur": 2.05, "a": 0.600, "gain": 0.12})
+
+
+def fx_thunder(buf, t):     # THUNDER (C17) -- distant rolling rumble, ~2.3 s; decoupled from the
+    # visual bolt by design (SfxPlayer rumbles on its own clock -- thunder lags lightning in life)
+    tone(buf, t, {"wave": "sine", "f0": 48, "f1": 26, "sweepT": 1.9, "dur": 2.30, "a": 0.120, "gain": 0.60})
+    noise_burst(buf, t, {"type": "lowpass", "freq": 150, "f1": 60, "sweepT": 1.8, "dur": 2.20, "a": 0.200, "gain": 0.50})
+    noise_burst(buf, t + 0.55, {"type": "lowpass", "freq": 110, "dur": 0.80, "a": 0.100, "gain": 0.30})
+
+
 SOUNDS = [
     ("mb16_fire",     0.55, fx_mb16),
     ("dp5_fire",      0.28, fx_dp5),
@@ -256,6 +269,8 @@ SOUNDS = [
     ("machine_swell", 1.55, fx_machine),
     ("ship_lost",     2.05, fx_ship_lost),
     ("radio",         0.18, fx_radio),
+    ("rain_bed",      2.40, fx_rain_bed),
+    ("thunder",       2.30, fx_thunder),
 ]
 
 

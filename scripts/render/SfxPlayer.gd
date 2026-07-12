@@ -11,6 +11,7 @@ const POOL_SIZE := 10
 const SOUND_NAMES := [
 	"mb16_fire", "dp5_fire", "mg_burst", "splash_column", "gunsplash", "torp_klaxon",
 	"contact_ping", "dc_volley", "dc_blast", "ship_hit", "wave_clear", "machine_swell", "ship_lost",
+	"rain_bed", "thunder",   # C17 weather fronts — the bed loops, thunder rumbles on its own clock
 ]
 # UI cues — played directly by Main (play_ui), NOT routed through the sim's effect channel. The
 # FLEET RADIO chime on incoming comms traffic lives here.
@@ -30,6 +31,14 @@ var _streams: Dictionary = {}     # sound name → AudioStream
 var _pool: Array = []             # AudioStreamPlayer children
 var _pool_started: Array = []     # per-player start tick (ms) — steal the oldest when all busy
 var _last_ms: Dictionary = {}     # sound name → last play tick (ms), the min-gap ledger
+# C17 weather bed — a dedicated looping voice outside the one-shot pool, plus the thunder clock.
+# States map to bed volumes; thunder rumbles are DECOUPLED from the visual bolts on purpose
+# (thunder lags lightning in life too — an untied rumble every 6–15 s reads true).
+const WX_BED_VOL := { "rain": 0.30, "squall": 0.55, "thunder": 0.50 }
+var _wx_bed: AudioStreamPlayer
+var _wx_state: String = "clear"
+var _wx_last_set: int = -100000   # watchdog: Main stops calling set_weather → the bed stops itself
+var _wx_next_rumble: int = 0
 
 func _ready() -> void:
 	for snd in SOUND_NAMES:
@@ -41,6 +50,41 @@ func _ready() -> void:
 		add_child(p)
 		_pool.append(p)
 		_pool_started.append(0)
+	_wx_bed = AudioStreamPlayer.new()
+	add_child(_wx_bed)
+	var bed: AudioStreamWAV = _streams.get("rain_bed") as AudioStreamWAV
+	if bed != null:   # loop the whole bed (16-bit mono: 2 bytes per frame)
+		bed.loop_mode = AudioStreamWAV.LOOP_FORWARD
+		bed.loop_begin = 0
+		bed.loop_end = bed.data.size() / 2
+		_wx_bed.stream = bed
+
+func _process(_dt: float) -> void:
+	# the watchdog: leaving the game state (menus, manual, restart) silences the front
+	if _wx_state != "clear" and Time.get_ticks_msec() - _wx_last_set > 600:
+		_wx_state = "clear"
+		_wx_bed.stop()
+
+# Main pushes the current weather state every game frame (C17). Bed volume rides the state;
+# THUNDERHEAD schedules low rumbles on the render clock (cosmetic — never the sim's).
+func set_weather(state: String) -> void:
+	_wx_last_set = Time.get_ticks_msec()
+	if _cfg == null or _cfg.muted:
+		state = "clear"
+	if state != _wx_state:
+		_wx_state = state
+		if state == "clear" or not WX_BED_VOL.has(state):
+			_wx_bed.stop()
+		else:
+			_wx_bed.volume_db = linear_to_db(clampf(_cfg.master_volume * float(WX_BED_VOL[state]), 0.0001, 1.0))
+			if not _wx_bed.playing:
+				_wx_bed.play()
+			_wx_next_rumble = Time.get_ticks_msec() + 2000
+	elif _wx_bed.playing and _cfg != null:
+		_wx_bed.volume_db = linear_to_db(clampf(_cfg.master_volume * float(WX_BED_VOL.get(state, 0.0)), 0.0001, 1.0))
+	if _wx_state == "thunder" and Time.get_ticks_msec() >= _wx_next_rumble:
+		_wx_next_rumble = Time.get_ticks_msec() + 6000 + randi() % 9000
+		_play("thunder")
 
 func bind(cfg: AudioConfig) -> void:
 	_cfg = cfg

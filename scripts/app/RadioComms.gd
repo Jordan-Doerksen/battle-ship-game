@@ -47,6 +47,11 @@ var _boss_announced: bool = false   # the current machine already got its arriva
 var _obstacle_seen: bool = false    # the shoal advisory fired this sortie
 var _relief_idx: int = 0            # which relief line comes next
 var _relief_next: float = RELIEF_PERIOD   # sortie elapsed at which the next relief line fires
+var _prev_wx: String = "clear"      # C17 MET SECTION: last-seen weather state, to catch front edges
+var _forecast_wave: int = -1        # the wave whose front was already forecast (one call per front)
+
+# C17 — how the MET SECTION names the states on the net
+const WX_NAMES := { "rain": "passing rain", "squall": "a squall line", "thunder": "a thunderhead" }
 
 func reset() -> void:   # Main calls this in start_sortie — a fresh net for every strait picket
 	_log.clear()
@@ -58,6 +63,8 @@ func reset() -> void:   # Main calls this in start_sortie — a fresh net for ev
 	_obstacle_seen = false
 	_relief_idx = 0
 	_relief_next = RELIEF_PERIOD
+	_prev_wx = "clear"
+	_forecast_wave = -1
 
 # Append a line to the log (cap at LOG_CAP), stamp it, and flag a fresh signal for the dish + chime.
 func push(text: String) -> void:
@@ -92,6 +99,22 @@ func _evaluate(world: GameWorld, cfg: Configs, profile: Profile) -> void:
 	elif _prev_wave_state == "fighting" and world.wave_state == "lull":
 		_emit("water's clear. good shooting. for now.")
 	_prev_wave_state = world.wave_state
+	# C17 MET SECTION — the forecast lands during the quiet (once per front), the arrival/clear
+	# lines land on the state flip, and a grounding front tells you the bird is lashed.
+	if world.wave_state == "lull" and not world.wx_schedule.is_empty():
+		var nxt: int = world.wave + 1
+		if world.wx_schedule.has(nxt) and _forecast_wave != nxt \
+				and String(world.wx_schedule[nxt]) != world.wx_state:
+			_forecast_wave = nxt
+			_emit("met section: %s on the front — next wave. batten down." % WX_NAMES[String(world.wx_schedule[nxt])])
+	if world.wx_state != _prev_wx:
+		_prev_wx = world.wx_state
+		if world.wx_state == "clear":
+			_emit("front's through. visibility restored.")
+		else:
+			_emit("%s overhead — every set on the water is degraded. eyes sharp." % WX_NAMES[world.wx_state])
+			if cfg.weather.grounds_bird(world.wx_state) and cfg.tech.helo:
+				_emit("deck crew lashing the bird — air wing grounded till this blows through.")
 	# BOSS ARRIVAL — once per machine (re-arms when the current machine is down)
 	if world.boss != null:
 		if not _boss_announced:

@@ -23,8 +23,10 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 				continue
 		var dist_ship: float = e.pos.distance_to(world.ship_pos)
 		var desired: float
+		# C17: weather is SYMMETRIC — their eyes shorten like yours, so standoff shooters close in
+		# before they can engage (the knife-fight effect). ×1.0 in clear skies = pre-C17 verbatim.
 		if def.standoff > 0.0:   # standoff shooter: approach, then orbit
-			desired = _angle_to(e.pos, world.ship_pos) + (0.0 if dist_ship > def.standoff else PI / 2.0)
+			desired = _angle_to(e.pos, world.ship_pos) + (0.0 if dist_ship > def.standoff * world.wx_mult else PI / 2.0)
 		else:
 			desired = _angle_to(e.pos, world.ship_pos)
 		# C15 — waterborne hulls (surf + sub) give way around terrain: the mockup's tangent
@@ -42,7 +44,7 @@ static func step(world: GameWorld, dt: float, cfg: Configs) -> void:
 			e.pos = Terrain.push_out(world, e.pos, def.radius)   # hard safety: never park in a rock
 		if def.standoff > 0.0:
 			e.cool -= dt
-			if dist_ship <= def.fire_range and e.cool <= 0.0:
+			if dist_ship <= def.fire_range * world.wx_mult and e.cool <= 0.0:
 				e.cool = def.fire_period
 				var flight: float = dist_ship / def.shell_speed
 				var aim: Vector2 = world.ship_pos + world.ship_vel * flight * def.lead

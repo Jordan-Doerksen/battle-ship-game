@@ -35,6 +35,8 @@ static func draw_wave(g: HelmGauges) -> void:
 					and since >= float(g._world.wave_ech_rel.get(ech, 1e12)):
 				phase = { "vanguard": "VANGUARD", "main": "MAIN BODY", "sting": "STING" }[ech]
 		var head := "WAVE %d" % g._world.wave + (" · " + phase if phase != "" else "")
+		if g._world.wx_state != "clear":   # C17: the front reads on the plate, newsreel-terse
+			head += " · " + { "rain": "RAIN", "squall": "SQUALL", "thunder": "THUNDERHEAD" }[g._world.wx_state]
 		line = "%s · %s" % [head, " · ".join(bits)] if not bits.is_empty() \
 			else "%s · CONTACTS: 0" % head
 	elif g._world.wave == 0:
